@@ -1,0 +1,20 @@
+# deps & build
+node_modules/
+.tanstack/
+.vercel/
+dist/
+.output/
+.node_modules.lock
+
+# secrets — never commit API keys
+.secrets/
+.env
+.env.*
+!.env.example
+
+# local / platform noise
+screenshots/
+artifacts/
+.grok/
+*.log
+.DS_Store
