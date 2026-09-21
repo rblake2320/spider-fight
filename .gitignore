@@ -6,11 +6,10 @@ dist/
 .output/
 .node_modules.lock
 
-# secrets — never commit API keys
+# secrets
 .secrets/
-.env
-.env.*
-!.env.example
+.env.local
+.env.*.local
 
 # local / platform noise
 screenshots/

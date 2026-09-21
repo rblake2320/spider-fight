@@ -25,10 +25,13 @@ Then open the app. `npm run build` / `npm run typecheck` are the production gate
 
 Rivals, post-fight reads, and hunt appraisals call [TypeSafe Jev](https://docs.typesafe.ai/introduction). Server-only.
 
-1. Copy `.env.example` and set `TYPESAFE_API_KEY`
-2. Or drop the key in `.secrets/typesafe.key` (gitignored)
+Set `TYPESAFE_API_KEY` in `.env` (no `VITE_` prefix — that would ship the key to the browser):
 
-Do not commit the key. Do not put it in any `VITE_` variable — that would ship it to the browser.
+```
+TYPESAFE_API_KEY=apikey_…
+```
+
+The repo is public for now, so treat this key as exposed. Rotate it at [console.typesafe.ai/keys](https://console.typesafe.ai/keys) whenever you lock the repo down. For a local override that stays off git, use `.env.local`.
 
 ## Stack
 

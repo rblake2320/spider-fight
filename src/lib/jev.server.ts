@@ -11,11 +11,44 @@ const callTimes: number[] = [];
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_CALLS = 48;
 
+function readDotEnv(file: string): Record<string, string> {
+  try {
+    const out: Record<string, string> = {};
+    for (const raw of readFileSync(file, "utf8").split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line || line.startsWith("#")) continue;
+      const stripped = line.startsWith("export ") ? line.slice(7).trim() : line;
+      const eq = stripped.indexOf("=");
+      if (eq < 0) {
+        if (stripped.startsWith("apikey_")) out.TYPESAFE_API_KEY = stripped;
+        continue;
+      }
+      const key = stripped.slice(0, eq).trim();
+      let val = stripped.slice(eq + 1).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      out[key] = val;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export function getTypeSafeKey(): string | undefined {
   const env = process.env.TYPESAFE_API_KEY?.trim();
   if (env) return env;
+  const root = process.cwd();
+  const fromDot =
+    readDotEnv(join(root, ".env")).TYPESAFE_API_KEY?.trim() ||
+    readDotEnv(join(root, ".env.local")).TYPESAFE_API_KEY?.trim();
+  if (fromDot) return fromDot;
   try {
-    const fromFile = readFileSync(join(process.cwd(), ".secrets/typesafe.key"), "utf8").trim();
+    const fromFile = readFileSync(join(root, ".secrets/typesafe.key"), "utf8").trim();
     if (fromFile) return fromFile;
   } catch {
     /* preview / vercel may not have the file */
