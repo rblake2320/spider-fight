@@ -30,9 +30,9 @@ export function GameApp() {
   const hideNav = screen === "title" || screen === "onboard" || Boolean(fight) || Boolean(result);
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-ink text-paper">
+    <div className="mx-auto flex h-dvh min-h-dvh w-full max-w-lg flex-col bg-ink text-paper">
       {screen !== "title" && screen !== "onboard" && !fight && !result ? <TopBar /> : null}
-      <main className="min-h-0 flex-1">
+      <main className="flex min-h-0 flex-1 flex-col">
         {screen === "title" ? <TitleScreen /> : null}
         {screen === "onboard" ? <Onboard /> : null}
         {screen === "yard" ? <Yard /> : null}

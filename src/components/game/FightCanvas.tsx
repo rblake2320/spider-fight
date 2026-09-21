@@ -56,10 +56,10 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
         const dw = im.width * scale;
         const dh = im.height * scale;
         ctx.drawImage(im, (w - dw) / 2, (h - dh) / 2, dw, dh);
-        ctx.fillStyle = "rgba(12,8,6,0.28)";
+        ctx.fillStyle = "rgba(12,8,6,0.12)";
         ctx.fillRect(0, 0, w, h);
       } else {
-        ctx.fillStyle = "#1a1410";
+        ctx.fillStyle = "#3a2a1c";
         ctx.fillRect(0, 0, w, h);
       }
 
@@ -80,7 +80,7 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
       drawSilk(ctx, pAttach, stickY + 4, px, py - 8, 0.85);
       drawSilk(ctx, eAttach, stickY + 4, ex, ey - 8, 0.85);
 
-      const scale = Math.min(w, h) / 210;
+      const scale = Math.min(w, h) / 140;
       const plumpP = Math.min(1, p.stats.size / 16);
       const plumpE = Math.min(1, e.stats.size / 16);
 

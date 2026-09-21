@@ -191,7 +191,7 @@ export function FightArena() {
   const locked = f.phase !== "telegraph" || f.playerLocked;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-ink">
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-ink">
       <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
         <Hp name={f.player.name} hp={f.player.hp} max={f.player.max} side="left" />
         <p className="shrink-0 text-dust">Rd {f.round}</p>
@@ -200,7 +200,7 @@ export function FightArena() {
       {f.jevMinded ? (
         <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-dust">Reads the stick</p>
       ) : null}
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-[240px] flex-1">
         <FightCanvas fight={f} className="absolute inset-0 h-full w-full" />
         <p className="pointer-events-none absolute bottom-2 left-0 right-0 text-center font-display text-lg text-paper drop-shadow">
           {f.lastText}

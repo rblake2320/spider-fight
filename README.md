@@ -4,6 +4,28 @@ Southern stick-fighting circuit. Catch porch orb-weavers, drill them, wager cash
 
 Playable on phone and desktop.
 
+![Title](docs/screenshots/01-title.png)
+
+## Look
+
+![The yard](docs/screenshots/03-yard.png)
+
+![Night porch hunt](docs/screenshots/05-hunt.png)
+
+![On the line](docs/screenshots/06-hunt-play.png)
+
+![Call a fight](docs/screenshots/10-fight-select.png)
+
+![The stick](docs/screenshots/11-fight.png)
+
+![Lunge](docs/screenshots/12-fight-round.png)
+
+![Shop](docs/screenshots/07-shop.png)
+
+![Stable](docs/screenshots/04-stable.png)
+
+More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt result, post-fight read.
+
 ## What’s in the yard
 
 - **Hunt** six lights a night across porch, garden, barn, woods, fair
