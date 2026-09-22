@@ -24,6 +24,7 @@ import { fightStakes } from "@/game/fight-stakes";
 import { nextStreakReward } from "@/game/streak";
 import { rivalWebProfiles } from "@/game/rival-scout";
 import { practiceSummary } from "@/game/practice-summary";
+import { strongestTapePlay } from "@/game/fight-playbook";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -526,6 +527,7 @@ function ResultCard() {
   const [rematchError, setRematchError] = useState<string | null>(null);
   const fighter = spiders.find((spider) => spider.id === selectedId && !spider.retired) ?? spiders.find((spider) => !spider.retired);
   const practice = result.practice ? practiceSummary(result) : null;
+  const tapePlay = strongestTapePlay(result.rounds);
 
   useEffect(() => {
     let alive = true;
@@ -617,6 +619,15 @@ function ResultCard() {
               </li>
             ))}
           </ol>
+        </section>
+      ) : null}
+      {tapePlay ? (
+        <section className="rounded-xl border border-moss/40 bg-moss/10 p-3 text-sm text-paper">
+          <p className="text-xs uppercase tracking-widest text-moss">Next read</p>
+          <p className="mt-1">When {MOVES[tapePlay.enemyMove].name} shows, lead {MOVES[tapePlay.playerMove].name}.</p>
+          <p className="mt-1 text-xs text-dust">
+            That line earned {tapePlay.edges} edge{tapePlay.edges === 1 ? "" : "s"}{tapePlay.hits ? ` and took ${tapePlay.hits} hit${tapePlay.hits === 1 ? "" : "s"}` : ""} in this tape.
+          </p>
         </section>
       ) : null}
       {read ? (
