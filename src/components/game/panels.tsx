@@ -4,7 +4,7 @@ import { ITEMS, ITEM_LIST, MOVES, RANKS, RIVALS, SLOT_LABEL, SPECIES, SPECIES_LI
 import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
-import { listCircuitBoard, postCircuitScore, type CircuitEntry } from "@/lib/circuit-board";
+import { listCircuitBoard, postCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
@@ -699,6 +699,7 @@ export function CareerView() {
   const [circuitBoard, setCircuitBoard] = useState<CircuitEntry[]>([]);
   const [boardState, setBoardState] = useState<"loading" | "ready" | "error">("loading");
   const [boardError, setBoardError] = useState<string | null>(null);
+  const [boardPlacement, setBoardPlacement] = useState<CircuitPlacement | null>(null);
   const [archiveShared, setArchiveShared] = useState<string | null>(null);
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
@@ -732,9 +733,10 @@ export function CareerView() {
     setBoardState("loading");
     setBoardError(null);
     void postCircuitScore({ data: { stableName, score: points, wins, rank } })
-      .then(() => listCircuitBoard())
-      .then((entries) => {
+      .then(async (placement) => ({ placement, entries: await listCircuitBoard() }))
+      .then(({ placement, entries }) => {
         setCircuitBoard(entries);
+        setBoardPlacement(placement);
         setBoardState("ready");
         setBoardError(null);
       })
@@ -781,6 +783,7 @@ export function CareerView() {
           </Button>
         </div>
         <p className="mt-1 text-xs text-mute">Post this stable's circuit score for other yards to chase.</p>
+        {boardPlacement ? <p className="mt-2 text-xs text-moss">Your latest post: #{boardPlacement.position} of {boardPlacement.total} active yards.</p> : null}
         {boardState === "error" ? <p className="mt-2 text-xs text-rust">{boardError}</p> : null}
         {boardState === "loading" ? <p className="mt-2 text-xs text-dust">Reading the board…</p> : null}
         {boardState === "ready" && circuitBoard.length === 0 ? <p className="mt-2 text-xs text-dust">Be the first yard on the line.</p> : null}

@@ -9,6 +9,11 @@ export type CircuitEntry = {
   updatedAt: string;
 };
 
+export type CircuitPlacement = {
+  position: number;
+  total: number;
+};
+
 type CircuitSubmission = Pick<CircuitEntry, "stableName" | "score" | "wins" | "rank">;
 
 function validSubmission(input: CircuitSubmission): CircuitSubmission {
@@ -35,7 +40,7 @@ export const listCircuitBoard = createServerFn({ method: "GET" }).handler(async 
 export const postCircuitScore = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: CircuitSubmission) => validSubmission(input))
-  .handler(async ({ data, context }): Promise<void> => {
+  .handler(async ({ data, context }): Promise<CircuitPlacement> => {
     const { getSql } = await import("./db");
     const sql = await getSql();
     await sql`
@@ -48,4 +53,20 @@ export const postCircuitScore = createServerFn({ method: "POST" })
         rank = excluded.rank,
         updated_at = now()
     `;
+    const [placement] = await sql<CircuitPlacement>`
+      with mine as (
+        select score, wins, updated_at
+        from circuit_leaderboard
+        where user_id = ${context.userId}
+      )
+      select
+        (1 + count(board.user_id))::int as position,
+        (select count(*)::int from circuit_leaderboard) as total
+      from circuit_leaderboard board
+      cross join mine
+      where board.score > mine.score
+        or (board.score = mine.score and board.wins > mine.wins)
+        or (board.score = mine.score and board.wins = mine.wins and board.updated_at > mine.updated_at)
+    `;
+    return placement ?? { position: 1, total: 1 };
   });
