@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ITEMS, ITEM_LIST, MOVES, RANKS, RIVALS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
 import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
@@ -18,6 +18,8 @@ import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
 import { DAILY_STREAK_CAP, dailyStreakBonus } from "@/game/daily-streak";
 import { archiveShareText } from "@/game/share";
 import { shareMatchCard } from "@/game/share-client";
+
+const CompetitionSignIn = lazy(() => import("./CompetitionSignIn").then((module) => ({ default: module.CompetitionSignIn })));
 
 export function Yard() {
   const name = useGame((s) => s.stableName);
@@ -804,6 +806,8 @@ export function CareerView() {
         </p>
       </header>
 
+      <Suspense fallback={null}><CompetitionSignIn /></Suspense>
+
       <section className="rounded-xl border border-line bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-dust">Yard leaderboard</p>
         <ol className="mt-2 space-y-2">
@@ -1080,6 +1084,7 @@ export function CareerView() {
     </div>
   );
 }
+
 
 export function SettingsView() {
   const settings = useGame((s) => s.settings);
