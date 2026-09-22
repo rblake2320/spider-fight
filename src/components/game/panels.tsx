@@ -18,6 +18,8 @@ export function Yard() {
   const losses = useGame((s) => s.losses);
   const setScreen = useGame((s) => s.setScreen);
   const collect = useGame((s) => s.collectDaily);
+  const contract = useGame((s) => s.dailyContract);
+  const claimContract = useGame((s) => s.claimDailyContract);
   const flags = useGame((s) => s.flags);
   const lead = spiders[0];
   const next = RANKS[rank + 1];
@@ -66,6 +68,25 @@ export function Yard() {
           <Action label="Team" onClick={() => setScreen("team")} />
           <Action label="Circuit" onClick={() => setScreen("career")} />
         </div>
+        <section className="rounded-xl border border-rust/50 bg-raised p-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-xs uppercase tracking-widest text-rust">Tonight's bounty</p>
+            <p className="tabular text-xs text-moss">${contract.reward}</p>
+          </div>
+          <p className="mt-1 font-medium">{contract.title}</p>
+          <p className="mt-1 text-xs text-dust">{contract.detail}</p>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="tabular text-sm text-paper">
+              {Math.min(contract.progress, contract.target)}/{contract.target}
+              {contract.claimed ? " · collected" : ""}
+            </p>
+            {contract.claimed ? null : (
+              <Button size="sm" variant="rust" disabled={contract.progress < contract.target} onClick={() => claimContract()}>
+                Collect
+              </Button>
+            )}
+          </div>
+        </section>
         <Button variant="outline" onClick={collect} disabled={flags.daily === todayHint()}>
           {flags.daily === todayHint() ? "Morning purse collected" : "Collect morning purse"}
         </Button>

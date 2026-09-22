@@ -172,6 +172,19 @@ export type CareerLog = {
   stripped: number;
 };
 
+export type ContractKind = "hunt" | "train" | "win";
+
+export type DailyContract = {
+  date: string;
+  kind: ContractKind;
+  title: string;
+  detail: string;
+  target: number;
+  progress: number;
+  reward: number;
+  claimed: boolean;
+};
+
 export type SaveState = {
   version: number;
   season: number;
@@ -193,4 +206,5 @@ export type SaveState = {
   seen: string[];
   flags: Record<string, string | boolean>;
   career: CareerLog;
+  dailyContract: DailyContract;
 };

@@ -27,6 +27,7 @@ import {
 import { unlockAudio, setMusicEnabled, setSfxEnabled } from "./audio";
 import { isShipped } from "./catalog";
 import { EMPTY_CAREER, migrateSave } from "./migrate";
+import { advanceContract, canClaimContract, makeDailyContract } from "./contracts";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -49,6 +50,7 @@ const emptySave = (): SaveState => ({
   seen: ["hentz"],
   flags: {},
   career: { ...EMPTY_CAREER },
+  dailyContract: makeDailyContract(todayStamp(), 0),
 });
 
 type Session = {
@@ -91,6 +93,7 @@ type Game = SaveState &
     applyResult: (out: FightOutcome, finalSpider: Spider) => void;
     clearResult: () => void;
     collectDaily: () => void;
+    claimDailyContract: () => string | null;
     setSetting: (k: keyof SaveState["settings"], v: boolean) => void;
     resetAll: () => void;
     rollYear: () => string | null;
@@ -127,7 +130,11 @@ export const useGame = create<Game>()(
       hydrate: () => {
         const s = get();
         if (s.dayStamp !== todayStamp()) {
-          set({ huntsLeft: HUNTS_PER_DAY, dayStamp: todayStamp() });
+          set({
+            huntsLeft: HUNTS_PER_DAY,
+            dayStamp: todayStamp(),
+            dailyContract: makeDailyContract(todayStamp(), s.rank),
+          });
         }
         if (!s.career) set({ career: { ...EMPTY_CAREER } });
         set({ hydrated: true });
@@ -262,6 +269,7 @@ export const useGame = create<Game>()(
         if (s.trained[stat] >= 18) return "That's as far as drills go. They need a molt.";
         set({
           cash: g.cash - cost,
+          dailyContract: advanceContract(g.dailyContract, "train"),
           spiders: patchSpider(g.spiders, spiderId, (sp) => ({
             ...sp,
             trained: { ...sp.trained, [stat]: sp.trained[stat] + 1 },
@@ -335,6 +343,7 @@ export const useGame = create<Game>()(
           pendingCatch: null,
           screen: "hunt",
           career: { ...g.career, hunts: g.career.hunts + 1 },
+          dailyContract: advanceContract(g.dailyContract, "hunt"),
           spiders: lead
             ? patchSpider(g.spiders, lead.id, (s) => ({ ...s, energy: s.energy - hab.energy }))
             : g.spiders,
@@ -443,6 +452,7 @@ export const useGame = create<Game>()(
             bouts: g.career.bouts + 1,
             stripped: g.career.stripped + out.stripped.length,
           },
+          dailyContract: out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
         });
       },
 
@@ -456,6 +466,16 @@ export const useGame = create<Game>()(
           huntsLeft: HUNTS_PER_DAY,
           flags: { ...g.flags, daily: todayStamp() },
         });
+      },
+
+      claimDailyContract: () => {
+        const g = get();
+        if (!canClaimContract(g.dailyContract)) return "Finish the card first";
+        set({
+          cash: g.cash + g.dailyContract.reward,
+          dailyContract: { ...g.dailyContract, claimed: true },
+        });
+        return null;
       },
 
       setSetting: (k, v) => {
@@ -509,6 +529,7 @@ export const useGame = create<Game>()(
         seen: s.seen,
         flags: s.flags,
         career: s.career,
+        dailyContract: s.dailyContract,
       }),
     },
   ),

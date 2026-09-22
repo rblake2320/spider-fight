@@ -1,6 +1,7 @@
 import { ITEMS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
 import { isShipped } from "./catalog.ts";
 import type { CareerLog, SaveState, Spider, Stats } from "./types.ts";
+import { makeDailyContract } from "./contracts.ts";
 
 const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0 };
 
@@ -87,6 +88,9 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
   const seen = (Array.isArray(p.seen) ? p.seen : [])
     .filter((id): id is string => typeof id === "string" && !!SPECIES[id]);
   const careerRaw = asRecord(p.career);
+  const dailyRaw = asRecord(p.dailyContract);
+  const date = str(dailyRaw.date, str(p.dayStamp));
+  const generatedContract = makeDailyContract(date || "1970-1-1", Math.max(0, num(p.rank)));
   const save = {
     version: SAVE_VERSION,
     season: Math.max(1, num(p.season, 1)),
@@ -121,6 +125,11 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       molts: num(careerRaw.molts),
       bouts: num(careerRaw.bouts),
       stripped: num(careerRaw.stripped),
+    },
+    dailyContract: {
+      ...generatedContract,
+      progress: Math.max(0, Math.min(generatedContract.target, num(dailyRaw.progress))),
+      claimed: dailyRaw.claimed === true,
     },
   } satisfies SaveState;
   void fromVersion;
