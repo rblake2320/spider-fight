@@ -12,6 +12,7 @@ import type { MoveId } from "@/game/types";
 import { askRivalMove, judgeBout, jevStatus } from "@/lib/jev";
 import type { StickSnapshot } from "@/lib/jev-types";
 import { cn } from "@/lib/utils";
+import { fightShareText } from "@/game/share";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -329,8 +330,10 @@ function Hp({ name, hp, max, side }: { name: string; hp: number; max: number; si
 
 function ResultCard() {
   const result = useGame((s) => s.result)!;
+  const stableName = useGame((s) => s.stableName);
   const clear = useGame((s) => s.clearResult);
   const [read, setRead] = useState<{ label: string; lesson: string } | null>(null);
+  const [shared, setShared] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -414,6 +417,28 @@ function ResultCard() {
           ? "Gear holds. Train the edge they just earned."
           : "What they learned on the stick walked off with the other yard. Drill it back."}
       </p>
+      <Button
+        variant="outline"
+        onClick={() => {
+          const text = fightShareText(stableName, result);
+          void (async () => {
+            try {
+              if (navigator.share) {
+                await navigator.share({ title: "Spider Fight", text });
+                setShared("Match card shared.");
+                return;
+              }
+              await navigator.clipboard.writeText(text);
+              setShared("Match card copied.");
+            } catch {
+              setShared("Share cancelled.");
+            }
+          })();
+        }}
+      >
+        Share match card
+      </Button>
+      {shared ? <p className="text-center text-xs text-dust">{shared}</p> : null}
       <Button variant="primary" onClick={clear}>
         Back to the yard
       </Button>
