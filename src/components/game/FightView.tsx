@@ -161,6 +161,7 @@ export function FightArena() {
   const spiders = useGame((s) => s.spiders);
   const applyResult = useGame((s) => s.applyResult);
   const result = useGame((s) => s.result);
+  const reduceMotion = useGame((s) => s.settings.reduceMotion);
   const setScreen = useGame((s) => s.setScreen);
   const player = spiders.find((s) => s.id === fightMeta?.playerId);
   const sim = useRef<StickFight | null>(null);
@@ -271,7 +272,7 @@ export function FightArena() {
         </p>
       ) : null}
       <div className="relative min-h-[240px] flex-1">
-        <FightCanvas fight={f} className="absolute inset-0 h-full w-full" />
+        <FightCanvas fight={f} className="absolute inset-0 h-full w-full" reduceMotion={reduceMotion} />
         <p className="pointer-events-none absolute bottom-2 left-0 right-0 text-center font-display text-lg text-paper drop-shadow">
           {f.lastText}
         </p>

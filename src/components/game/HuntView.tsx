@@ -92,6 +92,7 @@ export function HuntSelect() {
 export function HuntPlay() {
   const habitatId = useGame((s) => s.huntHabitat);
   const activeBait = useGame((s) => s.activeBait);
+  const reduceMotion = useGame((s) => s.settings.reduceMotion);
   const pending = useGame((s) => s.pendingCatch);
   const resolve = useGame((s) => s.resolveHuntTap);
   const keep = useGame((s) => s.keepCatch);
@@ -134,6 +135,11 @@ export function HuntPlay() {
 
   useEffect(() => {
     if (phase !== "seek" && phase !== "window") return;
+    if (reduceMotion) {
+      setMeter(0.72);
+      setPhase("window");
+      return;
+    }
     let raf = 0;
     let last = performance.now();
     let elapsed = 0;
@@ -155,7 +161,7 @@ export function HuntPlay() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [phase]);
+  }, [phase, reduceMotion]);
 
   if (!hab) return null;
 

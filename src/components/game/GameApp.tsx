@@ -22,6 +22,7 @@ export function GameApp() {
   const screen = useGame((s) => s.screen);
   const fight = useGame((s) => s.fight);
   const result = useGame((s) => s.result);
+  const reduceMotion = useGame((s) => s.settings.reduceMotion);
 
   useEffect(() => {
     void Promise.resolve(useGame.persist.rehydrate()).then(() => hydrate());
@@ -30,7 +31,7 @@ export function GameApp() {
   const hideNav = screen === "title" || screen === "onboard" || Boolean(fight) || Boolean(result);
 
   return (
-    <div className="mx-auto flex h-dvh min-h-dvh w-full max-w-lg flex-col bg-ink text-paper">
+    <div data-reduce-motion={reduceMotion ? "true" : undefined} className="mx-auto flex h-dvh min-h-dvh w-full max-w-lg flex-col bg-ink text-paper">
       {screen !== "title" && screen !== "onboard" && !fight && !result ? <TopBar /> : null}
       <main className="flex min-h-0 flex-1 flex-col">
         {screen === "title" ? <TitleScreen /> : null}

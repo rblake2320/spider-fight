@@ -13,7 +13,7 @@ const simulationOwners = (() => {
   return host.__spiderFightSimulationOwners ??= new WeakMap<StickFight, symbol>();
 })();
 
-export function FightCanvas({ fight, className }: { fight: StickFight; className?: string }) {
+export function FightCanvas({ fight, className, reduceMotion = false }: { fight: StickFight; className?: string; reduceMotion?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const bg = useRef<HTMLImageElement | null>(null);
   const fightRef = useRef(fight);
@@ -61,8 +61,8 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
-      const shx = (Math.random() - 0.5) * f.shake * 10;
-      const shy = (Math.random() - 0.5) * f.shake * 8;
+      const shx = reduceMotion ? 0 : (Math.random() - 0.5) * f.shake * 10;
+      const shy = reduceMotion ? 0 : (Math.random() - 0.5) * f.shake * 8;
       ctx.save();
       ctx.translate(shx, shy);
 
@@ -110,7 +110,7 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
         facing: 1,
         colors: p.colors,
         pose: p.pose,
-        t: now / 1000,
+        t: reduceMotion ? 0 : now / 1000,
         plump: plumpP,
         training: trainedP,
         hurtFlash: p.hurtFlash,
@@ -124,7 +124,7 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
         facing: -1,
         colors: e.colors,
         pose: e.pose,
-        t: now / 1000 + 1.7,
+        t: reduceMotion ? 1.7 : now / 1000 + 1.7,
         plump: plumpE,
         training: trainedE,
         hurtFlash: e.hurtFlash,
@@ -152,7 +152,7 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
         simulationOwners.delete(fight);
       }
     };
-  }, []);
+  }, [reduceMotion]);
 
   return <canvas ref={ref} className={className} style={{ touchAction: "none" }} />;
 }
