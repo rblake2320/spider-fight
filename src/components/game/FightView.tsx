@@ -21,6 +21,7 @@ import { RIVAL_TROPHIES } from "@/game/rewards";
 import { todayStamp } from "@/game/rng";
 import { fightStakes } from "@/game/fight-stakes";
 import { nextStreakReward } from "@/game/streak";
+import { rivalWebProfiles } from "@/game/rival-scout";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -163,6 +164,7 @@ export function FightSelect() {
           const widowMode = r.mind ? widowCallMode(rank) : null;
           const stakes = fightStakes(rank, wager, r.id === headline.id, sky.purse);
           const rankedCall = !r.mind || widowMode === "challenge";
+          const webProfiles = rivalWebProfiles(r);
           return (
           <button
             key={r.id}
@@ -193,6 +195,11 @@ export function FightSelect() {
             </div>
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
             {r.style ? <p className="mt-1 text-xs text-dust">Tends toward {MOVES[r.style].name.toLowerCase()}.</p> : null}
+            {webProfiles.length ? (
+              <p className="mt-1 text-xs text-dust">
+                Possible webs: {webProfiles.map((profile) => `${profile.species} · ${profile.web} (${profile.move})`).join(" / ")}
+              </p>
+            ) : null}
             <p className="mt-1 text-xs text-dust">{Math.round(r.grit * 100)}% grit</p>
             {rankedCall ? (
               <p className="mt-1 text-xs text-paper">
