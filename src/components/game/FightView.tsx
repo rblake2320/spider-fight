@@ -618,7 +618,7 @@ function ResultCard() {
         ) : null}
         {result.headlineBonus ? <li className="text-moss">Headliner bonus +${result.headlineBonus} · +{NIGHTLY_BONUS_POINTS} circuit</li> : null}
         {result.seriesBonus ? <li className="text-moss">Yard series bonus +${result.seriesBonus}</li> : null}
-        {result.readBonus ? <li className="text-moss">No-hint read +{result.readBonus} circuit</li> : null}
+        {result.readBonus ? <li className="text-moss">Counter-free read +{result.readBonus} circuit</li> : null}
         {result.streakBonus ? <li className="text-moss">{result.streakBonus.label} +${result.streakBonus.cash} · +{result.streakBonus.points} circuit</li> : null}
         {result.badges?.map((badge) => <li key={badge.name} className="text-moss">{badge.name} mark +{badge.reward} circuit pts</li>)}
         {result.sky ? <li className="text-dust">{tonightSky().name} on the stick</li> : null}
