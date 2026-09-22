@@ -711,7 +711,7 @@ export function CareerView() {
 
   useEffect(() => {
     let alive = true;
-    void listCircuitBoard()
+    void listCircuitBoard({ data: { season } })
       .then((entries) => {
         if (!alive) return;
         setCircuitBoard(entries);
@@ -727,13 +727,13 @@ export function CareerView() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [season]);
 
   const postScore = () => {
     setBoardState("loading");
     setBoardError(null);
-    void postCircuitScore({ data: { stableName, score: points, wins, rank } })
-      .then(async (placement) => ({ placement, entries: await listCircuitBoard() }))
+    void postCircuitScore({ data: { stableName, score: points, wins, rank, season } })
+      .then(async (placement) => ({ placement, entries: await listCircuitBoard({ data: { season } }) }))
       .then(({ placement, entries }) => {
         setCircuitBoard(entries);
         setBoardPlacement(placement);
@@ -777,7 +777,7 @@ export function CareerView() {
 
       <section className="rounded-xl border border-moss/50 bg-raised p-3">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-xs uppercase tracking-widest text-moss">Circuit board</p>
+          <p className="text-xs uppercase tracking-widest text-moss">Year {season} circuit board</p>
           <Button size="sm" variant="outline" disabled={boardState === "loading"} onClick={postScore}>
             Post score
           </Button>
