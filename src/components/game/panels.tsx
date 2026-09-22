@@ -314,6 +314,7 @@ export function ShopView() {
   const equip = useGame((s) => s.equip);
   const feed = useGame((s) => s.feed);
   const tonic = useGame((s) => s.useTonic);
+  const setHuntBait = useGame((s) => s.setHuntBait);
   const [tab, setTab] = useState<ItemKind | "gear">("gear");
   const [msg, setMsg] = useState<string | null>(null);
   const kinds: Array<ItemKind | "gear"> = ["gear", "feed", "tonic", "bait", "upgrade"];
@@ -370,6 +371,11 @@ export function ShopView() {
                 {item.kind === "tonic" && have > 0 && selectedId ? (
                   <Button size="sm" variant="ghost" onClick={() => setMsg(tonic(selectedId, item.id))}>
                     Use
+                  </Button>
+                ) : null}
+                {item.kind === "bait" && have > 0 ? (
+                  <Button size="sm" variant="ghost" onClick={() => setMsg(setHuntBait(item.id) ?? `${item.name} set for the next hunt`)}>
+                    Set bait
                   </Button>
                 ) : null}
               </div>

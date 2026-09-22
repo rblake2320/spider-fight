@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { HABITATS, SPECIES } from "@/game/content";
+import { HABITATS, ITEMS, SPECIES } from "@/game/content";
 import { isShipped, seasonName } from "@/game/catalog";
 import { playCatch } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -12,6 +12,7 @@ export function HuntSelect() {
   const rank = useGame((s) => s.rank);
   const huntsLeft = useGame((s) => s.huntsLeft);
   const startHunt = useGame((s) => s.startHunt);
+  const huntBait = useGame((s) => s.huntBait);
   const [err, setErr] = useState<string | null>(null);
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
@@ -19,6 +20,7 @@ export function HuntSelect() {
         <p className="text-xs uppercase tracking-widest text-dust">Hunt</p>
         <h2 className="font-display text-3xl font-semibold">Walk the web</h2>
         <p className="mt-1 text-sm text-dust">{huntsLeft} lights left tonight.</p>
+        <p className="mt-1 text-xs text-moss">{huntBait ? `${ITEMS[huntBait]?.name} set for this hunt.` : "No bait set."}</p>
       </header>
       {HABITATS.map((h) => {
         const coming = !isShipped(h);

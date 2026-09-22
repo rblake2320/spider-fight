@@ -30,6 +30,7 @@ import { isShipped } from "./catalog";
 import { EMPTY_CAREER, migrateSave } from "./migrate";
 import { advanceContract, canClaimContract, makeDailyContract } from "./contracts";
 import { firstWinTrophy } from "./rewards";
+import { applyBait } from "./bait";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -60,6 +61,8 @@ type Session = {
   screen: Screen;
   hydrated: boolean;
   huntHabitat: string | null;
+  huntBait: string | null;
+  activeBait: string | null;
   pendingCatch: Spider | null;
   fight: {
     rivalId: string;
@@ -83,6 +86,7 @@ type Game = SaveState &
     unequip: (spiderId: string, slot: keyof Spider["gear"]) => void;
     feed: (spiderId: string, itemId: string) => string | null;
     useTonic: (spiderId: string, itemId: string) => string | null;
+    setHuntBait: (itemId: string | null) => string | null;
     train: (spiderId: string, stat: keyof Stats) => string | null;
     restSpider: (spiderId: string) => string | null;
     tryMolt: (spiderId: string) => string | null;
@@ -126,6 +130,8 @@ export const useGame = create<Game>()(
       screen: "title",
       hydrated: false,
       huntHabitat: null,
+      huntBait: null,
+      activeBait: null,
       pendingCatch: null,
       fight: null,
       result: null,
@@ -340,11 +346,16 @@ export const useGame = create<Game>()(
         if (g.cash < hab.cost) return "Can't cover the trip";
         const lead = g.spiders.find((s) => s.id === g.selectedId) ?? g.spiders[0];
         if (lead && lead.energy < hab.energy) return "Your lead spider is spent";
+        const inventory = g.huntBait ? takeInv(g.inventory, g.huntBait) : g.inventory;
+        if (!inventory) return "That bait is gone";
         set({
           cash: g.cash - hab.cost,
           huntsLeft: g.huntsLeft - 1,
           huntHabitat: habitatId,
+          huntBait: null,
+          activeBait: g.huntBait,
           pendingCatch: null,
+          inventory,
           screen: "hunt",
           career: { ...g.career, hunts: g.career.hunts + 1 },
           dailyContract: advanceContract(g.dailyContract, "hunt"),
@@ -360,12 +371,9 @@ export const useGame = create<Game>()(
         const hab = HABITATS.find((h) => h.id === g.huntHabitat);
         if (!hab) return null;
         const rng = mulberry32(seedFrom(g.stableName + String(Date.now())));
-        const bait = (g.flags.bait === true ? 0.08 : 0) + quality * 0.5;
-        if (rng.next() > 0.28 + bait) return null;
-        const weights = { ...hab.weights };
-        if (g.inventory["sugar-water"]) weights.uncommon = (weights.uncommon ?? 0) + 18;
-        if (g.inventory.pheromone) weights.legendary = (weights.legendary ?? 0) + 16;
-        const caught = rollSpider(rng, { habitat: hab, rank: g.rank });
+        const bait = applyBait(g.activeBait, hab.weights);
+        if (rng.next() > 0.28 + quality * 0.5 + bait.chanceBonus) return null;
+        const caught = rollSpider(rng, { habitat: { ...hab, weights: bait.weights }, rank: g.rank });
         set({ pendingCatch: caught, seen: g.seen.includes(caught.speciesId) ? g.seen : [...g.seen, caught.speciesId] });
         return caught;
       },
@@ -386,7 +394,7 @@ export const useGame = create<Game>()(
 
       releaseCatch: () => set({ pendingCatch: null }),
 
-      leaveHunt: () => set({ huntHabitat: null, pendingCatch: null, screen: "hunt" }),
+      leaveHunt: () => set({ huntHabitat: null, activeBait: null, pendingCatch: null, screen: "hunt" }),
 
       prepareFight: (rivalId, playerId, wager) => {
         const g = get();
@@ -480,6 +488,18 @@ export const useGame = create<Game>()(
           huntsLeft: HUNTS_PER_DAY,
           flags: { ...g.flags, daily: todayStamp() },
         });
+      },
+
+      setHuntBait: (itemId) => {
+        if (itemId === null) {
+          set({ huntBait: null });
+          return null;
+        }
+        const item = ITEMS[itemId];
+        if (!item || item.kind !== "bait") return "That's not hunt bait";
+        if ((get().inventory[itemId] ?? 0) < 1) return "None in the crate";
+        set({ huntBait: itemId });
+        return null;
       },
 
       claimDailyContract: () => {
