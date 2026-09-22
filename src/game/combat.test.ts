@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, countersFor, createFight, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight } from "./combat";
+import { applyEnemyTell, bestCounterFor, countersFor, createFight, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
@@ -65,7 +65,15 @@ test("the live read guide only recommends moves that win the exchange", () => {
   assert.deepEqual(countersFor("lunge"), ["grapple", "drop"]);
   assert.deepEqual(countersFor("grapple"), ["feint"]);
   assert.ok(countersFor("brace").includes("lunge"));
+  assert.deepEqual(countersFor("yank"), ["brace"]);
   assert.ok(!countersFor("brace").includes("yank"));
+});
+
+test("scout cards lead with the highest-impact legal counter", () => {
+  assert.equal(bestCounterFor("lunge"), "grapple");
+  assert.equal(bestCounterFor("brace"), "lunge");
+  assert.equal(bestCounterFor("grapple"), "feint");
+  assert.equal(bestCounterFor("yank"), "brace");
 });
 
 test("a species web changes its signature move outcome", () => {

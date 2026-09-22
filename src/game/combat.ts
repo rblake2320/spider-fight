@@ -205,6 +205,10 @@ function rps(a: MoveId, b: MoveId): number {
   const ma = MOVES[a];
   if (ma.beats === b) return 1;
   if (ma.loses === b) return -1;
+  // A move may name its own loss (Silk Yank loses to Brace), so honor the
+  // opposite declaration before applying the general defensive fallback.
+  if (MOVES[b].loses === a) return 1;
+  if (MOVES[b].beats === a) return -1;
   if (a === "brace") return -0.2;
   if (b === "brace") return 0.35;
   return 0;
@@ -213,6 +217,11 @@ function rps(a: MoveId, b: MoveId): number {
 /** Moves that win the current exchange. Used by the live read card and tests. */
 export function countersFor(move: MoveId): MoveId[] {
   return (Object.keys(MOVES) as MoveId[]).filter((candidate) => rps(candidate, move) > 0);
+}
+
+/** The clearest single answer for a pre-fight scout card. */
+export function bestCounterFor(move: MoveId): MoveId | null {
+  return countersFor(move).sort((a, b) => MOVES[b].power - MOVES[a].power)[0] ?? null;
 }
 
 function spend(f: Fighter, move: MoveId): void {

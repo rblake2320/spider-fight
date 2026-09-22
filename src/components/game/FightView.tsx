@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, countersFor, createFight, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, webSurgeHint, type StickFight } from "@/game/combat";
+import { applyEnemyTell, bestCounterFor, countersFor, createFight, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -195,9 +195,9 @@ export function FightSelect() {
             </div>
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
             {r.style ? <p className="mt-1 text-xs text-dust">Tends toward {MOVES[r.style].name.toLowerCase()}.</p> : null}
-            {r.style ? (
+            {r.style && bestCounterFor(r.style) ? (
               <p className="mt-1 text-xs text-moss">
-                First read: if {MOVES[r.style].name.toLowerCase()} shows, answer {countersFor(r.style).map((move) => MOVES[move].name).join(" or ")}.
+                First read: if {MOVES[r.style].name.toLowerCase()} shows, lead {MOVES[bestCounterFor(r.style)!].name}.
               </p>
             ) : null}
             {webProfiles.length ? (
@@ -223,9 +223,9 @@ export function FightSelect() {
                     {record.streak > 1 ? ` · ${record.streak} straight` : ""}
                   </p>
                   {intel.length ? <p className="mt-1 text-xs text-dust">Tape says: {intel.map((entry) => `${MOVES[entry.move].name} ×${entry.count}`).join(" · ")}</p> : null}
-                  {intel[0] ? (
+                  {intel[0] && bestCounterFor(intel[0].move) ? (
                     <p className="mt-1 text-xs text-moss">
-                      Tape counter: when {MOVES[intel[0].move].name.toLowerCase()} shows, answer {countersFor(intel[0].move).map((move) => MOVES[move].name).join(" or ")}.
+                      Tape counter: when {MOVES[intel[0].move].name.toLowerCase()} shows, lead {MOVES[bestCounterFor(intel[0].move)!].name}.
                     </p>
                   ) : null}
                 </>
