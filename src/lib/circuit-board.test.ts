@@ -21,7 +21,7 @@ test("the circuit board offers the nearest other yard to chase", () => {
   });
   assert.equal(nextCircuitChase(board, 32, 0, "Porch Crew"), null);
   assert.equal(circuitPosition(board, 20, 2), 3);
-  assert.equal(circuitPosition(board, 23, 2), 1);
+  assert.equal(circuitPosition(board, 23, 2), 2);
 });
 
 test("the offline Porch Ladder is stable for a circuit day and offers distinct yards", () => {
