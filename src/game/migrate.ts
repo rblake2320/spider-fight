@@ -4,7 +4,7 @@ import type { CareerLog, MoltQuality, PaperClip, SaveState, Spider, Stats, YardS
 import { makeDailyContract, makeDailyWebChallenge } from "./contracts.ts";
 import type { MoveId } from "./types.ts";
 
-const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0 };
+const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0 };
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -181,6 +181,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       stripped: num(careerRaw.stripped),
       clutches: num(careerRaw.clutches),
       perfectMolts: num(careerRaw.perfectMolts),
+      worldTitles: Math.max(0, num(careerRaw.worldTitles)),
     },
     dailyContract: {
       ...generatedContract,

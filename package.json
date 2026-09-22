@@ -14,7 +14,7 @@
     "preview": "node scripts/with-app-env.mjs vite preview",
     "typecheck": "tsc --noEmit",
     "check:auth": "node scripts/check-auth-invariant.mjs",
-    "test": "node --test 'scripts/**/*.test.mjs' && tsx --test src/game/badges.test.ts src/game/night-card.test.ts src/game/bait.test.ts src/game/boss.test.ts src/game/combat.test.ts src/game/catalog.test.ts src/game/contracts.test.ts src/game/daily-streak.test.ts src/game/rewards.test.ts src/game/rival-intel.test.ts src/game/rival-scout.test.ts src/game/share.test.ts src/game/fight-stakes.test.ts src/game/streak.test.ts src/game/series.test.ts src/game/sky.test.ts src/game/clutch.test.ts src/game/caller.test.ts src/game/traits.test.ts src/game/rafters.test.ts src/game/paper.test.ts src/game/spiders.test.ts src/lib/app-data/app-data.test.ts src/lib/auth/gate-identity.test.ts",
+    "test": "node --test 'scripts/**/*.test.mjs' && tsx --test src/game/badges.test.ts src/game/night-card.test.ts src/game/bait.test.ts src/game/boss.test.ts src/game/combat.test.ts src/game/catalog.test.ts src/game/contracts.test.ts src/game/daily-streak.test.ts src/game/rewards.test.ts src/game/rival-intel.test.ts src/game/rival-scout.test.ts src/game/share.test.ts src/game/fight-stakes.test.ts src/game/streak.test.ts src/game/series.test.ts src/game/sky.test.ts src/game/clutch.test.ts src/game/caller.test.ts src/game/traits.test.ts src/game/rafters.test.ts src/game/paper.test.ts src/game/spiders.test.ts src/game/store.test.ts src/lib/app-data/app-data.test.ts src/lib/auth/gate-identity.test.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

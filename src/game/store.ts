@@ -776,13 +776,16 @@ export const useGame = create<Game>()(
       rollYear: () => {
         const g = get();
         if (g.rank < 7) return "Hold the World Stick first";
+        const career = { ...g.career, worldTitles: (g.career.worldTitles ?? 0) + 1 };
+        const badges = badgeProgress({ ...g, rank: 5, rankPoints: 0 }, { spiders: g.spiders, career, wins: g.wins, seen: g.seen });
         set({
           season: g.season + 1,
-          rank: 5,
-          rankPoints: 0,
+          rank: badges.rank,
+          rankPoints: badges.rankPoints,
           huntsLeft: HUNTS_PER_DAY,
           cash: g.cash + 80 + g.wins,
-          career: { ...g.career },
+          career,
+          earnedBadges: badges.earnedBadges,
         });
         return null;
       },

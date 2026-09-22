@@ -13,7 +13,7 @@ import { SEASON2_HABITATS, SEASON2_ITEMS, SEASON2_RIVALS, SEASON2_SPECIES } from
 import { SEASON3_HABITATS, SEASON3_ITEMS, SEASON3_RIVALS, SEASON3_SPECIES } from "./packs/season3.ts";
 import { SEASON4_HABITATS, SEASON4_ITEMS, SEASON4_RIVALS, SEASON4_SPECIES } from "./packs/season4.ts";
 
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 export const MAX_STAT = 42;
 export const TEAM_SIZE = 3;
 export const HUNTS_PER_DAY = 6;

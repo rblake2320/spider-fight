@@ -802,6 +802,7 @@ export function CareerView() {
           {career?.stripped ?? 0} wraps walked
           {(career?.clutches ?? 0) > 0 ? ` · ${career.clutches} clutches` : ""}
           {(career?.perfectMolts ?? 0) > 0 ? ` · ${career.perfectMolts} glass shells` : ""}
+          {(career?.worldTitles ?? 0) > 0 ? ` · ${career.worldTitles} World title${career.worldTitles === 1 ? "" : "s"}` : ""}
         </p>
       </div>
 
@@ -958,7 +959,7 @@ export function CareerView() {
         <Button
           onClick={() => {
             const err = rollYear();
-            setMsg(err ?? "New year. Regional again. Keep the spiders.");
+            setMsg(err ?? "World title stamped. New year, Regional again. Keep the spiders.");
           }}
         >
           Roll the next year

@@ -199,6 +199,7 @@ export type CareerLog = {
   stripped: number;
   clutches: number;
   perfectMolts: number;
+  worldTitles: number;
 };
 
 export type PaperClip = {
