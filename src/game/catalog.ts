@@ -2,8 +2,8 @@ import { HABITATS, ITEMS, ITEM_LIST, RIVALS, SPECIES, SPECIES_LIST } from "./con
 import type { Habitat, Item, Rival, Species } from "./types.ts";
 
 /** Shipped content year. Bump this when a pack goes live — old saves keep working. */
-export const SHIPPED_SEASON = 3;
-export const BUILD = "1.4.0";
+export const SHIPPED_SEASON = 4;
+export const BUILD = "1.5.0";
 
 export type SeasonPack = {
   id: number;
@@ -34,8 +34,8 @@ export const SEASONS: SeasonPack[] = [
   {
     id: 4,
     name: "Silk National",
-    blurb: "Named stables. They scout you. The stick makes papers.",
-    adds: ["Scout contracts", "Named rival stables", "National purse table"],
+    blurb: "Motel balconies, service gates, and crews that have done this before.",
+    adds: ["Motel Eave", "Stadium Service Gate", "Bowl and Doily", "Starbellied", "Long-jawed", "Gate Seven"],
   },
 ];
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { HABITATS, ITEMS, RIVALS, SPECIES } from "./content.ts";
+import { HABITATS, ITEMS, RIVALS, SAVE_VERSION, SPECIES } from "./content.ts";
 import { careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonOf, speciesOf } from "./catalog.ts";
 import { migrateSave } from "./migrate.ts";
 
@@ -25,8 +25,8 @@ test("item and species ids match their keys", () => {
   for (const [id, item] of Object.entries(ITEMS)) assert.equal(item.id, id);
 });
 
-test("season 2 and 3 content are live and available to the circuit", () => {
-  assert.equal(SHIPPED_SEASON, 3);
+test("season 2 through 4 content is live and available to the circuit", () => {
+  assert.equal(SHIPPED_SEASON, 4);
   assert.ok(SPECIES.brownwidow);
   assert.equal(seasonOf(SPECIES.brownwidow!), 2);
   assert.equal(isShipped(SPECIES.brownwidow!), true);
@@ -36,6 +36,11 @@ test("season 2 and 3 content are live and available to the circuit", () => {
   assert.equal(seasonOf(SPECIES.fishing!), 3);
   assert.equal(isShipped(SPECIES.fishing!), true);
   assert.ok(HABITATS.some((h) => h.id === "feedstore" && isShipped(h)));
+  assert.ok(SPECIES.bowl);
+  assert.equal(seasonOf(SPECIES.bowl!), 4);
+  assert.equal(isShipped(SPECIES.bowl!), true);
+  assert.ok(HABITATS.some((h) => h.id === "motel" && isShipped(h)));
+  assert.ok(RIVALS.some((r) => r.id === "gateseven" && isShipped(r)));
 });
 
 test("a career starts in Porch Year and holds at the newest released circuit", () => {
@@ -59,7 +64,7 @@ test("migrate keeps unknown species from crashing", () => {
     },
     1,
   );
-  assert.equal(next.version, 7);
+  assert.equal(next.version, SAVE_VERSION);
   assert.equal(next.spiders[0]?.speciesId, "hentz");
   assert.equal(next.spiders[0]?.gear.wraps, undefined);
   assert.equal(next.inventory.cricket, 2);

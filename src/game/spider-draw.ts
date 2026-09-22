@@ -317,6 +317,15 @@ export function drawSilk(
     ctx.strokeStyle = "rgba(232,220,198,0.32)";
     ctx.lineWidth = 0.7;
     ctx.stroke();
+  } else if (style === "sheet") {
+    ctx.strokeStyle = "rgba(184,224,207,0.38)";
+    ctx.lineWidth = 0.65;
+    for (const offset of [-5, 0, 5]) {
+      ctx.beginPath();
+      ctx.moveTo(x0, y0 + offset);
+      ctx.quadraticCurveTo(mx, my + offset * 0.4, x1, y1 + offset);
+      ctx.stroke();
+    }
   }
   if (style === "golden") {
     ctx.strokeStyle = "rgba(240,196,60,0.58)";

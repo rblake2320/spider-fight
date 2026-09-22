@@ -72,6 +72,15 @@ export const TRAITS: Record<string, TraitDef> = {
   "Molt glutton": { blurb: "Lives to shed.", moltPerfect: 0.1, moltRough: -0.06 },
   "Yard-bred": { blurb: "Born on this dirt.", stats: { grit: 1 }, moltPerfect: 0.04 },
   "First stick": { blurb: "Green. Still listens.", train: -2, moltRough: 0.03 },
+  "Bowl keeper": { blurb: "Holds the center of the sheet.", stats: { silk: 1, grit: 1 } },
+  "Doily maker": { blurb: "Builds a second line before sunrise.", stats: { silk: 1 }, ai: { yank: 2 } },
+  "Quiet pull": { blurb: "The line moves before you hear it.", stats: { speed: 1 }, ai: { feint: 1 } },
+  "Star belly": { blurb: "A mark made for hard lights.", stats: { grit: 1, silk: 1 } },
+  "Gate glare": { blurb: "Doesn't flinch under the floodlights.", stats: { power: 1 }, ai: { lunge: 1 } },
+  "Late hitter": { blurb: "Gets mean when the window thins.", heat: 0.12, ai: { lunge: 1 } },
+  "Long jaw": { blurb: "A bite from farther down the line.", stats: { venom: 1, silk: 1 } },
+  "Rail runner": { blurb: "Fast along the service wire.", stats: { speed: 1 }, ai: { drop: 2 } },
+  "River thread": { blurb: "Keeps a wet line tight.", stats: { silk: 1 }, moltRough: -0.04 },
 };
 
 export function traitOf(name: string): TraitDef | undefined {

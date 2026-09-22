@@ -99,6 +99,25 @@ test("two correct reads prime a visible species-web surge", () => {
   assert.equal(fight.roundLog[0]?.playerSurge, "cross brace restores shell");
 });
 
+test("the Bowl and Doily spends its sheet web to recover stamina and tighten the rival line", () => {
+  const bowl = rollSpider(mulberry32(153), { speciesId: "bowl", stage: "adult" });
+  const enemy = rollSpider(mulberry32(154), { speciesId: "hentz", stage: "adult", asRival: true });
+  const fight = createFight(bowl, enemy, 10, "tom", "Alley Tom");
+  for (let i = 0; i < 24; i += 1) stepFight(fight, 0.05);
+
+  fight.player.webCharge = 2;
+  fight.player.stam = 50;
+  fight.enemy.silk = 0.22;
+  assert.equal(applyEnemyTell(fight, "drop", false), true);
+  queuePlayerMove(fight, "yank");
+  for (let i = 0; i < 40 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
+
+  assert.equal(fight.player.webCharge, 0);
+  assert.equal(fight.player.stam, 54); // 50 - 14 for yank, then +18 from the sheet surge
+  assert.equal(fight.enemy.silk, 0.4); // yank, its signature pull, then the sheet surge caps the rival line
+  assert.equal(fight.roundLog[0]?.playerSurge, "sheet web tightens the line");
+});
+
 test("crew style is carried into the fallback stick AI", () => {
   const player = rollSpider(mulberry32(55), { speciesId: "hentz", stage: "adult" });
   const enemy = rollSpider(mulberry32(66), { speciesId: "cross", stage: "adult", asRival: true });

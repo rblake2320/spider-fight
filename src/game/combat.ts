@@ -85,6 +85,7 @@ export function webSurgeHint(style: WebStyle): string {
   if (style === "tangle") return "drain rival stamina";
   if (style === "spoked") return "snap for bonus damage";
   if (style === "golden") return "bite back and recover";
+  if (style === "sheet") return "tighten the sheet and recover stamina";
   return "catch hard for bonus damage";
 }
 
@@ -557,6 +558,10 @@ function applyWebSurge(f: StickFight, fighter: Fighter, opponent: Fighter, move:
     applyHit(f, opponent, 6 + fighter.stats.silk * 0.5, move);
     fighter.hp = clamp(fighter.hp + 7, 0, fighter.max);
     label = "gold silk bites back";
+  } else if (fighter.web.style === "sheet") {
+    fighter.stam = clamp(fighter.stam + 18, 0, 100);
+    opponent.silk = clamp(opponent.silk + 0.08, 0.14, 0.4);
+    label = "sheet web tightens the line";
   } else {
     applyHit(f, opponent, 6 + fighter.stats.silk * 0.4, move);
     opponent.silk = clamp(opponent.silk + 0.035, 0.14, 0.4);
