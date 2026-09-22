@@ -18,3 +18,9 @@ export function firstWinTrophy(rivalId: string, inventory: Record<string, number
   const alreadyHeld = (inventory[trophy] ?? 0) > 0 || spiders.some((spider) => Object.values(spider.gear).includes(trophy));
   return alreadyHeld ? null : trophy;
 }
+
+export function heldRivalTrophies(inventory: Record<string, number>, spiders: Spider[]): string[] {
+  return [...new Set(Object.values(RIVAL_TROPHIES))].filter(
+    (trophy) => (inventory[trophy] ?? 0) > 0 || spiders.some((spider) => Object.values(spider.gear).includes(trophy)),
+  );
+}

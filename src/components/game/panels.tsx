@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ITEMS, ITEM_LIST, MOVES, RANKS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
+import { ITEMS, ITEM_LIST, MOVES, RANKS, RIVALS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
 import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
@@ -14,6 +14,7 @@ import { activeSpiders, canRelease, canRetire, rafterSpiders, releaseCash } from
 import type { GearSlot, ItemKind, Stats } from "@/game/types";
 import { jevStatus } from "@/lib/jev";
 import { cn } from "@/lib/utils";
+import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
 
 export function Yard() {
   const name = useGame((s) => s.stableName);
@@ -681,6 +682,7 @@ export function CareerView() {
   const losses = useGame((s) => s.losses);
   const seen = useGame((s) => s.seen);
   const spiders = useGame((s) => s.spiders);
+  const inventory = useGame((s) => s.inventory);
   const season = useGame((s) => s.season);
   const career = useGame((s) => s.career);
   const earnedBadges = useGame((s) => s.earnedBadges);
@@ -695,6 +697,8 @@ export function CareerView() {
   const current = SEASONS.find((s) => s.id === careerSeasonId(season)) ?? SEASONS[0]!;
   const fieldGuide = SPECIES_LIST.filter(isShipped);
   const foundSpecies = fieldGuide.filter((species) => seen.includes(species.id)).length;
+  const trophies = heldRivalTrophies(inventory, spiders);
+  const trophyRows = Object.entries(RIVAL_TROPHIES).map(([rivalId, itemId]) => ({ rival: RIVALS.find((rival) => rival.id === rivalId), item: ITEMS[itemId], held: trophies.includes(itemId) }));
 
   useEffect(() => {
     let alive = true;
@@ -795,6 +799,18 @@ export function CareerView() {
           {(career?.perfectMolts ?? 0) > 0 ? ` · ${career.perfectMolts} glass shells` : ""}
         </p>
       </div>
+
+      <section className="rounded-xl border border-moss/50 bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-moss">Trophy case</p>
+        <p className="mt-1 text-xs text-dust">{trophies.length}/{trophyRows.length} key crews beaten. Trophies can be equipped from the crate.</p>
+        <ul className="mt-2 space-y-1 text-sm">
+          {trophyRows.map(({ rival, item, held }) => (
+            <li key={item?.id} className={held ? "text-paper" : "text-dust"}>
+              {held ? "●" : "○"} {held ? item?.name : rival?.name ?? "Unknown crew"}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {paper?.length ? (
         <section className="rounded-xl border border-line bg-raised p-3">
