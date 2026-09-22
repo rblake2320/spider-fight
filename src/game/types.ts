@@ -181,6 +181,8 @@ export type FightOutcome = {
   sky?: string;
   /** First opponent species observed at the stick; shown as a field-guide unlock. */
   discovery?: { species: string; web: string; ability: string };
+  /** Circuit marks earned by this ranked bout, including their actual point reward. */
+  badges?: { name: string; reward: number }[];
   rounds: FightRound[];
 };
 

@@ -61,9 +61,35 @@ test("fighting an unknown species adds its web to the field guide, even in pract
     useGame.getState().applyResult(outcome, player);
     const after = useGame.getState();
     assert.ok(after.seen.includes("cross"));
+    assert.equal(after.rankPoints, 0);
+    assert.deepEqual(after.earnedBadges, []);
     assert.deepEqual(outcome.discovery, {
       species: "Cross Orbweaver", web: "Cross brace", ability: "Brace restores extra stamina",
     });
+  } finally {
+    useGame.setState(before, true);
+  }
+});
+
+test("a ranked web discovery shows the earned field-guide Circuit mark", () => {
+  const before = useGame.getState();
+  try {
+    const player = rollSpider(mulberry32(41), { speciesId: "hentz", stage: "adult" });
+    const enemy = rollSpider(mulberry32(42), { speciesId: "cross", stage: "adult", asRival: true });
+    const outcome: FightOutcome = {
+      won: false, wager: 0, purse: 0, xp: 0, stripped: [], decay: {}, loot: null,
+      injury: null, koMove: null, playerHp: 0, enemyHp: 10, enemyName: enemy.name, rivalId: "tom", rounds: [],
+    };
+    useGame.setState({
+      spiders: [player], selectedId: player.id, seen: ["hentz", "catface", "shamrock"], rank: 0, rankPoints: 0,
+      fight: { rivalId: "tom", playerId: player.id, wager: 0, practice: false, enemy, teamBonus: {}, headline: false, seriesStage: null },
+      career: { ...EMPTY_CAREER }, earnedBadges: [],
+    });
+    useGame.getState().applyResult(outcome, player);
+    const after = useGame.getState();
+    assert.equal(after.rankPoints, 12); // Score cannot go below zero, so the +12 mark is fully retained.
+    assert.ok(after.earnedBadges.includes("field-guide"));
+    assert.deepEqual(outcome.badges, [{ name: "Field guide", reward: 12 }]);
   } finally {
     useGame.setState(before, true);
   }

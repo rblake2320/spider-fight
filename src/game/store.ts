@@ -679,10 +679,15 @@ export const useGame = create<Game>()(
           bouts: g.career.bouts + (practice ? 0 : 1),
           stripped: g.career.stripped + (practice ? 0 : out.stripped.length),
         };
-        const badges = badgeProgress(
-          { ...g, rank, rankPoints },
-          { spiders, career, wins, seen },
-        );
+        // Practice can reveal a web but must never change competitive score.
+        // Any newly eligible Circuit mark is picked up by the next ranked result.
+        const unlockedBadges = practice ? [] : newlyEarnedBadges(g.earnedBadges, { spiders, career, wins, seen });
+        const badges = practice
+          ? { earnedBadges: g.earnedBadges, rankPoints, rank }
+          : badgeProgress({ ...g, rank, rankPoints }, { spiders, career, wins, seen });
+        if (unlockedBadges.length) {
+          out.badges = unlockedBadges.map((badge) => ({ name: badge.name, reward: badge.reward }));
+        }
         if (!practice) out.points = badges.rankPoints - g.rankPoints;
         const nextSeries = isSeries && out.won && g.yardSeries
           ? { ...g.yardSeries, stage: g.yardSeries.stage + 1 }
