@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyJob, BAY_BY_ID, bayLook, bayStats, canFit, canSplice, crackGraft, splice, spliceCost } from "./bay.ts";
+import { applyJob, BAY_BY_ID, bayBonusLine, bayLook, bayStats, canFit, canSplice, crackGraft, splice, spliceCost } from "./bay.ts";
 import { sanitizeSpider } from "./migrate.ts";
 import { mulberry32 } from "./rng.ts";
 import { colorsOf, effective, rollSpider } from "./spiders.ts";
@@ -23,6 +23,11 @@ test("bay jobs bolt to a slot, stack stats, and show on the silhouette", () => {
   assert.equal(bayStats(fitted).power, 2);
   assert.ok((bayLook(fitted).legs ?? 1) > 1);
   assert.ok(effective(fitted).power > effective(spider).power);
+});
+
+test("bay cards state every upside and tradeoff before the player bolts a kit on", () => {
+  assert.equal(bayBonusLine(BAY_BY_ID["bulk-femurs"]!.bonus), "+2 power · -1 speed · +1 size");
+  assert.equal(bayBonusLine(BAY_BY_ID["spinner-press"]!.bonus), "+1 speed · +3 silk");
 });
 
 test("the bay gates rank, cash, energy, nymph guts, and duplicate kits", () => {

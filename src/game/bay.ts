@@ -125,6 +125,16 @@ export const BAY_JOBS: BayJob[] = [
 
 export const BAY_BY_ID: Record<string, BayJob> = Object.fromEntries(BAY_JOBS.map((job) => [job.id, job]));
 
+const BAY_STAT_ORDER: Array<keyof Stats> = ["power", "speed", "grit", "venom", "silk", "size"];
+
+/** Exact stat movement shown before a player spends cash and energy in the bay. */
+export function bayBonusLine(bonus: Partial<Stats>): string {
+  return BAY_STAT_ORDER
+    .filter((stat) => (bonus[stat] ?? 0) !== 0)
+    .map((stat) => `${(bonus[stat] ?? 0) > 0 ? "+" : ""}${bonus[stat]} ${stat}`)
+    .join(" · ") || "No stat change";
+}
+
 export function bayJobOf(id: string | undefined): BayJob | undefined {
   return id ? BAY_BY_ID[id] : undefined;
 }

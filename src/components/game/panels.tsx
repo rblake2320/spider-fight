@@ -8,7 +8,7 @@ import { circuitDay, listCircuitBoard, listDailyCircuitBoard, postCircuitScore, 
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
-import { BAY_JOBS, BAY_SLOTS, bayJobOf, bayKitLine, canFit, canSplice, graftsOf, spliceCost } from "@/game/bay";
+import { BAY_JOBS, BAY_SLOTS, bayBonusLine, bayJobOf, bayKitLine, bayStats, canFit, canSplice, graftsOf, spliceCost } from "@/game/bay";
 import { canFight, canMolt, effective, moltLine, portraitOf, recoveryRests, spiderScore, STAGE_LABEL, STAT_LABEL, trainingLook, trainingTotal } from "@/game/spiders";
 import { traitBlurb, traitTrainCost } from "@/game/traits";
 import { activeSpiders, canRelease, canRetire, rafterSpiders, releaseCash } from "@/game/rafters";
@@ -603,6 +603,9 @@ export function BayView() {
   if (!host) return <p className="p-6 text-dust">Catch someone first.</p>;
   const jobs = BAY_JOBS.filter((job) => job.slot === slot);
   const fitted = graftsOf(host);
+  const chassis = bayStats(host);
+  const chassisLine = bayBonusLine(chassis);
+  const boltedScore = Object.values(fitted).filter(Boolean).length * 10;
   const donor = donors.find((s) => s.id === donorId);
   const splicePrice = spliceCost(rank);
   return (
@@ -623,6 +626,7 @@ export function BayView() {
       </div>
       <p className="font-display text-2xl">{host.name}</p>
       <p className="text-xs text-moss">{bayKitLine(host)}</p>
+      <p className="text-xs text-dust">Chassis effect: {chassisLine} · +{boltedScore} yard score</p>
       <SpiderBuildCanvas spider={host} />
       <div className="grid grid-cols-2 gap-2">
         {BAY_SLOTS.map((entry) => {
@@ -652,6 +656,7 @@ export function BayView() {
                 <p className="tabular text-sm text-dust">${job.price}</p>
               </div>
               <p className="mt-1 text-xs text-mute">{job.blurb}</p>
+              <p className="mt-1 text-xs text-moss">{bayBonusLine(job.bonus)}</p>
               <p className="mt-1 text-[11px] text-dust">
                 {current ? "Running this kit" : blocked ?? `${job.energy} energy · ${RANKS[job.rank]?.name ?? "Alley"}`}
               </p>
