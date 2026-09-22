@@ -41,9 +41,10 @@ import {
   makeDailyWebChallenge,
 } from "./contracts";
 import { firstWinTrophy } from "./rewards";
+import { fightStakes } from "./fight-stakes";
 import { applyBait } from "./bait";
 import { badgeReward, newlyEarnedBadges } from "./badges";
-import { nightlyReward, nightlyRival } from "./night-card";
+import { nightlyRival } from "./night-card";
 import { SERIES_BONUS_CASH, SERIES_BONUS_POINTS, yardSeriesLineup } from "./series";
 import { recordRivalMoves } from "./rival-intel";
 import { canCallWidow } from "./boss";
@@ -612,7 +613,6 @@ export const useGame = create<Game>()(
         let wins = g.wins;
         let losses = g.losses;
         let inventory = { ...g.inventory };
-        const headlineReward = nightlyReward(g.fight?.headline === true);
         const seriesStage = g.fight?.seriesStage;
         const isSeries = seriesStage !== null && seriesStage !== undefined && g.yardSeries?.date === g.dayStamp;
         const priorRival = g.rivalRecords[out.rivalId] ?? { wins: 0, losses: 0, streak: 0 };
@@ -623,11 +623,12 @@ export const useGame = create<Game>()(
           ? { ...priorRival, wins: priorRival.wins + 1, streak: priorRival.streak + 1, moves: scoutedMoves }
           : { ...priorRival, losses: priorRival.losses + 1, streak: 0, moves: scoutedMoves };
         if (!practice && out.won) {
-          const prize = (RANKS[g.rank]?.purse ?? 18) + out.wager + headlineReward.cash;
-          cash += prize;
-          out.purse = prize;
-          rankPoints += 12 + Math.round(out.wager / 8) + headlineReward.points;
-          if (headlineReward.cash) out.headlineBonus = headlineReward.cash;
+          const sky = tonightSky();
+          const stakes = fightStakes(g.rank, out.wager, g.fight?.headline === true, sky.purse);
+          cash += stakes.purse;
+          out.purse = stakes.purse;
+          rankPoints += stakes.points;
+          if (stakes.headlineCash) out.headlineBonus = stakes.headlineCash;
           if (isSeries) {
             const bonusCash = SERIES_BONUS_CASH[seriesStage] ?? 0;
             const bonusPoints = SERIES_BONUS_POINTS[seriesStage] ?? 0;
@@ -635,12 +636,7 @@ export const useGame = create<Game>()(
             rankPoints += bonusPoints;
             out.seriesBonus = bonusCash;
           }
-          const sky = tonightSky();
           out.sky = sky.id;
-          if (sky.purse > 0) {
-            cash += sky.purse;
-            out.purse += sky.purse;
-          }
           wins += 1;
           if (out.loot) inventory = addInv(inventory, out.loot);
           const trophy = firstWinTrophy(out.rivalId, inventory, g.spiders);

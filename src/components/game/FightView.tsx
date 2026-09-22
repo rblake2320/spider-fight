@@ -19,6 +19,7 @@ import { rivalIntel } from "@/game/rival-intel";
 import { WIDOW_UNLOCK_RANK, widowCallMode } from "@/game/boss";
 import { RIVAL_TROPHIES } from "@/game/rewards";
 import { todayStamp } from "@/game/rng";
+import { fightStakes } from "@/game/fight-stakes";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -65,6 +66,7 @@ export function FightSelect() {
   const rivals = [...RIVALS.filter((r) => r.always && isShipped(r)), ...windowed];
   const purse = RANKS[rank]?.purse ?? 18;
   const headline = nightlyRival(todayStamp(), rank);
+  const sky = tonightSky();
 
   useEffect(() => {
     void jevStatus()
@@ -134,7 +136,7 @@ export function FightSelect() {
           <span>Wager</span>
           <span className="tabular text-paper">
             ${wager}
-            <span className="text-mute"> · purse ~${purse + wager}</span>
+            <span className="text-mute"> · base purse ${purse + wager}</span>
           </span>
         </span>
         <input
@@ -149,6 +151,8 @@ export function FightSelect() {
       <div className="grid gap-2">
         {rivals.map((r) => {
           const widowMode = r.mind ? widowCallMode(rank) : null;
+          const stakes = fightStakes(rank, wager, r.id === headline.id, sky.purse);
+          const rankedCall = !r.mind || widowMode === "challenge";
           return (
           <button
             key={r.id}
@@ -180,6 +184,13 @@ export function FightSelect() {
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
             {r.style ? <p className="mt-1 text-xs text-dust">Tends toward {MOVES[r.style].name.toLowerCase()}.</p> : null}
             <p className="mt-1 text-xs text-dust">{Math.round(r.grit * 100)}% grit</p>
+            {rankedCall ? (
+              <p className="mt-1 text-xs text-paper">
+                Win ${stakes.purse} · +{stakes.points} pts <span className="text-mute">· loss −{stakes.lossPoints} pts</span>
+                {stakes.headlineCash ? <span className="text-moss"> · headliner included</span> : null}
+                {stakes.skyCash ? <span className="text-moss"> · +${stakes.skyCash} {sky.name}</span> : null}
+              </p>
+            ) : null}
             {(() => {
               const record = rivalRecords[r.id];
               const intel = rivalIntel(record?.moves);
