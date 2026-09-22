@@ -2,7 +2,7 @@ import { MOVES, RANKS, SPECIES, maxHp } from "./content";
 import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
 import { colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
-import type { FightOutcome, MorphColors, MoveId, Spider, Stats, WebProfile } from "./types";
+import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile } from "./types";
 
 export type Fighter = {
   spider: Spider;
@@ -49,6 +49,7 @@ export type StickFight = {
   lastEnemyMove: MoveId | null;
   failedJev: boolean;
   pendingJev: MoveId | null;
+  roundLog: FightRound[];
 };
 
 const INTRO = 1.15;
@@ -106,6 +107,7 @@ export function createFight(player: Spider, enemy: Spider, wager: number, rivalI
     lastEnemyMove: null,
     failedJev: false,
     pendingJev: null,
+    roundLog: [],
   };
 }
 
@@ -312,6 +314,14 @@ function resolveRound(f: StickFight): void {
   if (eMove === "brace") f.enemy.stam = clamp(f.enemy.stam + 10, 0, 100);
   applyWebSignature(f.player, f.enemy, pMove);
   applyWebSignature(f.enemy, f.player, eMove);
+  f.roundLog.push({
+    round: f.round,
+    playerMove: pMove,
+    enemyMove: eMove,
+    result: cmp > 0 ? "edge" : cmp < 0 ? "hit" : "lock",
+    playerDamage: Math.round(eDmg),
+    enemyDamage: Math.round(pDmg),
+  });
 }
 
 function attackPower(f: Fighter, move: MoveId): number {
@@ -419,6 +429,7 @@ function buildOutcome(f: StickFight): FightOutcome {
     enemyName: f.enemy.name,
     rivalId: f.rivalId,
     jevReads: f.jevReads,
+    rounds: f.roundLog,
   };
 }
 

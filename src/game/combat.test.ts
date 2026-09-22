@@ -35,6 +35,9 @@ test("a selected move locks the player input and resolves as that move", () => {
 
   assert.equal(fight.phase, "resolve");
   assert.equal(fight.lastPlayerMove, "grapple");
+  assert.equal(fight.roundLog.length, 1);
+  assert.equal(fight.roundLog[0]?.playerMove, "grapple");
+  assert.equal(fight.roundLog[0]?.enemyMove, fight.lastEnemyMove);
 });
 
 test("a species web changes its signature move outcome", () => {

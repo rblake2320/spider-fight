@@ -164,6 +164,16 @@ export type FightOutcome = {
   enemyName: string;
   rivalId: string;
   jevReads?: number;
+  rounds: FightRound[];
+};
+
+export type FightRound = {
+  round: number;
+  playerMove: MoveId;
+  enemyMove: MoveId;
+  result: "edge" | "hit" | "lock";
+  playerDamage: number;
+  enemyDamage: number;
 };
 
 export type CareerLog = {

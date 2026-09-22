@@ -375,6 +375,23 @@ function ResultCard() {
         {result.loot ? <li className="text-moss">Lifted {ITEMS[result.loot]?.name}</li> : null}
         {result.injury ? <li className="text-rust">{result.injury.label}</li> : null}
       </ul>
+      {result.rounds.length ? (
+        <section className="rounded-xl bg-raised p-3">
+          <p className="text-xs uppercase tracking-widest text-dust">Fight tape</p>
+          <ol className="mt-2 space-y-1 text-xs text-paper">
+            {result.rounds.slice(-6).map((round) => (
+              <li key={round.round} className="flex items-center justify-between gap-2">
+                <span className="text-dust">Rd {round.round}</span>
+                <span>{MOVES[round.playerMove].name}</span>
+                <span className={round.result === "edge" ? "text-moss" : round.result === "hit" ? "text-rust" : "text-dust"}>
+                  {round.result === "edge" ? `edge +${round.enemyDamage}` : round.result === "hit" ? `hit −${round.playerDamage}` : "lock"}
+                </span>
+                <span>{MOVES[round.enemyMove].name}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
       {read ? (
         <p className="rounded-xl bg-raised p-3 text-sm text-paper">
           <span className="text-xs uppercase tracking-widest text-dust">Stick mind</span>
