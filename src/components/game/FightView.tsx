@@ -673,9 +673,24 @@ function ResultCard() {
         Share match card
       </Button>
       {shared ? <p className="text-center text-xs text-dust">{shared}</p> : null}
-      {!yardSeries ? (
+      {!result.practice && !result.won && !yardSeries ? (
         <Button
           variant="primary"
+          disabled={!fighter}
+          onClick={() => {
+            if (!fighter) {
+              setRematchError("Pick a fighter before opening a practice thread.");
+              return;
+            }
+            setRematchError(startPractice(fighter.id, result.rivalId));
+          }}
+        >
+          Practice this crew · no stakes
+        </Button>
+      ) : null}
+      {!yardSeries ? (
+        <Button
+          variant={result.won || result.practice ? "primary" : "outline"}
           disabled={!fighter}
           onClick={() => {
             if (!fighter) {
