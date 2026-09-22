@@ -10,7 +10,7 @@ const simulationOwners = (() => {
   const host = globalThis as typeof globalThis & {
     __spiderFightSimulationOwners?: WeakMap<StickFight, symbol>;
   };
-  return (host.__spiderFightSimulationOwners ??= new WeakMap<StickFight, symbol>());
+  return host.__spiderFightSimulationOwners ??= new WeakMap<StickFight, symbol>();
 })();
 
 export function FightCanvas({ fight, className }: { fight: StickFight; className?: string }) {
@@ -41,14 +41,12 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
       return;
     }
     let raf = 0;
-    let last = performance.now();
+    const tick = window.setInterval(() => {
+      if (simulationOwners.get(fight) === owner) stepFight(fightRef.current, 0.05);
+    }, 150);
     const loop = (now: number) => {
       if (simulationOwners.get(fight) !== owner) return;
-      const raw = (now - last) / 1000;
-      last = now;
       const f = fightRef.current;
-      const dt = Math.max(0, Math.min(raw, 0.1));
-      stepFight(f, dt);
 
       const parent = canvas.parentElement;
       const w = parent?.clientWidth ?? 360;
@@ -149,7 +147,10 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
     raf = requestAnimationFrame(loop);
     return () => {
       cancelAnimationFrame(raf);
-      if (simulationOwners.get(fight) === owner) simulationOwners.delete(fight);
+      clearInterval(tick);
+      if (simulationOwners.get(fight) === owner) {
+        simulationOwners.delete(fight);
+      }
     };
   }, []);
 
