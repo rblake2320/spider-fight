@@ -1,4 +1,4 @@
-import type { MorphColors, MoveId, WebStyle } from "./types";
+import type { Gear, MorphColors, MoveId, WebStyle } from "./types";
 
 export type DrawPose = MoveId | "idle" | "hurt" | "ko" | "intro";
 
@@ -15,6 +15,7 @@ export type SpiderDraw = {
   training: number;
   hurtFlash: number;
   mark?: "hourglass";
+  gear?: Gear;
 };
 
 function lerp(a: number, b: number, t: number): number {
@@ -378,9 +379,52 @@ export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
   const oy = -2 * d.scale;
   back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1));
   drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training);
+  drawGear(ctx, d);
   front.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2.4 * d.scale, l, d.scale, 1));
 
   ctx.restore();
+}
+
+/** Small readable silhouettes make equipped kit feel earned in a fast fight. */
+function drawGear(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
+  const gear = d.gear;
+  if (!gear) return;
+  const s = d.scale;
+  if (gear.wraps) {
+    ctx.save();
+    ctx.strokeStyle = gear.wraps === "chitin-plates" ? "#c9b58a" : gear.wraps === "silk-mail" ? "#d9d1bc" : "#8a5a36";
+    ctx.lineWidth = Math.max(1, s * 2.3);
+    ctx.beginPath();
+    ctx.ellipse(7 * s, 2 * s, 11 * s, 7 * s, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (gear.fang) {
+    ctx.fillStyle = gear.fang === "black-drop" ? "#b42028" : "#d9bb72";
+    ctx.beginPath();
+    ctx.moveTo(-7 * s, -2 * s);
+    ctx.lineTo(-11 * s, 4 * s);
+    ctx.lineTo(-4 * s, 2 * s);
+    ctx.closePath();
+    ctx.fill();
+  }
+  if (gear.silk) {
+    ctx.strokeStyle = gear.silk === "golden-wind" ? "rgba(236,190,66,0.85)" : "rgba(220,235,235,0.78)";
+    ctx.lineWidth = Math.max(0.8, s * 0.8);
+    ctx.beginPath();
+    ctx.arc(5 * s, 0, 15 * s, d.t * 2, d.t * 2 + Math.PI * 1.45);
+    ctx.stroke();
+  }
+  if (gear.stim) {
+    ctx.fillStyle = gear.stim === "night-moth" ? "rgba(124,194,255,0.85)" : "rgba(230,100,56,0.8)";
+    ctx.beginPath();
+    ctx.arc(-1 * s, -6 * s, Math.max(1, s * 1.8), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (gear.charm) {
+    ctx.fillStyle = gear.charm === "widow-knot" ? "#181318" : gear.charm === "fair-ribbon" ? "#3975c7" : "#b48634";
+    ctx.fillRect(13 * s, -4 * s, Math.max(2, s * 3), Math.max(2, s * 5));
+  }
 }
 
 export type Particle = {

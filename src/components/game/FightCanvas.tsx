@@ -115,6 +115,7 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         training: trainedP,
         hurtFlash: p.hurtFlash,
         mark: p.spider.speciesId === "widow" ? "hourglass" : undefined,
+        gear: p.spider.gear,
       });
       drawSpider(ctx, {
         x: ex,
@@ -129,6 +130,7 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         training: trainedE,
         hurtFlash: e.hurtFlash,
         mark: e.spider.speciesId === "widow" ? "hourglass" : undefined,
+        gear: e.spider.gear,
       });
 
       // particles were spawned in normalized-ish coords; convert on draw
