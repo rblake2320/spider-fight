@@ -28,6 +28,7 @@ import { unlockAudio, setMusicEnabled, setSfxEnabled } from "./audio";
 import { isShipped } from "./catalog";
 import { EMPTY_CAREER, migrateSave } from "./migrate";
 import { advanceContract, canClaimContract, makeDailyContract } from "./contracts";
+import { firstWinTrophy } from "./rewards";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -170,6 +171,7 @@ export const useGame = create<Game>()(
       buy: (itemId) => {
         const item = ITEMS[itemId];
         if (!item) return "Unknown item";
+        if (item.rewardOnly) return "Earn that from the stick";
         const g = get();
         if (!isShipped(item)) return "Not in this year's crate";
         if (g.rank < item.rank) return "Rank locked";
@@ -434,6 +436,11 @@ export const useGame = create<Game>()(
           rankPoints += 12 + Math.round(out.wager / 8);
           wins += 1;
           if (out.loot) inventory = addInv(inventory, out.loot);
+          const trophy = firstWinTrophy(out.rivalId, inventory, g.spiders);
+          if (trophy) {
+            inventory = addInv(inventory, trophy);
+            out.loot = trophy;
+          }
         } else {
           losses += 1;
           rankPoints = Math.max(0, rankPoints - 6);

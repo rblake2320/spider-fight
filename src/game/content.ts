@@ -527,6 +527,17 @@ export const ITEMS: Record<string, Item> = {
     bonus: { luck: 8 },
     rank: 4,
   },
+  "widow-knot": {
+    id: "widow-knot",
+    name: "Widow Knot",
+    kind: "charm",
+    slot: "charm",
+    price: 0,
+    blurb: "A hard black knot cut from the far silk. First Widow win only.",
+    bonus: { venom: 3, luck: 5 },
+    rewardOnly: true,
+    rank: 0,
+  },
   cricket: {
     id: "cricket",
     name: "Field Cricket",

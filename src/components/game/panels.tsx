@@ -318,7 +318,7 @@ export function ShopView() {
   const [msg, setMsg] = useState<string | null>(null);
   const kinds: Array<ItemKind | "gear"> = ["gear", "feed", "tonic", "bait", "upgrade"];
   const list = useMemo(() => {
-    const live = ITEM_LIST.filter(isShipped);
+    const live = ITEM_LIST.filter((item) => isShipped(item) && !item.rewardOnly);
     if (tab === "gear") return live.filter((i) => i.slot);
     return live.filter((i) => i.kind === tab);
   }, [tab]);

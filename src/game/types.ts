@@ -109,6 +109,7 @@ export type Item = {
   blurb: string;
   bonus?: Partial<Stats & { luck: number }>;
   stimFights?: number;
+  rewardOnly?: boolean;
   rank: number;
   season?: number;
 };

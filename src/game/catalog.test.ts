@@ -34,6 +34,10 @@ test("season 2 content is live and available to the circuit", () => {
   assert.ok(SEASONS.some((s) => s.id === 2));
 });
 
+test("the Widow Knot is a boss-only reward", () => {
+  assert.equal(ITEMS["widow-knot"]?.rewardOnly, true);
+});
+
 test("migrate keeps unknown species from crashing", () => {
   const next = migrateSave(
     {
