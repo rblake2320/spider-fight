@@ -81,6 +81,10 @@ export const TRAITS: Record<string, TraitDef> = {
   "Long jaw": { blurb: "A bite from farther down the line.", stats: { venom: 1, silk: 1 } },
   "Rail runner": { blurb: "Fast along the service wire.", stats: { speed: 1 }, ai: { drop: 2 } },
   "River thread": { blurb: "Keeps a wet line tight.", stats: { silk: 1 }, moltRough: -0.04 },
+  "Banded crown": { blurb: "A hard pattern under hard lights.", stats: { grit: 1, silk: 1 } },
+  "Rail brace": { blurb: "Plants every leg before the hit.", stats: { grit: 1 }, ai: { brace: 2 } },
+  "Scrap blind": { blurb: "Hides in the loose thread.", stats: { speed: 1 }, ai: { feint: 2 } },
+  "Bark runner": { blurb: "Explodes off the cedar grain.", stats: { speed: 1, power: 1 }, ai: { lunge: 1 } },
 };
 
 export function traitOf(name: string): TraitDef | undefined {

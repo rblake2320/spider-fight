@@ -12,6 +12,7 @@ import type {
 import { SEASON2_HABITATS, SEASON2_ITEMS, SEASON2_RIVALS, SEASON2_SPECIES } from "./packs/season2.ts";
 import { SEASON3_HABITATS, SEASON3_ITEMS, SEASON3_RIVALS, SEASON3_SPECIES } from "./packs/season3.ts";
 import { SEASON4_HABITATS, SEASON4_ITEMS, SEASON4_RIVALS, SEASON4_SPECIES } from "./packs/season4.ts";
+import { SEASON5_HABITATS, SEASON5_ITEMS, SEASON5_RIVALS, SEASON5_SPECIES } from "./packs/season5.ts";
 
 export const SAVE_VERSION = 11;
 export const MAX_STAT = 42;
@@ -279,7 +280,7 @@ export const SPECIES: Record<string, Species> = {
   },
 };
 
-Object.assign(SPECIES, SEASON2_SPECIES, SEASON3_SPECIES, SEASON4_SPECIES);
+Object.assign(SPECIES, SEASON2_SPECIES, SEASON3_SPECIES, SEASON4_SPECIES, SEASON5_SPECIES);
 
 export const SPECIES_LIST = Object.values(SPECIES);
 
@@ -353,7 +354,7 @@ export const HABITATS: Habitat[] = [
   },
 ];
 
-HABITATS.push(...SEASON2_HABITATS, ...SEASON3_HABITATS, ...SEASON4_HABITATS);
+HABITATS.push(...SEASON2_HABITATS, ...SEASON3_HABITATS, ...SEASON4_HABITATS, ...SEASON5_HABITATS);
 
 export const ITEMS: Record<string, Item> = {
   "porch-twine": {
@@ -705,7 +706,7 @@ export const ITEMS: Record<string, Item> = {
   },
 };
 
-Object.assign(ITEMS, SEASON2_ITEMS, SEASON3_ITEMS, SEASON4_ITEMS);
+Object.assign(ITEMS, SEASON2_ITEMS, SEASON3_ITEMS, SEASON4_ITEMS, SEASON5_ITEMS);
 
 export const ITEM_LIST = Object.values(ITEMS);
 
@@ -745,7 +746,7 @@ export const RIVALS: Rival[] = [
   { id: "world", name: "Stick World", rank: 7, quote: "Hold it.", bias: ["joro", "golden", "marbled"], teamSize: 3, grit: 1.6, style: "grapple" },
 ];
 
-RIVALS.push(...SEASON2_RIVALS, ...SEASON3_RIVALS, ...SEASON4_RIVALS);
+RIVALS.push(...SEASON2_RIVALS, ...SEASON3_RIVALS, ...SEASON4_RIVALS, ...SEASON5_RIVALS);
 
 export const NAMES_F = [
   "Cinder", "Dixie", "Magnolia", "Junebug", "Clover", "Sable", "Moth", "Pecan",
