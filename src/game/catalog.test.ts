@@ -25,12 +25,12 @@ test("item and species ids match their keys", () => {
   for (const [id, item] of Object.entries(ITEMS)) assert.equal(item.id, id);
 });
 
-test("season 2 content is authored but not shipped", () => {
-  assert.equal(SHIPPED_SEASON, 1);
+test("season 2 content is live and available to the circuit", () => {
+  assert.equal(SHIPPED_SEASON, 2);
   assert.ok(SPECIES.brownwidow);
   assert.equal(seasonOf(SPECIES.brownwidow!), 2);
-  assert.equal(isShipped(SPECIES.brownwidow!), false);
-  assert.ok(HABITATS.some((h) => h.id === "creek" && !isShipped(h)));
+  assert.equal(isShipped(SPECIES.brownwidow!), true);
+  assert.ok(HABITATS.some((h) => h.id === "creek" && isShipped(h)));
   assert.ok(SEASONS.some((s) => s.id === 2));
 });
 
@@ -49,7 +49,7 @@ test("migrate keeps unknown species from crashing", () => {
   assert.equal(next.spiders[0]?.speciesId, "hentz");
   assert.equal(next.spiders[0]?.gear.wraps, undefined);
   assert.equal(next.inventory.cricket, 2);
-  assert.equal(next.inventory["culvert-silk"], undefined);
+  assert.equal(next.inventory["culvert-silk"], 9);
   assert.ok(next.career);
   assert.equal(next.dailyContract.progress, 0);
   assert.deepEqual(next.rivalRecords.tom, { wins: 2, losses: 1, streak: 2 });

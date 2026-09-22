@@ -65,7 +65,7 @@ The repo is public for now, so treat this key as exposed. Rotate it at [console.
 
 The game is built to get bigger without breaking old yards.
 
-- **Seasons** live in `src/game/catalog.ts` (`SHIPPED_SEASON`). Season 2 (Night Circuit — culverts, brown widows, ditch wolves) is already authored in `src/game/packs/season2.ts` and sits locked until that number bumps.
+- **Seasons** live in `src/game/catalog.ts` (`SHIPPED_SEASON`). Season 2, Night Circuit, is live: culverts, brown widows, ditch wolves, jumpers, new gear, and new crews open by rank.
 - **Saves migrate.** `src/game/migrate.ts` upgrades old crates, drops unknown items, and maps missing species back to Hentz.
 - **Circuit** in the yard shows open packs, coming packs, ranks, and the almanac. Hold World Stick to roll a new year.
 - To ship a pack: fill the pack file, then set `SHIPPED_SEASON` to that pack’s id. No save wipe.
