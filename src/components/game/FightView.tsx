@@ -7,6 +7,7 @@ import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { canFight, portraitOf, STAGE_LABEL } from "@/game/spiders";
 import { SPECIES, RIVALS, RANKS, SLOT_LABEL, ITEMS } from "@/game/content";
+import { isShipped } from "@/game/catalog";
 import type { MoveId } from "@/game/types";
 import { askRivalMove, judgeBout, jevStatus } from "@/lib/jev";
 import type { StickSnapshot } from "@/lib/jev-types";
@@ -46,9 +47,9 @@ export function FightSelect() {
   const [mind, setMind] = useState<"checking" | "live" | "dark">("checking");
   const player = spiders.find((s) => s.id === selectedId) ?? spiders.find((s) => !canFight(s)) ?? spiders[0];
   const windowed = RIVALS.filter(
-    (r) => !r.always && r.rank <= rank + 1 && r.rank >= Math.max(0, rank - 1),
+    (r) => isShipped(r) && !r.always && r.rank <= rank + 1 && r.rank >= Math.max(0, rank - 1),
   );
-  const rivals = [...RIVALS.filter((r) => r.always), ...windowed];
+  const rivals = [...RIVALS.filter((r) => r.always && isShipped(r)), ...windowed];
   const purse = RANKS[rank]?.purse ?? 18;
 
   useEffect(() => {

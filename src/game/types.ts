@@ -79,6 +79,7 @@ export type Species = {
   traits: string[];
   habitats: string[];
   web: WebProfile;
+  season?: number;
 };
 
 export type WebProfile = {
@@ -109,6 +110,7 @@ export type Item = {
   bonus?: Partial<Stats & { luck: number }>;
   stimFights?: number;
   rank: number;
+  season?: number;
 };
 
 export type Habitat = {
@@ -122,6 +124,7 @@ export type Habitat = {
   weights: Partial<Record<Rarity, number>>;
   species: string[];
   night?: boolean;
+  season?: number;
 };
 
 export type RankInfo = {
@@ -142,6 +145,7 @@ export type Rival = {
   grit: number;
   always?: boolean;
   mind?: boolean;
+  season?: number;
 };
 
 export type FightOutcome = {
@@ -159,6 +163,13 @@ export type FightOutcome = {
   enemyName: string;
   rivalId: string;
   jevReads?: number;
+};
+
+export type CareerLog = {
+  hunts: number;
+  molts: number;
+  bouts: number;
+  stripped: number;
 };
 
 export type SaveState = {
@@ -181,4 +192,5 @@ export type SaveState = {
   settings: { sfx: boolean; music: boolean; reduceMotion: boolean };
   seen: string[];
   flags: Record<string, string | boolean>;
+  career: CareerLog;
 };

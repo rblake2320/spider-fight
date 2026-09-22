@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ITEMS, ITEM_LIST, RANKS, SLOT_LABEL, SPECIES, xpToNext } from "@/game/content";
+import { ITEMS, ITEM_LIST, RANKS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
+import { BUILD, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { canFight, effective, molt, portraitOf, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
 import type { GearSlot, ItemKind, Stats } from "@/game/types";
@@ -296,8 +297,9 @@ export function ShopView() {
   const [msg, setMsg] = useState<string | null>(null);
   const kinds: Array<ItemKind | "gear"> = ["gear", "feed", "tonic", "bait", "upgrade"];
   const list = useMemo(() => {
-    if (tab === "gear") return ITEM_LIST.filter((i) => i.slot);
-    return ITEM_LIST.filter((i) => i.kind === tab);
+    const live = ITEM_LIST.filter(isShipped);
+    if (tab === "gear") return live.filter((i) => i.slot);
+    return live.filter((i) => i.kind === tab);
   }, [tab]);
   return (
     <div className="flex h-full flex-col overflow-auto p-4 pb-24">
@@ -353,6 +355,9 @@ export function ShopView() {
             </div>
           );
         })}
+        {ITEM_LIST.some((i) => !isShipped(i)) ? (
+          <p className="text-xs text-mute">More gear sits in {seasonName(2)} — Circuit lists the pack.</p>
+        ) : null}
       </div>
       {msg ? <p className="mt-3 text-sm text-paper">{msg}</p> : null}
     </div>
@@ -412,22 +417,31 @@ export function CareerView() {
   const rank = useGame((s) => s.rank);
   const points = useGame((s) => s.rankPoints);
   const wins = useGame((s) => s.wins);
+  const losses = useGame((s) => s.losses);
   const seen = useGame((s) => s.seen);
   const spiders = useGame((s) => s.spiders);
+  const season = useGame((s) => s.season);
+  const career = useGame((s) => s.career);
+  const rollYear = useGame((s) => s.rollYear);
+  const [msg, setMsg] = useState<string | null>(null);
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
+  const current = SEASONS.find((s) => s.id === SHIPPED_SEASON) ?? SEASONS[0]!;
+
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
       <header>
         <p className="text-xs uppercase tracking-widest text-dust">Circuit</p>
         <h2 className="font-display text-3xl font-semibold">{rankName(rank)}</h2>
         <p className="text-sm text-dust">
-          {wins} stick wins · {seen.length} species logged
+          Year {season} · {current.name} · {wins}–{losses} on the stick
         </p>
         <p className="text-xs text-moss">
-          Circuit score {points}{next ? ` · ${Math.max(0, next.points - points)} to ${next.name}` : " · World Stick"}
+          Circuit score {points}
+          {next ? ` · ${Math.max(0, next.points - points)} to ${next.name}` : " · World Stick"}
         </p>
       </header>
+
       <section className="rounded-xl border border-line bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-dust">Yard leaderboard</p>
         <ol className="mt-2 space-y-2">
@@ -442,25 +456,105 @@ export function CareerView() {
           ))}
         </ol>
       </section>
-      <ol className="space-y-2">
-        {RANKS.map((r) => (
-          <li
-            key={r.id}
-            className={cn(
-              "rounded-xl border p-3",
-              r.id === rank ? "border-paper bg-panel" : "border-line bg-raised",
-              r.id > rank && "opacity-50",
-            )}
-          >
-            <p className="font-medium">{r.name}</p>
-            <p className="text-xs text-dust">{r.blurb}</p>
-            <p className="tabular text-[11px] text-mute">
-              {r.points} circuit pts · purse ${r.purse}
-            </p>
-          </li>
-        ))}
-      </ol>
-      <p className="text-sm text-mute">Later seasons add night circuits, county brackets, and species packs. This save already carries a season number.</p>
+
+      <div className="rounded-xl bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-dust">Yard book</p>
+        <p className="mt-1 tabular text-sm text-paper">
+          {career?.hunts ?? 0} hunts · {career?.bouts ?? 0} bouts · {career?.molts ?? 0} molts ·{" "}
+          {career?.stripped ?? 0} wraps walked
+        </p>
+      </div>
+
+      <section>
+        <p className="mb-2 text-xs uppercase tracking-widest text-dust">Seasons</p>
+        <ol className="space-y-2">
+          {SEASONS.map((pack) => {
+            const open = pack.id <= SHIPPED_SEASON;
+            return (
+              <li
+                key={pack.id}
+                className={cn(
+                  "rounded-xl border p-3",
+                  pack.id === SHIPPED_SEASON ? "border-paper bg-panel" : "border-line bg-raised",
+                  !open && "opacity-70",
+                )}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="font-medium">
+                    {pack.id}. {pack.name}
+                  </p>
+                  <span className="text-xs text-dust">{open ? "Open" : "In the crate"}</span>
+                </div>
+                <p className="mt-1 text-sm text-dust">{pack.blurb}</p>
+                <p className="mt-1 text-xs text-mute">{pack.adds.join(" · ")}</p>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      <section>
+        <p className="mb-2 text-xs uppercase tracking-widest text-dust">Ranks</p>
+        <ol className="space-y-2">
+          {RANKS.map((r) => (
+            <li
+              key={r.id}
+              className={cn(
+                "rounded-xl border p-3",
+                r.id === rank ? "border-paper bg-panel" : "border-line bg-raised",
+                r.id > rank && "opacity-50",
+              )}
+            >
+              <p className="font-medium">{r.name}</p>
+              <p className="text-xs text-dust">{r.blurb}</p>
+              <p className="tabular text-xs text-mute">
+                {points}/{r.points} · purse ${r.purse}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section>
+        <p className="mb-2 text-xs uppercase tracking-widest text-dust">Almanac</p>
+        <p className="mb-2 text-sm text-dust">{seen.length} species logged</p>
+        <div className="grid grid-cols-2 gap-2">
+          {SPECIES_LIST.map((sp) => {
+            const known = seen.includes(sp.id);
+            const open = isShipped(sp);
+            return (
+              <div
+                key={sp.id}
+                className={cn("rounded-xl border border-line bg-raised p-2", !known && "opacity-60")}
+              >
+                {known && open ? (
+                  <img src={Object.values(sp.portraits)[0]} alt="" className="mb-2 h-16 w-full rounded object-cover" />
+                ) : (
+                  <div className="mb-2 h-16 rounded bg-ink" />
+                )}
+                <p className="truncate text-sm font-medium">{open ? (known ? sp.common : "???") : sp.common}</p>
+                <p className="text-xs text-mute">
+                  {open ? (known ? sp.latin : "Unlogged") : seasonName(sp.season ?? 2)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {rank >= 7 ? (
+        <Button
+          onClick={() => {
+            const err = rollYear();
+            setMsg(err ?? "New year. Regional again. Keep the spiders.");
+          }}
+        >
+          Roll the next year
+        </Button>
+      ) : (
+        <p className="text-sm text-mute">Hold World Stick to roll a new year. Packs drop when the circuit opens them.</p>
+      )}
+      {msg ? <p className="text-sm text-paper">{msg}</p> : null}
     </div>
   );
 }
@@ -494,6 +588,9 @@ export function SettingsView() {
             : mind === "live"
               ? "Jev is live. Call the Black Widow on the fight card — she hangs on the far silk and the stick mind throws for her. Other crews also pick with it. Hunts get a keep/release read."
               : "Stick mind is dark. You can still call the Black Widow; she falls back to yard instinct until the line comes up."}
+        </p>
+        <p className="mt-2 text-xs text-mute">
+          Build {BUILD} · {seasonName(SHIPPED_SEASON)} shipped. Later packs sit in Circuit until they open.
         </p>
       </div>
       <label className="text-sm text-dust">

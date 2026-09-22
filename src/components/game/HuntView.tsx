@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HABITATS, SPECIES } from "@/game/content";
+import { isShipped, seasonName } from "@/game/catalog";
 import { playCatch } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { portraitOf, STAGE_LABEL } from "@/game/spiders";
@@ -20,7 +21,8 @@ export function HuntSelect() {
         <p className="mt-1 text-sm text-dust">{huntsLeft} lights left tonight.</p>
       </header>
       {HABITATS.map((h) => {
-        const locked = rank < h.rank;
+        const coming = !isShipped(h);
+        const locked = coming || rank < h.rank;
         return (
           <button
             key={h.id}
@@ -35,7 +37,14 @@ export function HuntSelect() {
               <div className="absolute bottom-2 left-3 right-3">
                 <p className="font-display text-xl">{h.name}</p>
                 <p className="text-xs text-dust">
-                  {locked ? "Rank locked" : h.cost ? `$${h.cost} trip` : "Free walk"} · {h.blurb}
+                  {coming
+                    ? `${seasonName(h.season ?? 2)} — not open yet`
+                    : locked
+                      ? "Rank locked"
+                      : h.cost
+                        ? `$${h.cost} trip`
+                        : "Free walk"}{" "}
+                  · {h.blurb}
                 </p>
               </div>
             </div>

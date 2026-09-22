@@ -1,0 +1,84 @@
+import { HABITATS, ITEMS, ITEM_LIST, RIVALS, SPECIES, SPECIES_LIST } from "./content.ts";
+import type { Habitat, Item, Rival, Species } from "./types.ts";
+
+/** Shipped content year. Bump this when a pack goes live — old saves keep working. */
+export const SHIPPED_SEASON = 1;
+export const BUILD = "1.1.0";
+
+export type SeasonPack = {
+  id: number;
+  name: string;
+  blurb: string;
+  adds: string[];
+};
+
+export const SEASONS: SeasonPack[] = [
+  {
+    id: 1,
+    name: "Porch Year",
+    blurb: "Alley sticks, five hunt lights, and the Widow on the far silk.",
+    adds: ["Hentz circuit", "Night porch to fairgrounds", "Black Widow boss", "Stick mind (Jev)"],
+  },
+  {
+    id: 2,
+    name: "Night Circuit",
+    blurb: "After the bulb dies. Culverts, brown widows, wolves in the ditch.",
+    adds: ["Creek Culvert", "Attic Window", "Brown Widow", "Ditch Wolf", "Bold Jumper", "Culvert Crew"],
+  },
+  {
+    id: 3,
+    name: "County Brackets",
+    blurb: "Three-spider teams, side pots, a bracket that pays the county.",
+    adds: ["Team brackets", "Side pots", "Travel motel nights"],
+  },
+  {
+    id: 4,
+    name: "Silk National",
+    blurb: "Named stables. They scout you. The stick makes papers.",
+    adds: ["Scout contracts", "Named rival stables", "National purse table"],
+  },
+];
+
+export function seasonOf(entry: { season?: number }): number {
+  return entry.season ?? 1;
+}
+
+export function isShipped(entry: { season?: number }): boolean {
+  return seasonOf(entry) <= SHIPPED_SEASON;
+}
+
+export function seasonName(id: number): string {
+  return SEASONS.find((s) => s.id === id)?.name ?? `Season ${id}`;
+}
+
+export function speciesOf(id: string): Species {
+  return SPECIES[id] ?? SPECIES.hentz!;
+}
+
+export function itemOf(id: string): Item | undefined {
+  return ITEMS[id];
+}
+
+export function liveSpecies(): Species[] {
+  return SPECIES_LIST.filter(isShipped);
+}
+
+export function liveHabitats(): Habitat[] {
+  return HABITATS.filter(isShipped);
+}
+
+export function liveItems(): Item[] {
+  return ITEM_LIST.filter(isShipped);
+}
+
+export function liveRivals(): Rival[] {
+  return RIVALS.filter(isShipped);
+}
+
+export function comingHabitats(): Habitat[] {
+  return HABITATS.filter((h) => !isShipped(h));
+}
+
+export function comingRivals(): Rival[] {
+  return RIVALS.filter((r) => !isShipped(r) && !r.always);
+}

@@ -8,9 +8,10 @@ import type {
   Rival,
   Species,
   Stats,
-} from "./types";
+} from "./types.ts";
+import { SEASON2_HABITATS, SEASON2_ITEMS, SEASON2_RIVALS, SEASON2_SPECIES } from "./packs/season2.ts";
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const MAX_STAT = 42;
 export const TEAM_SIZE = 3;
 export const HUNTS_PER_DAY = 6;
@@ -276,6 +277,8 @@ export const SPECIES: Record<string, Species> = {
   },
 };
 
+Object.assign(SPECIES, SEASON2_SPECIES);
+
 export const SPECIES_LIST = Object.values(SPECIES);
 
 export const RANKS: RankInfo[] = [
@@ -347,6 +350,8 @@ export const HABITATS: Habitat[] = [
     species: ["joro", "golden", "spiny", "marbled", "shamrock"],
   },
 ];
+
+HABITATS.push(...SEASON2_HABITATS);
 
 export const ITEMS: Record<string, Item> = {
   "porch-twine": {
@@ -620,6 +625,8 @@ export const ITEMS: Record<string, Item> = {
   },
 };
 
+Object.assign(ITEMS, SEASON2_ITEMS);
+
 export const ITEM_LIST = Object.values(ITEMS);
 
 export const SLOT_LABEL: Record<GearSlot, string> = {
@@ -656,6 +663,8 @@ export const RIVALS: Rival[] = [
   { id: "silkmen", name: "The Silkmen", rank: 6, quote: "Don't wager what you can't molt back.", bias: ["joro", "golden", "spiny"], teamSize: 3, grit: 1.45 },
   { id: "world", name: "Stick World", rank: 7, quote: "Hold it.", bias: ["joro", "golden", "marbled"], teamSize: 3, grit: 1.6 },
 ];
+
+RIVALS.push(...SEASON2_RIVALS);
 
 export const NAMES_F = [
   "Cinder", "Dixie", "Magnolia", "Junebug", "Clover", "Sable", "Moth", "Pecan",

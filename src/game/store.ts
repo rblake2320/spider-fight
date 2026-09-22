@@ -25,6 +25,8 @@ import {
   starterSpider,
 } from "./spiders";
 import { unlockAudio, setMusicEnabled, setSfxEnabled } from "./audio";
+import { isShipped } from "./catalog";
+import { EMPTY_CAREER, migrateSave } from "./migrate";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -46,6 +48,7 @@ const emptySave = (): SaveState => ({
   settings: { sfx: true, music: true, reduceMotion: false },
   seen: ["hentz"],
   flags: {},
+  career: { ...EMPTY_CAREER },
 });
 
 type Session = {
@@ -90,6 +93,7 @@ type Game = SaveState &
     collectDaily: () => void;
     setSetting: (k: keyof SaveState["settings"], v: boolean) => void;
     resetAll: () => void;
+    rollYear: () => string | null;
     spiderById: (id: string) => Spider | undefined;
   };
 
@@ -125,6 +129,7 @@ export const useGame = create<Game>()(
         if (s.dayStamp !== todayStamp()) {
           set({ huntsLeft: HUNTS_PER_DAY, dayStamp: todayStamp() });
         }
+        if (!s.career) set({ career: { ...EMPTY_CAREER } });
         set({ hydrated: true });
         setSfxEnabled(s.settings.sfx);
         setMusicEnabled(s.settings.music);
@@ -158,6 +163,7 @@ export const useGame = create<Game>()(
         const item = ITEMS[itemId];
         if (!item) return "Unknown item";
         const g = get();
+        if (!isShipped(item)) return "Not in this year's crate";
         if (g.rank < item.rank) return "Rank locked";
         if (g.cash < item.price) return "Not enough cash";
         if (item.kind === "upgrade") {
@@ -293,7 +299,11 @@ export const useGame = create<Game>()(
         if (!s) return "No spider";
         const next = molt(s);
         if (!next) return s.moltReady < 70 ? "Not ready to molt" : "Already at the top";
-        set({ spiders: patchSpider(get().spiders, spiderId, () => next) });
+        const g = get();
+        set({
+          spiders: patchSpider(g.spiders, spiderId, () => next),
+          career: { ...(g.career ?? EMPTY_CAREER), molts: (g.career?.molts ?? 0) + 1 },
+        });
         return null;
       },
 
@@ -311,6 +321,7 @@ export const useGame = create<Game>()(
       startHunt: (habitatId) => {
         const hab = HABITATS.find((h) => h.id === habitatId);
         if (!hab) return "No such ground";
+        if (!isShipped(hab)) return "Night Circuit isn't open yet";
         const g = get();
         if (g.rank < hab.rank) return "Rank locked";
         if (g.huntsLeft <= 0) return "That's all the light tonight";
@@ -323,6 +334,7 @@ export const useGame = create<Game>()(
           huntHabitat: habitatId,
           pendingCatch: null,
           screen: "hunt",
+          career: { ...g.career, hunts: g.career.hunts + 1 },
           spiders: lead
             ? patchSpider(g.spiders, lead.id, (s) => ({ ...s, energy: s.energy - hab.energy }))
             : g.spiders,
@@ -371,6 +383,7 @@ export const useGame = create<Game>()(
         if (reason) return reason;
         if (g.cash < wager) return "Can't cover the wager";
         const rival = RIVALS.find((r) => r.id === rivalId) ?? RIVALS[0]!;
+        if (!isShipped(rival)) return "That crew isn't on this year's circuit";
         const fightRank = rival.always ? Math.max(g.rank, rival.rank) : rival.rank;
         const rng = mulberry32(seedFrom(rival.id + String(g.rank) + player.id.slice(0, 4)));
         const bias = rng.pick(rival.bias.filter((id) => SPECIES[id]) as string[]) || "hentz";
@@ -425,6 +438,11 @@ export const useGame = create<Game>()(
           spiders: patchSpider(g.spiders, patched.id, () => patched),
           fight: null,
           result: out,
+          career: {
+            ...g.career,
+            bouts: g.career.bouts + 1,
+            stripped: g.career.stripped + out.stripped.length,
+          },
         });
       },
 
@@ -449,12 +467,27 @@ export const useGame = create<Game>()(
 
       resetAll: () => set({ ...emptySave(), screen: "title", hydrated: true, fight: null, result: null }),
 
+      rollYear: () => {
+        const g = get();
+        if (g.rank < 7) return "Hold the World Stick first";
+        set({
+          season: g.season + 1,
+          rank: 5,
+          rankPoints: 0,
+          huntsLeft: HUNTS_PER_DAY,
+          cash: g.cash + 80 + g.wins,
+          career: { ...g.career },
+        });
+        return null;
+      },
+
       spiderById: (id) => get().spiders.find((s) => s.id === id),
     }),
     {
       name: "spider-fight-v1",
       version: SAVE_VERSION,
       skipHydration: true,
+      migrate: (persisted, from) => migrateSave(persisted, from),
       partialize: (s) => ({
         version: s.version,
         season: s.season,
@@ -475,6 +508,7 @@ export const useGame = create<Game>()(
         settings: s.settings,
         seen: s.seen,
         flags: s.flags,
+        career: s.career,
       }),
     },
   ),

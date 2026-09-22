@@ -24,6 +24,8 @@ Playable on phone and desktop.
 
 ![The Widow on the far silk](docs/screenshots/15-jev-fight.png)
 
+![Circuit](docs/screenshots/16-circuit.png)
+
 ![Shop](docs/screenshots/07-shop.png)
 
 ![Stable](docs/screenshots/04-stable.png)
@@ -58,6 +60,15 @@ TYPESAFE_API_KEY=apikey_…
 ```
 
 The repo is public for now, so treat this key as exposed. Rotate it at [console.typesafe.ai/keys](https://console.typesafe.ai/keys) whenever you lock the repo down. For a local override that stays off git, use `.env.local`.
+
+## Growing the circuit
+
+The game is built to get bigger without breaking old yards.
+
+- **Seasons** live in `src/game/catalog.ts` (`SHIPPED_SEASON`). Season 2 (Night Circuit — culverts, brown widows, ditch wolves) is already authored in `src/game/packs/season2.ts` and sits locked until that number bumps.
+- **Saves migrate.** `src/game/migrate.ts` upgrades old crates, drops unknown items, and maps missing species back to Hentz.
+- **Circuit** in the yard shows open packs, coming packs, ranks, and the almanac. Hold World Stick to roll a new year.
+- To ship a pack: fill the pack file, then set `SHIPPED_SEASON` to that pack’s id. No save wipe.
 
 ## Stack
 
