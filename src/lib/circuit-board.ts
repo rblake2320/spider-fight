@@ -16,6 +16,13 @@ export type CircuitPlacement = {
 
 type CircuitSeason = { season: number };
 type CircuitSubmission = Pick<CircuitEntry, "stableName" | "score" | "wins" | "rank"> & CircuitSeason;
+type DailyCircuit = CircuitSeason & { day: string };
+type DailyCircuitSubmission = CircuitSubmission & DailyCircuit;
+
+/** Shared daily cards reset at midnight UTC, so every yard sees the same race. */
+export function circuitDay(now = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
 
 function validSeason(input: CircuitSeason): CircuitSeason {
   if (!Number.isInteger(input.season) || input.season < 1 || input.season > 10000) throw new Error("Invalid circuit year");
@@ -30,6 +37,16 @@ function validSubmission(input: CircuitSubmission): CircuitSubmission {
   }
   if (input.score > 100000 || input.wins > 10000 || input.rank > 7) throw new Error("Circuit score exceeds board limits");
   return { stableName, score: input.score, wins: input.wins, rank: input.rank, ...validSeason(input) };
+}
+
+function validDaily(input: DailyCircuit): DailyCircuit {
+  const day = typeof input.day === "string" ? input.day : "";
+  if (day !== circuitDay()) throw new Error("Daily board is open for today only");
+  return { ...validSeason(input), day };
+}
+
+function validDailySubmission(input: DailyCircuitSubmission): DailyCircuitSubmission {
+  return { ...validSubmission(input), ...validDaily(input) };
 }
 
 export const listCircuitBoard = createServerFn({ method: "GET" })
@@ -74,6 +91,56 @@ export const postCircuitScore = createServerFn({ method: "POST" })
       from circuit_leaderboard board
       cross join mine
       where board.season = ${data.season} and (
+        board.score > mine.score
+        or (board.score = mine.score and board.wins > mine.wins)
+        or (board.score = mine.score and board.wins = mine.wins and board.updated_at > mine.updated_at)
+      )
+    `;
+    return placement ?? { position: 1, total: 1 };
+  });
+
+export const listDailyCircuitBoard = createServerFn({ method: "GET" })
+  .validator((input: DailyCircuit) => validDaily(input))
+  .handler(async ({ data }): Promise<CircuitEntry[]> => {
+    const { getSql } = await import("./db");
+    const sql = await getSql();
+    return sql<CircuitEntry>`
+      select stable_name as "stableName", score, wins, rank, updated_at::text as "updatedAt"
+      from daily_circuit_board
+      where day = ${data.day}::date and season = ${data.season}
+      order by score desc, wins desc, updated_at desc
+      limit 20
+    `;
+  });
+
+export const postDailyCircuitScore = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: DailyCircuitSubmission) => validDailySubmission(input))
+  .handler(async ({ data, context }): Promise<CircuitPlacement> => {
+    const { getSql } = await import("./db");
+    const sql = await getSql();
+    await sql`
+      insert into daily_circuit_board (user_id, day, season, stable_name, score, wins, rank)
+      values (${context.userId}, ${data.day}::date, ${data.season}, ${data.stableName}, ${data.score}, ${data.wins}, ${data.rank})
+      on conflict (user_id, day, season) do update set
+        stable_name = excluded.stable_name,
+        score = excluded.score,
+        wins = excluded.wins,
+        rank = excluded.rank,
+        updated_at = now()
+    `;
+    const [placement] = await sql<CircuitPlacement>`
+      with mine as (
+        select score, wins, updated_at
+        from daily_circuit_board
+        where user_id = ${context.userId} and day = ${data.day}::date and season = ${data.season}
+      )
+      select
+        (1 + count(board.user_id))::int as position,
+        (select count(*)::int from daily_circuit_board where day = ${data.day}::date and season = ${data.season}) as total
+      from daily_circuit_board board
+      cross join mine
+      where board.day = ${data.day}::date and board.season = ${data.season} and (
         board.score > mine.score
         or (board.score = mine.score and board.wins > mine.wins)
         or (board.score = mine.score and board.wins = mine.wins and board.updated_at > mine.updated_at)

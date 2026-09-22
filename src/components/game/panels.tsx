@@ -4,7 +4,7 @@ import { ITEMS, ITEM_LIST, MOVES, RANKS, RIVALS, SLOT_LABEL, SPECIES, SPECIES_LI
 import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
-import { listCircuitBoard, postCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
+import { circuitDay, listCircuitBoard, listDailyCircuitBoard, postCircuitScore, postDailyCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
@@ -701,10 +701,15 @@ export function CareerView() {
   const [boardState, setBoardState] = useState<"loading" | "ready" | "error">("loading");
   const [boardError, setBoardError] = useState<string | null>(null);
   const [boardPlacement, setBoardPlacement] = useState<CircuitPlacement | null>(null);
+  const [dailyCircuitBoard, setDailyCircuitBoard] = useState<CircuitEntry[]>([]);
+  const [dailyBoardState, setDailyBoardState] = useState<"loading" | "ready" | "error">("loading");
+  const [dailyBoardError, setDailyBoardError] = useState<string | null>(null);
+  const [dailyPlacement, setDailyPlacement] = useState<CircuitPlacement | null>(null);
   const [archiveShared, setArchiveShared] = useState<string | null>(null);
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
   const current = SEASONS.find((s) => s.id === careerSeasonId(season)) ?? SEASONS[0]!;
+  const day = useMemo(() => circuitDay(), []);
   const fieldGuide = SPECIES_LIST.filter(isShipped);
   const foundSpecies = fieldGuide.filter((species) => seen.includes(species.id)).length;
   const trophies = heldRivalTrophies(inventory, spiders);
@@ -730,6 +735,26 @@ export function CareerView() {
     };
   }, [season]);
 
+  useEffect(() => {
+    let alive = true;
+    void listDailyCircuitBoard({ data: { season, day } })
+      .then((entries) => {
+        if (!alive) return;
+        setDailyCircuitBoard(entries);
+        setDailyBoardState("ready");
+        setDailyBoardError(null);
+      })
+      .catch(() => {
+        if (alive) {
+          setDailyBoardState("error");
+          setDailyBoardError("Daily board unavailable. Your yard still saves locally.");
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [day, season]);
+
   const postScore = () => {
     setBoardState("loading");
     setBoardError(null);
@@ -744,6 +769,23 @@ export function CareerView() {
       .catch((error: unknown) => {
         setBoardState("error");
         setBoardError(error instanceof Error && error.message === "Unauthorized" ? "Sign in to post a score." : "Could not post this score. Try again.");
+      });
+  };
+
+  const postDailyScore = () => {
+    setDailyBoardState("loading");
+    setDailyBoardError(null);
+    void postDailyCircuitScore({ data: { stableName, score: points, wins, rank, season, day } })
+      .then(async (placement) => ({ placement, entries: await listDailyCircuitBoard({ data: { season, day } }) }))
+      .then(({ placement, entries }) => {
+        setDailyCircuitBoard(entries);
+        setDailyPlacement(placement);
+        setDailyBoardState("ready");
+        setDailyBoardError(null);
+      })
+      .catch((error: unknown) => {
+        setDailyBoardState("error");
+        setDailyBoardError(error instanceof Error && error.message === "Unauthorized" ? "Sign in to post a score." : "Could not post this score. Try again.");
       });
   };
 
@@ -823,6 +865,32 @@ export function CareerView() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-xl border border-rust/50 bg-raised p-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-xs uppercase tracking-widest text-rust">Daily circuit · {day}</p>
+          <Button size="sm" variant="outline" disabled={dailyBoardState === "loading"} onClick={postDailyScore}>
+            Enter today
+          </Button>
+        </div>
+        <p className="mt-1 text-xs text-mute">Fresh board at midnight UTC. Your current Circuit score is your entry.</p>
+        {dailyPlacement ? <p className="mt-2 text-xs text-moss">Today’s placement: #{dailyPlacement.position} of {dailyPlacement.total} active yards.</p> : null}
+        {dailyBoardState === "error" ? <p className="mt-2 text-xs text-rust">{dailyBoardError}</p> : null}
+        {dailyBoardState === "loading" ? <p className="mt-2 text-xs text-dust">Reading today’s board…</p> : null}
+        {dailyBoardState === "ready" && dailyCircuitBoard.length === 0 ? <p className="mt-2 text-xs text-dust">Set the first mark today.</p> : null}
+        {dailyCircuitBoard.length ? (
+          <ol className="mt-2 space-y-2">
+            {dailyCircuitBoard.map((entry, index) => (
+              <li key={`${entry.stableName}-${entry.updatedAt}`} className="flex items-center gap-2 text-sm">
+                <span className="w-5 text-dust">{index + 1}</span>
+                <span className="min-w-0 flex-1 truncate">{entry.stableName}</span>
+                <span className="text-xs text-dust">{rankName(entry.rank)} · {entry.wins}W</span>
+                <span className="tabular text-moss">{entry.score} pts</span>
+              </li>
+            ))}
+          </ol>
+        ) : null}
       </section>
 
       {paper?.length ? (
