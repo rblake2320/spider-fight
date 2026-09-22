@@ -23,6 +23,7 @@ import { todayStamp } from "@/game/rng";
 import { fightStakes } from "@/game/fight-stakes";
 import { nextStreakReward } from "@/game/streak";
 import { rivalWebProfiles } from "@/game/rival-scout";
+import { practiceSummary } from "@/game/practice-summary";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -524,6 +525,7 @@ function ResultCard() {
   const [shared, setShared] = useState<string | null>(null);
   const [rematchError, setRematchError] = useState<string | null>(null);
   const fighter = spiders.find((spider) => spider.id === selectedId && !spider.retired) ?? spiders.find((spider) => !spider.retired);
+  const practice = result.practice ? practiceSummary(result) : null;
 
   useEffect(() => {
     let alive = true;
@@ -554,11 +556,11 @@ function ResultCard() {
 
   return (
     <div className="flex h-full flex-col items-stretch justify-center gap-4 p-6">
-      <p className="text-xs uppercase tracking-widest text-dust">{result.practice ? "Practice thread" : result.won ? "You hold it" : "You dropped it"}</p>
-      <h2 className="font-display text-4xl font-semibold">{result.practice ? "Practice complete" : result.won ? "Win" : "Loss"}</h2>
+      <p className="text-xs uppercase tracking-widest text-dust">{practice?.kicker ?? (result.won ? "You hold it" : "You dropped it")}</p>
+      <h2 className="font-display text-4xl font-semibold">{practice?.title ?? (result.won ? "Win" : "Loss")}</h2>
       <p className="text-dust">vs {result.enemyName}</p>
       <ul className="space-y-1 text-sm">
-        {result.practice ? <li className="text-moss">No stakes. Your yard stays exactly as it was.</li> : <li>Wager {result.won ? "returned in purse" : "gone"} · ${result.wager}</li>}
+        {practice ? <li className={result.won ? "text-moss" : "text-rust"}>{practice.detail}</li> : <li>Wager {result.won ? "returned in purse" : "gone"} · ${result.wager}</li>}
         {result.won && !result.practice ? <li className="text-moss">Purse ${result.purse}</li> : null}
         {!result.practice && result.points !== undefined ? (
           <li className={result.points > 0 ? "text-moss" : result.points < 0 ? "text-rust" : "text-dust"}>
