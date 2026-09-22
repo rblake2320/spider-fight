@@ -15,6 +15,7 @@ import type { GearSlot, ItemKind, Stats } from "@/game/types";
 import { jevStatus } from "@/lib/jev";
 import { cn } from "@/lib/utils";
 import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
+import { DAILY_STREAK_CAP, dailyStreakBonus } from "@/game/daily-streak";
 
 export function Yard() {
   const name = useGame((s) => s.stableName);
@@ -37,6 +38,8 @@ export function Yard() {
   const next = RANKS[rank + 1];
   const firstNight = FIRST_NIGHT[tutorial];
   const sky = tonightSky();
+  const streak = Math.max(0, Number(flags.dailyStreak ?? 0));
+  const nextStreak = Math.min(DAILY_STREAK_CAP, Math.max(1, streak + 1));
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-auto">
       <div className="relative h-52 shrink-0">
@@ -158,6 +161,7 @@ export function Yard() {
         <Button variant="outline" onClick={collect} disabled={flags.daily === todayHint()}>
           {flags.daily === todayHint() ? "Morning purse collected" : "Collect morning purse"}
         </Button>
+        <p className="text-center text-xs text-moss">Morning streak {streak}/{DAILY_STREAK_CAP} · next purse +${dailyStreakBonus(nextStreak)}</p>
       </div>
     </div>
   );

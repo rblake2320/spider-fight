@@ -50,6 +50,7 @@ import { canCallWidow } from "./boss";
 import { traitHuntChance, traitTrainCost } from "./traits";
 import { activeSpiders, canRelease, canRetire, releaseCash, retire } from "./rafters";
 import { pushPaper, writeClip } from "./paper";
+import { dailyStreakBonus, nextDailyStreak } from "./daily-streak";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -705,11 +706,13 @@ export const useGame = create<Game>()(
 
       collectDaily: () => {
         const g = get();
-        if (g.flags.daily === todayStamp()) return;
+        const today = todayStamp();
+        if (g.flags.daily === today) return;
+        const streak = nextDailyStreak(typeof g.flags.daily === "string" ? g.flags.daily : undefined, Number(g.flags.dailyStreak ?? 0), today);
         set({
-          cash: g.cash + 12 + g.rank * 4,
+          cash: g.cash + 12 + g.rank * 4 + dailyStreakBonus(streak),
           huntsLeft: HUNTS_PER_DAY,
-          flags: { ...g.flags, daily: todayStamp() },
+          flags: { ...g.flags, daily: today, dailyStreak: String(streak) },
         });
       },
 
