@@ -17,6 +17,7 @@ import { NIGHTLY_BONUS_CASH, NIGHTLY_BONUS_POINTS, nightlyRival } from "@/game/n
 import { tonightSky } from "@/game/sky";
 import { rivalIntel } from "@/game/rival-intel";
 import { WIDOW_UNLOCK_RANK, widowCallMode } from "@/game/boss";
+import { RIVAL_TROPHIES } from "@/game/rewards";
 import { todayStamp } from "@/game/rng";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
@@ -197,6 +198,9 @@ export function FightSelect() {
                 <p className="mt-1 text-xs text-dust">No calls on this crew yet.</p>
               );
             })()}
+            {RIVAL_TROPHIES[r.id] && (rivalRecords[r.id]?.wins ?? 0) === 0 ? (
+              <p className="mt-1 text-xs text-moss">First win lifts {ITEMS[RIVAL_TROPHIES[r.id]!]?.name}.</p>
+            ) : null}
             {r.mind ? (
               <p className="mt-1 text-xs text-dust">
                 {widowMode === "challenge"

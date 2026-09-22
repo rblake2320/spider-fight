@@ -39,6 +39,7 @@ More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt resu
 - **Species webs** — every spider has a signature move and a distinct charged-web payoff
 - **Train / shop / team** — drills change the fighter, and cash buys wraps, fangs, silk, stims, bait
 - **Stick fights** — readable, timed counter rounds on a bamboo line (lunge, grapple, feint, brace, yank, drop)
+- **Rival trophies** — first wins over key crews lift one-of-a-kind, equipable gear to collect and build around
 - **Practice Thread** — learn a real opponent's tells with no cash, gear, rank, record, or daily progress at risk
 - **Daily loop** — a rotating contract, a species-web challenge, nightly headliner, and three-call Yard Series
 - **Circuit** — personal spider scores, web marks, a collection Almanac, and an authenticated shared score board

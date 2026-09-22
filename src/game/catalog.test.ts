@@ -3,6 +3,7 @@ import test from "node:test";
 import { HABITATS, ITEMS, RIVALS, SAVE_VERSION, SPECIES } from "./content.ts";
 import { careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonOf, speciesOf } from "./catalog.ts";
 import { migrateSave } from "./migrate.ts";
+import { RIVAL_TROPHIES } from "./rewards.ts";
 
 test("every habitat species exists", () => {
   for (const h of HABITATS) {
@@ -51,6 +52,13 @@ test("a career starts in Porch Year and holds at the newest released circuit", (
 
 test("the Widow Knot is a boss-only reward", () => {
   assert.equal(ITEMS["widow-knot"]?.rewardOnly, true);
+});
+
+test("every advertised rival trophy is defined as reward-only gear", () => {
+  for (const id of Object.values(RIVAL_TROPHIES)) {
+    assert.equal(ITEMS[id]?.rewardOnly, true, `${id} must be reward-only`);
+    assert.ok(ITEMS[id]?.slot, `${id} must be equipable`);
+  }
 });
 
 test("migrate keeps unknown species from crashing", () => {

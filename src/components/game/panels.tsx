@@ -550,10 +550,10 @@ export function ShopView() {
   const [msg, setMsg] = useState<string | null>(null);
   const kinds: Array<ItemKind | "gear"> = ["gear", "feed", "tonic", "bait", "upgrade"];
   const list = useMemo(() => {
-    const live = ITEM_LIST.filter((item) => isShipped(item) && !item.rewardOnly);
+    const live = ITEM_LIST.filter((item) => isShipped(item) && (!item.rewardOnly || (inv[item.id] ?? 0) > 0));
     if (tab === "gear") return live.filter((i) => i.slot);
     return live.filter((i) => i.kind === tab);
-  }, [tab]);
+  }, [tab, inv]);
   return (
     <div className="flex h-full flex-col overflow-auto p-4 pb-24">
       <header className="mb-3">
@@ -581,14 +581,16 @@ export function ShopView() {
             <div key={item.id} className="rounded-xl border border-line bg-raised p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="font-medium">{item.name}</p>
-                <p className="tabular text-sm text-dust">${item.price}</p>
+                <p className="tabular text-sm text-dust">{item.rewardOnly ? "Trophy" : `$${item.price}`}</p>
               </div>
               <p className="mt-1 text-xs text-mute">{item.blurb}</p>
               <p className="mt-1 text-[11px] text-dust">{have ? `In crate ${have}` : locked ? `Needs ${RANKS[item.rank]?.name}` : "\u00a0"}</p>
               <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="outline" disabled={locked} onClick={() => setMsg(buy(item.id) ?? `Bought ${item.name}`)}>
-                  Buy
-                </Button>
+                {!item.rewardOnly ? (
+                  <Button size="sm" variant="outline" disabled={locked} onClick={() => setMsg(buy(item.id) ?? `Bought ${item.name}`)}>
+                    Buy
+                  </Button>
+                ) : null}
                 {item.slot && have > 0 && selectedId ? (
                   <Button size="sm" variant="ghost" onClick={() => setMsg(equip(selectedId, item.id))}>
                     Equip
