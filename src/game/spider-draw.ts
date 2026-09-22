@@ -100,7 +100,8 @@ export function poseLegs(pose: DrawPose, t: number): Leg[] {
     });
   } else if (pose === "feint") {
     const snap = Math.sin(t * 16);
-    base.forEach((l) => {`n      l.sweep += snap * 0.42 - 0.18;
+    base.forEach((l) => {
+      l.sweep += snap * 0.42 - 0.18;
       l.lift += Math.abs(snap) * 0.18;
       l.bend += snap * 0.12;
     });
