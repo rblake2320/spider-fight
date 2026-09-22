@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, countersFor, createFight, MAX_ROUNDS, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight } from "./combat";
+import { applyEnemyTell, countersFor, createFight, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
@@ -97,6 +97,14 @@ test("two correct reads prime a visible species-web surge", () => {
   assert.equal(fight.player.webCharge, 0);
   assert.ok(fight.player.hp > Math.round(fight.player.max * 0.55));
   assert.equal(fight.roundLog[0]?.playerSurge, "cross brace restores shell");
+});
+
+test("desktop move keys match the visible six-move grid", () => {
+  assert.equal(moveForKey("1"), "lunge");
+  assert.equal(moveForKey("4"), "brace");
+  assert.equal(moveForKey("6"), "drop");
+  assert.equal(moveForKey("0"), null);
+  assert.equal(moveForKey("q"), null);
 });
 
 test("the Bowl and Doily spends its sheet web to recover stamina and tighten the rival line", () => {

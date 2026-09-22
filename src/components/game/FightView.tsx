@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, countersFor, createFight, queuePlayerMove, readWindowPercent, readWindowSeconds, webSurgeHint, type StickFight } from "@/game/combat";
+import { applyEnemyTell, countersFor, createFight, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -309,6 +309,20 @@ export function FightArena() {
     return () => clearInterval(id);
   }, [applyResult, fightMeta, player]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+      const move = moveForKey(event.key);
+      const fight = sim.current;
+      if (!move || !fight || fight.phase !== "telegraph" || !fight.tellReady || fight.playerLocked) return;
+      event.preventDefault();
+      queuePlayerMove(fight, move);
+      bump((n) => n + 1);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   if (result) return <ResultCard />;
   if (!fightMeta || !player || !sim.current) {
     return (
@@ -399,11 +413,11 @@ export function FightArena() {
           />
         </div>
         <p className="mt-1 text-center text-[11px] text-dust">
-          {f.timingHit ? "Sweet timing" : "Hit the window as you pick"}
+          {f.timingHit ? "Sweet timing" : "Hit the window as you pick"} · desktop keys 1–6
         </p>
       </div>
       <div className="grid grid-cols-3 gap-1.5 p-3 pb-4">
-        {MOVE_ORDER.map((m) => (
+        {MOVE_ORDER.map((m, index) => (
           <button
             key={m}
             type="button"
@@ -415,7 +429,10 @@ export function FightArena() {
               locked && "opacity-50",
             )}
           >
-            {MOVES[m].name}
+            <span className="inline-flex items-center gap-1">
+              <span className="text-[10px] text-dust">{index + 1}</span>
+              {MOVES[m].name}
+            </span>
           </button>
         ))}
       </div>

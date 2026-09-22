@@ -232,6 +232,13 @@ export function queuePlayerMove(f: StickFight, move: MoveId): void {
   f.timingHit = window < 0.16;
 }
 
+/** Desktop shortcuts mirror the move grid from left to right. */
+export function moveForKey(key: string): MoveId | null {
+  const moves: readonly MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
+  const index = Number(key) - 1;
+  return Number.isInteger(index) && index >= 0 && index < moves.length ? moves[index]! : null;
+}
+
 export function stepFight(f: StickFight, dt: number): void {
   const cap = Math.min(dt, 0.05);
   if (f.hitstop > 0) {
