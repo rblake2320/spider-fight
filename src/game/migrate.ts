@@ -1,11 +1,12 @@
 import { ITEMS, RIVALS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
 import { isShipped } from "./catalog.ts";
+import { BAY_BY_ID } from "./bay.ts";
 import type { CareerLog, FightArchive, FightRound, MoltQuality, PaperClip, SaveState, Spider, Stats, WeeklyCircuit, YardSeries } from "./types.ts";
 import { makeDailyContract, makeDailyWebChallenge } from "./contracts.ts";
 import { makeWeeklyCircuit } from "./weekly-circuit.ts";
 import type { MoveId } from "./types.ts";
 
-const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0 };
+const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0, bayJobs: 0, splices: 0 };
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -33,6 +34,17 @@ function statsOf(v: unknown): Stats {
 
 function moltQualityOf(v: unknown): MoltQuality | undefined {
   return v === "perfect" || v === "clean" || v === "rough" ? v : undefined;
+}
+
+function sanitizeGrafts(raw: unknown): Spider["grafts"] {
+  const record = asRecord(raw);
+  const out: NonNullable<Spider["grafts"]> = {};
+  for (const [slot, id] of Object.entries(record)) {
+    if ((slot === "legs" || slot === "fangs" || slot === "gut" || slot === "gland") && typeof id === "string" && BAY_BY_ID[id]?.slot === slot) {
+      out[slot] = id;
+    }
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 export function sanitizeSpider(raw: unknown): Spider | null {
@@ -78,6 +90,9 @@ export function sanitizeSpider(raw: unknown): Spider | null {
     bredFrom: str(s.bredFrom) || undefined,
     line: str(s.line) || undefined,
     lastMolt,
+    grafts: sanitizeGrafts(s.grafts),
+    splicedFrom: str(s.splicedFrom) || undefined,
+    spliceMark: SPECIES[str(s.spliceMark)] ? str(s.spliceMark) : undefined,
   };
 }
 
@@ -221,6 +236,8 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       clutches: num(careerRaw.clutches),
       perfectMolts: num(careerRaw.perfectMolts),
       worldTitles: Math.max(0, num(careerRaw.worldTitles)),
+      bayJobs: Math.max(0, num(careerRaw.bayJobs)),
+      splices: Math.max(0, num(careerRaw.splices)),
     },
     dailyContract: {
       ...generatedContract,

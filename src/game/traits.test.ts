@@ -13,6 +13,7 @@ test("every species trait and pool trait has a live definition", () => {
     assert.ok(TRAITS[trait], `pool is missing live trait "${trait}"`);
   }
   assert.ok(TRAITS["Yard-bred"]);
+  assert.ok(TRAITS["Yard-spliced"]);
   assert.ok(TRAITS["First stick"]);
 });
 

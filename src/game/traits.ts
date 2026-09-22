@@ -71,6 +71,7 @@ export const TRAITS: Record<string, TraitDef> = {
   "Fair veteran": { blurb: "She's been under the lights.", stats: { grit: 1, power: 1 } },
   "Molt glutton": { blurb: "Lives to shed.", moltPerfect: 0.1, moltRough: -0.06 },
   "Yard-bred": { blurb: "Born on this dirt.", stats: { grit: 1 }, moltPerfect: 0.04 },
+  "Yard-spliced": { blurb: "Foreign blood in the mill.", stats: { venom: 1 }, heat: 0.06 },
   "First stick": { blurb: "Green. Still listens.", train: -2, moltRough: 0.03 },
   "Bowl keeper": { blurb: "Holds the center of the sheet.", stats: { silk: 1, grit: 1 } },
   "Doily maker": { blurb: "Builds a second line before sunrise.", stats: { silk: 1 }, ai: { yank: 2 } },

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { bobPos, stepFight, type StickFight } from "@/game/combat";
+import { bayLook } from "@/game/bay";
 import { drawParticles, drawSilk, drawSpider, drawStick } from "@/game/spider-draw";
 import { tonightSky } from "@/game/sky";
 
@@ -97,9 +98,11 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
       const eAttach = e.attachX * w;
       const trainedP = Object.values(p.spider.trained).reduce((sum, value) => sum + value, 0);
       const trainedE = Object.values(e.spider.trained).reduce((sum, value) => sum + value, 0);
+      const lookP = bayLook(p.spider);
+      const lookE = bayLook(e.spider);
 
-      drawSilk(ctx, pAttach, stickY + 4, px, py - 8, 0.85, p.web.style, trainedP);
-      drawSilk(ctx, eAttach, stickY + 4, ex, ey - 8, 0.85, e.web.style, trainedE);
+      drawSilk(ctx, pAttach, stickY + 4, px, py - 8, 0.85, p.web.style, trainedP, lookP.silk);
+      drawSilk(ctx, eAttach, stickY + 4, ex, ey - 8, 0.85, e.web.style, trainedE, lookE.silk);
 
       const scale = Math.min(w, h) / 140;
       const plumpP = Math.min(1, p.stats.size / 16);
@@ -119,6 +122,7 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         hurtFlash: p.hurtFlash,
         mark: p.spider.speciesId === "widow" ? "hourglass" : undefined,
         gear: p.spider.gear,
+        look: lookP,
       });
       drawSpider(ctx, {
         x: ex,
@@ -134,6 +138,7 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         hurtFlash: e.hurtFlash,
         mark: e.spider.speciesId === "widow" ? "hourglass" : undefined,
         gear: e.spider.gear,
+        look: lookE,
       });
 
       // particles were spawned in normalized-ish coords; convert on draw

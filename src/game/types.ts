@@ -7,6 +7,7 @@ export type Screen =
   | "hunt"
   | "train"
   | "shop"
+  | "bay"
   | "fight"
   | "team"
   | "career"
@@ -18,6 +19,8 @@ export type Rarity = "common" | "uncommon" | "rare" | "legendary";
 export type MoveId = "lunge" | "grapple" | "feint" | "brace" | "yank" | "drop";
 export type WebStyle = "orb" | "cross" | "tangle" | "spoked" | "golden" | "sheet";
 export type GearSlot = "wraps" | "fang" | "silk" | "stim" | "charm";
+/** Chassis work. Like tires/engine/body kit — stays on the spider, shows on the stick. */
+export type BaySlot = "legs" | "fangs" | "gut" | "gland";
 export type ItemKind = GearSlot | "feed" | "bait" | "tonic" | "upgrade";
 export type ShopTab = "gear" | "feed" | "tonics" | "bait" | "stable";
 export type MoltQuality = "perfect" | "clean" | "rough";
@@ -66,6 +69,9 @@ export type Spider = {
   bredFrom?: string;
   line?: string;
   lastMolt?: MoltQuality;
+  grafts?: Partial<Record<BaySlot, string>>;
+  splicedFrom?: string;
+  spliceMark?: string;
 };
 
 export type Species = {
@@ -179,6 +185,8 @@ export type FightOutcome = {
   seriesBonus?: number;
   streakBonus?: { cash: number; points: number; label: string };
   sky?: string;
+  /** Bay chassis work that cracked on a loss, like totaling a bumper. */
+  cracked?: string;
   /** First opponent species observed at the stick; shown as a field-guide unlock. */
   discovery?: { species: string; web: string; ability: string };
   /** Circuit marks earned by this ranked bout, including their actual point reward. */
@@ -208,6 +216,8 @@ export type CareerLog = {
   clutches: number;
   perfectMolts: number;
   worldTitles: number;
+  bayJobs: number;
+  splices: number;
 };
 
 export type PaperClip = {

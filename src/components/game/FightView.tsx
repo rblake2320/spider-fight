@@ -583,6 +583,7 @@ function ResultCard() {
         ))}
         {result.loot ? <li className="text-moss">Lifted {ITEMS[result.loot]?.name}</li> : null}
         {result.injury ? <li className="text-rust">{result.injury.label}</li> : null}
+        {result.cracked ? <li className="text-rust">Bay kit cracked · {result.cracked}</li> : null}
       </ul>
       {result.discovery ? (
         <section className="rounded-xl border border-moss/50 bg-moss/10 p-3 text-sm text-paper">

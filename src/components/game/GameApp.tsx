@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpiderMark } from "./mark";
-import { Yard, Stable, SpiderDetail, TrainView, ShopView, TeamView, CareerView, SettingsView } from "./panels";
+import { Yard, Stable, SpiderDetail, TrainView, ShopView, BayView, TeamView, CareerView, SettingsView } from "./panels";
 import { HuntPlay, HuntSelect } from "./HuntView";
 import { FightArena, FightSelect } from "./FightView";
 import { useGame } from "@/game/store";
@@ -45,6 +45,7 @@ export function GameApp() {
         {screen === "hunt" ? <HuntGate /> : null}
         {screen === "train" ? <TrainView /> : null}
         {screen === "shop" ? <ShopView /> : null}
+        {screen === "bay" ? <BayView /> : null}
         {screen === "fight" && (fight || result) ? <FightArena /> : null}
         {screen === "fight" && !fight && !result ? <FightSelect /> : null}
         {screen === "team" ? <TeamView /> : null}
@@ -96,7 +97,7 @@ function TopBar() {
 function NavBar() {
   const screen = useGame((s) => s.screen);
   const setScreen = useGame((s) => s.setScreen);
-  const mapped: Screen = screen === "spider" ? "stable" : screen === "train" ? "yard" : screen;
+  const mapped: Screen = screen === "spider" ? "stable" : screen === "train" ? "yard" : screen === "bay" ? "shop" : screen;
   return (
     <nav className="safe-b grid grid-cols-5 border-t border-line bg-raised">
       {TABS.map((t) => (

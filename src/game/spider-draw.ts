@@ -1,4 +1,5 @@
 import type { Gear, MorphColors, MoveId, WebStyle } from "./types";
+import type { BayLook } from "./bay";
 
 export type DrawPose = MoveId | "idle" | "hurt" | "ko" | "intro";
 
@@ -16,6 +17,7 @@ export type SpiderDraw = {
   hurtFlash: number;
   mark?: "hourglass";
   gear?: Gear;
+  look?: BayLook;
 };
 
 function lerp(a: number, b: number, t: number): number {
@@ -103,10 +105,13 @@ function drawLeg(
   leg: Leg,
   scale: number,
   facing: number,
+  look?: BayLook,
 ): void {
-  const len1 = 22 * scale;
-  const len2 = 20 * scale;
-  const len3 = 16 * scale;
+  const thick = look?.legs ?? 1;
+  const long = look?.length ?? 1;
+  const len1 = 22 * scale * long;
+  const len2 = 20 * scale * long;
+  const len3 = 16 * scale * long;
   const ang0 = -Math.PI / 2 + leg.sweep * facing + (facing < 0 ? Math.PI : 0);
   // origin at cephalothorax side
   const x0 = originX;
@@ -124,9 +129,9 @@ function drawLeg(
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   const segs = [
-    [x0, y0, x1, y1, 3.1 * scale],
-    [x1, y1, x2, y2, 2.3 * scale],
-    [x2, y2, x3, y3, 1.4 * scale],
+    [x0, y0, x1, y1, 3.1 * scale * thick],
+    [x1, y1, x2, y2, 2.3 * scale * thick],
+    [x2, y2, x3, y3, 1.4 * scale * thick],
   ] as const;
   segs.forEach((s, i) => {
     ctx.beginPath();
@@ -158,12 +163,15 @@ function drawBody(
   pose: DrawPose,
   mark?: "hourglass",
   training = 0,
+  look?: BayLook,
 ): void {
   const edge = Math.min(1, training / 36);
-  const abdW = 16 * scale * lerp(0.85, 1.25, plump) * (1 + edge * 0.08);
-  const abdH = 20 * scale * lerp(0.9, 1.2, plump) * (1 + edge * 0.06);
+  const bodyPlump = plump + (look?.plump ?? 0);
+  const abdW = 16 * scale * lerp(0.85, 1.25, bodyPlump) * (1 + edge * 0.08);
+  const abdH = 20 * scale * lerp(0.9, 1.2, bodyPlump) * (1 + edge * 0.06);
   const cephW = 8.5 * scale * (1 + edge * 0.14);
   const cephH = 10 * scale * (1 + edge * 0.12);
+  const fangMul = look?.fangs ?? 1;
 
   // abdomen
   ctx.save();
@@ -225,6 +233,15 @@ function drawBody(
   ctx.ellipse(0, abdH * 0.82, 2.2 * scale, 1.6 * scale, 0, 0, Math.PI * 2);
   ctx.fillStyle = shade(colors.cephalothorax, 10);
   ctx.fill();
+  if (look?.splice) {
+    ctx.beginPath();
+    ctx.ellipse(0, 0, abdW * 0.72, abdH * 0.62, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = colors.speckle;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 1.6 * scale;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
   ctx.restore();
 
   // cephalothorax
@@ -253,11 +270,11 @@ function drawBody(
   // chelicerae
   ctx.fillStyle = colors.fang;
   ctx.beginPath();
-  ctx.ellipse(cephW * 0.7 * facing, cephH * 0.55, 1.4 * scale, 2.2 * scale, 0.4 * facing, 0, Math.PI * 2);
+  ctx.ellipse(cephW * 0.7 * facing, cephH * 0.55, 1.4 * scale * fangMul, 2.2 * scale * fangMul, 0.4 * facing, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = pose === "lunge" || pose === "grapple" ? "#8a1c14" : shade(colors.fang, 20);
   ctx.beginPath();
-  ctx.ellipse(cephW * 0.95 * facing, cephH * 0.72, 0.7 * scale, 1.4 * scale, 0.5 * facing, 0, Math.PI * 2);
+  ctx.ellipse(cephW * 0.95 * facing, cephH * 0.72, 0.7 * scale * fangMul, 1.4 * scale * fangMul, 0.5 * facing, 0, Math.PI * 2);
   ctx.fill();
 
   // eyes
@@ -288,6 +305,7 @@ export function drawSilk(
   taut: number,
   style: WebStyle = "orb",
   training = 0,
+  silkBoost = 0,
 ): void {
   ctx.save();
   ctx.beginPath();
@@ -296,10 +314,10 @@ export function drawSilk(
   ctx.moveTo(x0, y0);
   ctx.quadraticCurveTo(mx, my, x1, y1);
   ctx.strokeStyle = "rgba(232,220,198,0.55)";
-  ctx.lineWidth = 1.15;
+  ctx.lineWidth = 1.15 + silkBoost * 0.55;
   ctx.stroke();
   ctx.strokeStyle = "rgba(255,255,245,0.25)";
-  ctx.lineWidth = 0.5;
+  ctx.lineWidth = 0.5 + silkBoost * 0.2;
   ctx.stroke();
   if (style === "cross" || style === "spoked") {
     ctx.beginPath();
@@ -332,7 +350,7 @@ export function drawSilk(
     ctx.lineWidth = 0.8;
     ctx.stroke();
   }
-  const knots = Math.min(4, Math.floor(training / 6));
+  const knots = Math.min(5, Math.floor(training / 6) + silkBoost);
   for (let i = 1; i <= knots; i += 1) {
     const t = i / (knots + 1);
     const x = x0 + (x1 - x0) * t;
@@ -386,10 +404,10 @@ export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
   const front = legs.filter((l) => l.z === 1);
   const ox = 6 * d.scale;
   const oy = -2 * d.scale;
-  back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1));
-  drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training);
+  back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1, d.look));
+  drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training, d.look);
   drawGear(ctx, d);
-  front.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2.4 * d.scale, l, d.scale, 1));
+  front.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2.4 * d.scale, l, d.scale, 1, d.look));
 
   ctx.restore();
 }
@@ -433,6 +451,13 @@ function drawGear(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
   if (gear.charm) {
     ctx.fillStyle = gear.charm === "widow-knot" ? "#181318" : gear.charm === "fair-ribbon" ? "#3975c7" : "#b48634";
     ctx.fillRect(13 * s, -4 * s, Math.max(2, s * 3), Math.max(2, s * 5));
+  }
+  if (d.look?.silk) {
+    ctx.strokeStyle = "rgba(232,220,198,0.55)";
+    ctx.lineWidth = Math.max(0.8, s * 0.7);
+    ctx.beginPath();
+    ctx.arc(5 * s, 2 * s, 13 * s, d.t, d.t + Math.PI * 1.15);
+    ctx.stroke();
   }
 }
 

@@ -3,6 +3,7 @@ import { callKo, callRound } from "./caller";
 import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
 import { addStats, colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
+import { crackGraft } from "./bay";
 import { traitAi, traitHeat } from "./traits";
 import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile } from "./types";
 
@@ -515,6 +516,7 @@ function buildOutcome(f: StickFight): FightOutcome {
   let injury = f.player.spider.injury;
   let loot: string | null = null;
   let spider = f.player.spider;
+  let cracked: string | undefined;
 
   if (f.practice) {
     spider = { ...spider, hp: f.player.hp };
@@ -526,6 +528,11 @@ function buildOutcome(f: StickFight): FightOutcome {
     const d = decayTrained(spider, rng);
     spider = d.spider;
     decay = d.decay;
+    if (rng.chance(0.28)) {
+      const crackedBay = crackGraft(spider, rng);
+      spider = crackedBay.spider;
+      cracked = crackedBay.cracked ?? undefined;
+    }
     if (rng.chance(0.45)) {
       injury = { label: rng.pick(["Split femur", "Torn silk gland", "Cracked plate", "Rattled palps"]), fightsLeft: rng.int(1, 3) };
     }
@@ -557,6 +564,7 @@ function buildOutcome(f: StickFight): FightOutcome {
     decay,
     loot,
     injury: !won ? injury : null,
+    cracked,
     koMove: null,
     playerHp: f.player.hp,
     enemyHp: f.enemy.hp,

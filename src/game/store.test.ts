@@ -136,6 +136,54 @@ test("a ranked win that crosses a threshold records the new Circuit division on 
   }
 });
 
+test("fitting a bay job spends cash, bolts the graft, and stamps a Circuit mark", () => {
+  const before = useGame.getState();
+  try {
+    const spider = rollSpider(mulberry32(71), { speciesId: "hentz", stage: "adult" });
+    spider.energy = 80;
+    useGame.setState({
+      spiders: [spider], selectedId: spider.id, cash: 50, rank: 0, rankPoints: 0,
+      career: { ...EMPTY_CAREER }, seen: ["hentz"], earnedBadges: [],
+    });
+    assert.equal(useGame.getState().fitBay(spider.id, "joint-tape"), null);
+    const after = useGame.getState();
+    assert.equal(after.cash, 28);
+    assert.equal(after.spiders[0]?.grafts?.legs, "joint-tape");
+    assert.equal(after.career.bayJobs, 1);
+    assert.ok(after.earnedBadges.includes("bay-one"));
+    assert.equal(after.rankPoints, 14);
+    assert.equal(useGame.getState().fitBay(spider.id, "joint-tape"), "Already running that kit");
+  } finally {
+    useGame.setState(before, true);
+  }
+});
+
+test("a District splice mixes donor blood and spends the graft purse", () => {
+  const before = useGame.getState();
+  try {
+    const host = rollSpider(mulberry32(81), { speciesId: "hentz", stage: "adult" });
+    const donor = rollSpider(mulberry32(82), { speciesId: "widow", stage: "veteran" });
+    host.energy = 80;
+    host.traits = ["Porch-bred"];
+    donor.traits = ["Hourglass"];
+    donor.retired = true;
+    useGame.setState({
+      spiders: [host, donor], selectedId: host.id, cash: 80, rank: 2, rankPoints: 110,
+      career: { ...EMPTY_CAREER }, seen: ["hentz", "widow"], earnedBadges: [],
+    });
+    const message = useGame.getState().spliceDna(host.id, donor.id);
+    assert.ok(message === null || message.includes("fever"));
+    const after = useGame.getState();
+    assert.equal(after.cash, 80 - (40 + 2 * 6));
+    assert.equal(after.career.splices, 1);
+    assert.ok(after.spiders[0]?.traits.includes("Yard-spliced"));
+    assert.equal(after.spiders[0]?.spliceMark, "widow");
+    assert.ok(after.earnedBadges.includes("splice-one"));
+  } finally {
+    useGame.setState(before, true);
+  }
+});
+
 test("a completed weekly Circuit card pays cash and points exactly once", () => {
   const before = useGame.getState();
   try {

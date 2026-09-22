@@ -15,6 +15,7 @@ import {
 import { clamp, mulberry32, type Rng, uid } from "./rng";
 import { traitMoltShift, traitStats } from "./traits";
 import { rafterBonus } from "./rafters";
+import { bayStats } from "./bay";
 import type {
   GearSlot,
   Habitat,
@@ -36,8 +37,10 @@ export function portraitOf(s: Spider): string {
 export function colorsOf(s: Spider): MorphColors {
   const sp = SPECIES[s.speciesId];
   if (!sp) return SPECIES.hentz!.colors;
-  if (s.sex === "male" && sp.maleColors) return sp.maleColors;
-  return sp.colors;
+  const base = s.sex === "male" && sp.maleColors ? sp.maleColors : sp.colors;
+  const donor = s.spliceMark ? SPECIES[s.spliceMark] : undefined;
+  if (!donor) return base;
+  return { ...base, speckle: donor.colors.speckle, folium: donor.colors.folium };
 }
 
 export function addStats(a: Stats, b: Partial<Stats>): Stats {
@@ -63,6 +66,7 @@ export function luckOf(s: Spider): number {
 export function effective(s: Spider): Stats {
   let e = addStats(s.base, s.trained);
   e = addStats(e, traitStats(s.traits));
+  e = addStats(e, bayStats(s));
   for (const id of Object.values(s.gear)) {
     if (!id) continue;
     const b = ITEMS[id]?.bonus;
@@ -98,7 +102,9 @@ export function trainingLook(s: Spider): { title: string; detail: string } {
 export function spiderScore(s: Spider): number {
   const gearScore = Object.values(s.gear).filter(Boolean).length * 8;
   const rafterScore = s.retired ? 20 : 0;
-  return Math.max(0, s.wins * 32 - s.losses * 6 + s.level * 12 + trainingTotal(s) * 5 + gearScore + rafterScore);
+  const graftScore = Object.values(s.grafts ?? {}).filter(Boolean).length * 10;
+  const spliceScore = s.spliceMark ? 8 : 0;
+  return Math.max(0, s.wins * 32 - s.losses * 6 + s.level * 12 + trainingTotal(s) * 5 + gearScore + rafterScore + graftScore + spliceScore);
 }
 
 export function filledHp(s: Spider): number {
@@ -183,6 +189,7 @@ export function rollSpider(
     caughtAt: Date.now(),
     moltReady: rng.int(0, 20),
     retired: false,
+    grafts: {},
   };
 }
 

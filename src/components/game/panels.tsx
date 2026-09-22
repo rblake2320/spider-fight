@@ -8,10 +8,11 @@ import { circuitDay, listCircuitBoard, listDailyCircuitBoard, postCircuitScore, 
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
+import { BAY_JOBS, BAY_SLOTS, bayJobOf, bayKitLine, canFit, canSplice, graftsOf, spliceCost } from "@/game/bay";
 import { canFight, canMolt, effective, moltLine, portraitOf, recoveryRests, spiderScore, STAGE_LABEL, STAT_LABEL, trainingLook, trainingTotal } from "@/game/spiders";
 import { traitBlurb, traitTrainCost } from "@/game/traits";
 import { activeSpiders, canRelease, canRetire, rafterSpiders, releaseCash } from "@/game/rafters";
-import type { GearSlot, ItemKind, Stats } from "@/game/types";
+import type { BaySlot, GearSlot, ItemKind, Stats } from "@/game/types";
 import { jevStatus } from "@/lib/jev";
 import { cn } from "@/lib/utils";
 import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
@@ -106,6 +107,7 @@ export function Yard() {
           <Action label="Fight" onClick={() => setScreen("fight")} />
           <Action label="Train" onClick={() => setScreen("train")} />
           <Action label="Shop" onClick={() => setScreen("shop")} />
+          <Action label="Bay" onClick={() => setScreen("bay")} />
           <Action label="Team" onClick={() => setScreen("team")} />
           <Action label="Circuit" onClick={() => setScreen("career")} />
         </div>
@@ -361,6 +363,7 @@ export function SpiderDetail() {
           </div>
           <p className="mt-1 font-medium">{build.title}</p>
           <p className="mt-1 text-xs text-dust">{build.detail}</p>
+          <p className="mt-1 text-xs text-moss">{bayKitLine(spider)}</p>
           <div className="mt-3"><SpiderBuildCanvas spider={spider} /></div>
         </section>
         <XpBar level={spider.level} xp={spider.xp} />
@@ -384,6 +387,9 @@ export function SpiderDetail() {
           <>
             <Button variant="outline" onClick={() => setScreen("train")}>
               Train
+            </Button>
+            <Button variant="outline" onClick={() => setScreen("bay")}>
+              Open the bay
             </Button>
             <Button
               variant={team.includes(spider.id) ? "outline" : "primary"}
@@ -580,6 +586,130 @@ export function TrainView() {
   );
 }
 
+export function BayView() {
+  const spiders = useGame((s) => s.spiders);
+  const selectedId = useGame((s) => s.selectedId);
+  const select = useGame((s) => s.selectSpider);
+  const cash = useGame((s) => s.cash);
+  const rank = useGame((s) => s.rank);
+  const fitBay = useGame((s) => s.fitBay);
+  const spliceDna = useGame((s) => s.spliceDna);
+  const live = activeSpiders(spiders);
+  const host = live.find((s) => s.id === selectedId) ?? live[0];
+  const donors = spiders.filter((s) => s.id !== host?.id);
+  const [slot, setSlot] = useState<BaySlot>("legs");
+  const [donorId, setDonorId] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  if (!host) return <p className="p-6 text-dust">Catch someone first.</p>;
+  const jobs = BAY_JOBS.filter((job) => job.slot === slot);
+  const fitted = graftsOf(host);
+  const donor = donors.find((s) => s.id === donorId);
+  const splicePrice = spliceCost(rank);
+  return (
+    <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
+      <header>
+        <p className="text-xs uppercase tracking-widest text-dust">The bay</p>
+        <h2 className="font-display text-3xl font-semibold">Chassis work</h2>
+        <p className="text-sm text-dust">
+          Gear walks off a loss. This stays bolted — until the stick cracks it. {formatCash(cash)}
+        </p>
+      </header>
+      <div className="flex gap-2 overflow-x-auto">
+        {live.map((sp) => (
+          <button key={sp.id} type="button" onClick={() => select(sp.id)} className="shrink-0">
+            <img src={portraitOf(sp)} alt="" className={cn("size-14 rounded-lg object-cover", sp.id === host.id && "ring-2 ring-paper")} />
+          </button>
+        ))}
+      </div>
+      <p className="font-display text-2xl">{host.name}</p>
+      <p className="text-xs text-moss">{bayKitLine(host)}</p>
+      <SpiderBuildCanvas spider={host} />
+      <div className="grid grid-cols-2 gap-2">
+        {BAY_SLOTS.map((entry) => {
+          const current = bayJobOf(fitted[entry.id]);
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => setSlot(entry.id)}
+              className={cn("rounded-xl border p-3 text-left", slot === entry.id ? "border-paper bg-panel" : "border-line bg-raised")}
+            >
+              <p className="text-[10px] uppercase tracking-wide text-dust">{entry.label}</p>
+              <p className="text-sm">{current?.name ?? "Stock"}</p>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-xs text-mute">{BAY_SLOTS.find((entry) => entry.id === slot)?.blurb}</p>
+      <div className="flex flex-col gap-2">
+        {jobs.map((job) => {
+          const blocked = canFit(job, host, cash, rank);
+          const current = fitted[job.slot] === job.id;
+          return (
+            <div key={job.id} className="rounded-xl border border-line bg-raised p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="font-medium">{job.name}</p>
+                <p className="tabular text-sm text-dust">${job.price}</p>
+              </div>
+              <p className="mt-1 text-xs text-mute">{job.blurb}</p>
+              <p className="mt-1 text-[11px] text-dust">
+                {current ? "Running this kit" : blocked ?? `${job.energy} energy · ${RANKS[job.rank]?.name ?? "Alley"}`}
+              </p>
+              <Button
+                className="mt-2"
+                size="sm"
+                variant="outline"
+                disabled={Boolean(blocked)}
+                onClick={() => setMsg(fitBay(host.id, job.id) ?? `Bolted ${job.name}.`)}
+              >
+                Bolt on
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+      <section className="rounded-xl border border-rust/40 bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-rust">DNA splice</p>
+        <p className="mt-1 text-xs text-mute">
+          District and up. Copy a donor trait onto the mill. Hung rafters still count as stock. ${splicePrice}.
+        </p>
+        {donors.length ? (
+          <>
+            <div className="mt-2 flex gap-2 overflow-x-auto">
+              {donors.map((s) => (
+                <button key={s.id} type="button" onClick={() => setDonorId(s.id)} className="shrink-0">
+                  <img
+                    src={portraitOf(s)}
+                    alt=""
+                    className={cn("size-12 rounded-lg object-cover", donorId === s.id && "ring-2 ring-paper")}
+                  />
+                </button>
+              ))}
+            </div>
+            <Button
+              className="mt-3 w-full"
+              variant="outline"
+              disabled={!donor || Boolean(canSplice(host, donor, cash, rank))}
+              onClick={() => {
+                if (!donorId) return;
+                setMsg(spliceDna(host.id, donorId) ?? `Spliced ${donor?.name ?? "stock"} into ${host.name}.`);
+              }}
+            >
+              Splice · ${splicePrice}
+            </Button>
+            {donor && canSplice(host, donor, cash, rank) ? (
+              <p className="mt-2 text-xs text-dust">{canSplice(host, donor, cash, rank)}</p>
+            ) : null}
+          </>
+        ) : (
+          <p className="mt-2 text-xs text-dust">Catch a second spider before you mix blood.</p>
+        )}
+      </section>
+      {msg ? <p className="text-sm text-paper">{msg}</p> : null}
+    </div>
+  );
+}
+
 export function ShopView() {
   const cash = useGame((s) => s.cash);
   const rank = useGame((s) => s.rank);
@@ -604,6 +734,9 @@ export function ShopView() {
         <p className="text-xs uppercase tracking-widest text-dust">Shop</p>
         <h2 className="font-display text-3xl font-semibold">The crate</h2>
         <p className="tabular text-sm text-dust">{formatCash(cash)}</p>
+        <button type="button" onClick={() => useGame.getState().setScreen("bay")} className="mt-2 min-h-11 text-sm text-moss">
+          Open the bay for chassis work
+        </button>
       </header>
       <div className="mb-3 flex gap-1 overflow-x-auto">
         {kinds.map((k) => (
@@ -892,6 +1025,8 @@ export function CareerView() {
           {(career?.clutches ?? 0) > 0 ? ` · ${career.clutches} clutches` : ""}
           {(career?.perfectMolts ?? 0) > 0 ? ` · ${career.perfectMolts} glass shells` : ""}
           {(career?.worldTitles ?? 0) > 0 ? ` · ${career.worldTitles} World title${career.worldTitles === 1 ? "" : "s"}` : ""}
+          {(career?.bayJobs ?? 0) > 0 ? ` · ${career.bayJobs} bay jobs` : ""}
+          {(career?.splices ?? 0) > 0 ? ` · ${career.splices} splices` : ""}
         </p>
       </div>
 

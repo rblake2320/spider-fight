@@ -74,5 +74,6 @@ export function makeClutch(a: Spider, b: Spider, rng: Rng, stableName: string): 
     retired: false,
     bredFrom: `${dam.name} × ${sire.name}`,
     line,
+    grafts: {},
   };
 }

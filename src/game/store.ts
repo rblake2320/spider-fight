@@ -50,6 +50,7 @@ import { SERIES_BONUS_CASH, SERIES_BONUS_POINTS, yardSeriesLineup } from "./seri
 import { recordRivalMoves } from "./rival-intel";
 import { canCallWidow } from "./boss";
 import { traitHuntChance, traitTrainCost } from "./traits";
+import { applyJob, bayJobOf, canFit, canSplice, splice, spliceCost } from "./bay";
 import { activeSpiders, canRelease, canRetire, releaseCash, retire } from "./rafters";
 import { pushPaper, writeClip } from "./paper";
 import { dailyStreakBonus, nextDailyStreak } from "./daily-streak";
@@ -139,6 +140,8 @@ type Game = SaveState &
     setClutch: (aId: string, bId: string) => string | null;
     retireSpider: (id: string) => string | null;
     releaseSpider: (id: string) => string | null;
+    fitBay: (spiderId: string, jobId: string) => string | null;
+    spliceDna: (hostId: string, donorId: string) => string | null;
     applyResult: (out: FightOutcome, finalSpider: Spider) => void;
     clearResult: () => void;
     collectDaily: () => void;
@@ -621,6 +624,45 @@ export const useGame = create<Game>()(
           screen: g.selectedId === id ? "stable" : g.screen,
         });
         return null;
+      },
+
+      fitBay: (spiderId, jobId) => {
+        const g = get();
+        const spider = g.spiders.find((s) => s.id === spiderId);
+        if (!spider) return "No spider";
+        const job = bayJobOf(jobId);
+        if (!job) return "No such kit";
+        const blocked = canFit(job, spider, g.cash, g.rank);
+        if (blocked) return blocked;
+        const spiders = patchSpider(g.spiders, spiderId, () => applyJob(spider, job));
+        const career = { ...g.career, bayJobs: (g.career.bayJobs ?? 0) + 1 };
+        set({
+          cash: g.cash - job.price,
+          spiders,
+          career,
+          ...badgeProgress(g, { spiders, career, wins: g.wins, seen: g.seen }),
+        });
+        return null;
+      },
+
+      spliceDna: (hostId, donorId) => {
+        const g = get();
+        const host = g.spiders.find((s) => s.id === hostId);
+        const donor = g.spiders.find((s) => s.id === donorId);
+        if (!host || !donor) return "Pick two";
+        const blocked = canSplice(host, donor, g.cash, g.rank);
+        if (blocked) return blocked;
+        const cost = spliceCost(g.rank);
+        const result = splice(host, donor, mulberry32(seedFrom(host.id + donor.id + String(Date.now()))));
+        const spiders = patchSpider(g.spiders, hostId, () => result.host);
+        const career = { ...g.career, splices: (g.career.splices ?? 0) + 1 };
+        set({
+          cash: g.cash - cost,
+          spiders,
+          career,
+          ...badgeProgress(g, { spiders, career, wins: g.wins, seen: g.seen }),
+        });
+        return result.fever ? "Graft fever. She'll sit a night." : null;
       },
 
       applyResult: (out, finalSpider) => {
