@@ -182,15 +182,17 @@ export function FightSelect() {
             <p className="mt-1 text-xs text-dust">{Math.round(r.grit * 100)}% grit</p>
             {(() => {
               const record = rivalRecords[r.id];
+              const intel = rivalIntel(record?.moves);
               return record ? (
                 <>
                   <p className="mt-1 text-xs text-moss">
                     Yard card: {record.wins}–{record.losses}
                     {record.streak > 1 ? ` · ${record.streak} straight` : ""}
                   </p>
-                  {rivalIntel(record.moves).length ? (
-                    <p className="mt-1 text-xs text-dust">
-                      Tape says: {rivalIntel(record.moves).map((entry) => `${MOVES[entry.move].name} ×${entry.count}`).join(" · ")}
+                  {intel.length ? <p className="mt-1 text-xs text-dust">Tape says: {intel.map((entry) => `${MOVES[entry.move].name} ×${entry.count}`).join(" · ")}</p> : null}
+                  {intel[0] ? (
+                    <p className="mt-1 text-xs text-moss">
+                      Tape counter: when {MOVES[intel[0].move].name.toLowerCase()} shows, answer {countersFor(intel[0].move).map((move) => MOVES[move].name).join(" or ")}.
                     </p>
                   ) : null}
                 </>
