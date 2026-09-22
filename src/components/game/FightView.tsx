@@ -432,11 +432,17 @@ function Hp({ name, hp, max, side }: { name: string; hp: number; max: number; si
 function ResultCard() {
   const result = useGame((s) => s.result)!;
   const stableName = useGame((s) => s.stableName);
+  const spiders = useGame((s) => s.spiders);
+  const selectedId = useGame((s) => s.selectedId);
   const clear = useGame((s) => s.clearResult);
+  const prepareFight = useGame((s) => s.prepareFight);
+  const startPractice = useGame((s) => s.startPractice);
   const continueYardSeries = useGame((s) => s.continueYardSeries);
   const yardSeries = useGame((s) => s.yardSeries);
   const [read, setRead] = useState<{ label: string; lesson: string } | null>(null);
   const [shared, setShared] = useState<string | null>(null);
+  const [rematchError, setRematchError] = useState<string | null>(null);
+  const fighter = spiders.find((spider) => spider.id === selectedId && !spider.retired) ?? spiders.find((spider) => !spider.retired);
 
   useEffect(() => {
     let alive = true;
@@ -548,7 +554,26 @@ function ResultCard() {
         Share match card
       </Button>
       {shared ? <p className="text-center text-xs text-dust">{shared}</p> : null}
-      <Button variant="primary" onClick={clear}>
+      {!yardSeries ? (
+        <Button
+          variant="primary"
+          disabled={!fighter}
+          onClick={() => {
+            if (!fighter) {
+              setRematchError("Pick a fighter before calling a rematch.");
+              return;
+            }
+            const error = result.practice
+              ? startPractice(fighter.id)
+              : prepareFight(result.rivalId, fighter.id, result.wager);
+            setRematchError(error);
+          }}
+        >
+          {result.practice ? "Practice again" : `Run it back · $${result.wager}`}
+        </Button>
+      ) : null}
+      {rematchError ? <p className="text-center text-xs text-rust">{rematchError}</p> : null}
+      <Button variant="outline" onClick={clear}>
         Back to the yard
       </Button>
       {result.won && yardSeries ? (
