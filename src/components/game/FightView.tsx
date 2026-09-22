@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, moveForKey, queuePlayerMove, READ_WINDOW_SECONDS, readWindowPercent, readWindowSeconds, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint, type StickFight } from "@/game/combat";
+import { applyEnemyTell, arenaOpponentName, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, moveForKey, queuePlayerMove, READ_WINDOW_SECONDS, readWindowPercent, readWindowSeconds, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -390,7 +390,7 @@ export function FightArena() {
       <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
         <Hp name={f.player.name} hp={f.player.hp} max={f.player.max} side="left" />
         <p className="shrink-0 text-dust">{fightMeta.seriesStage !== null ? `Series ${fightMeta.seriesStage + 1}/3 · ` : ""}Rd {f.round}</p>
-        <Hp name={f.enemy.name} hp={f.enemy.hp} max={f.enemy.max} side="right" />
+        <Hp name={arenaOpponentName(f)} hp={f.enemy.hp} max={f.enemy.max} side="right" />
       </div>
       {RIVALS.find((r) => r.id === f.rivalId)?.mind ? (
         <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-rust">

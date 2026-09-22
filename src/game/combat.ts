@@ -176,6 +176,11 @@ export function createFight(
   };
 }
 
+/** The crowd follows the called crew, even when both yards gave a spider the same name. */
+export function arenaOpponentName(fight: Pick<StickFight, "rivalName">): string {
+  return fight.rivalName;
+}
+
 function pickAi(f: StickFight): MoveId {
   const rng = mulberry32((f.round + 1) * 9973 + f.enemy.hp * 13);
   const s = f.enemy.stats;

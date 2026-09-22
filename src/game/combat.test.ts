@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, hasSweetTiming, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint } from "./combat";
+import { applyEnemyTell, arenaOpponentName, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, hasSweetTiming, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
@@ -77,6 +77,14 @@ test("sweet timing is only awarded inside the player-visible moss band", () => {
   assert.equal(hasSweetTiming(SWEET_TIMING_CENTER - SWEET_TIMING_TOLERANCE + 0.001), true);
   assert.equal(hasSweetTiming(SWEET_TIMING_CENTER + SWEET_TIMING_TOLERANCE), false);
   assert.equal(hasSweetTiming(0.1), false);
+});
+
+test("the live arena labels the called crew when two spiders share a name", () => {
+  const player = rollSpider(mulberry32(141), { speciesId: "hentz", stage: "adult" });
+  const enemy = rollSpider(mulberry32(142), { speciesId: "hentz", stage: "adult", asRival: true });
+  enemy.name = player.name;
+  const fight = createFight(player, enemy, 0, "tom", "Alley Tom", "brace", {}, {}, null, true);
+  assert.equal(arenaOpponentName(fight), "Alley Tom");
 });
 
 test("the live read guide only recommends moves that win the exchange", () => {
