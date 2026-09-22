@@ -1,7 +1,7 @@
 import { trainingTotal } from "./spiders";
 import type { CareerLog, Spider } from "./types";
 
-export type BadgeId = "first-molt" | "drill-five" | "yard-five" | "field-guide" | "first-clutch";
+export type BadgeId = "first-molt" | "drill-five" | "yard-five" | "field-guide" | "first-clutch" | "glass-shell" | "rafter-one";
 
 export type Badge = {
   id: BadgeId;
@@ -16,6 +16,8 @@ export const BADGES: readonly Badge[] = [
   { id: "yard-five", name: "Yard regular", detail: "Win five bouts on the stick.", reward: 16 },
   { id: "field-guide", name: "Field guide", detail: "Spot four species around the circuit.", reward: 12 },
   { id: "first-clutch", name: "Porch bloodline", detail: "Set a clutch in the yard.", reward: 18 },
+  { id: "glass-shell", name: "Glass shell", detail: "Guide a spider through a perfect molt.", reward: 22 },
+  { id: "rafter-one", name: "Hung in the rafters", detail: "Hang a veteran where the yard can see her.", reward: 20 },
 ];
 
 type BadgeProgress = {
@@ -34,6 +36,8 @@ export function newlyEarnedBadges(earned: string[], progress: BadgeProgress): Ba
     if (badge.id === "drill-five") return training >= 5;
     if (badge.id === "yard-five") return progress.wins >= 5;
     if (badge.id === "first-clutch") return progress.career.clutches >= 1;
+    if (badge.id === "glass-shell") return progress.career.perfectMolts >= 1;
+    if (badge.id === "rafter-one") return progress.spiders.some((spider) => spider.retired);
     return progress.seen.length >= 4;
   });
 }

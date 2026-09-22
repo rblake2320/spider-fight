@@ -1,10 +1,10 @@
 import { ITEMS, RIVALS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
 import { isShipped } from "./catalog.ts";
-import type { CareerLog, SaveState, Spider, Stats, YardSeries } from "./types.ts";
+import type { CareerLog, MoltQuality, PaperClip, SaveState, Spider, Stats, YardSeries } from "./types.ts";
 import { makeDailyContract, makeDailyWebChallenge } from "./contracts.ts";
 import type { MoveId } from "./types.ts";
 
-const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0 };
+const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0 };
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -30,6 +30,10 @@ function statsOf(v: unknown): Stats {
   };
 }
 
+function moltQualityOf(v: unknown): MoltQuality | undefined {
+  return v === "perfect" || v === "clean" || v === "rough" ? v : undefined;
+}
+
 export function sanitizeSpider(raw: unknown): Spider | null {
   const s = asRecord(raw);
   const id = str(s.id);
@@ -40,6 +44,7 @@ export function sanitizeSpider(raw: unknown): Spider | null {
   for (const [slot, itemId] of Object.entries(rawGear)) {
     if (typeof itemId === "string" && ITEMS[itemId]) gear[slot as keyof Spider["gear"]] = itemId;
   }
+  const lastMolt = moltQualityOf(s.lastMolt);
   return {
     id,
     name: str(s.name, "Unnamed").slice(0, 18),
@@ -71,6 +76,7 @@ export function sanitizeSpider(raw: unknown): Spider | null {
     retired: s.retired === true,
     bredFrom: str(s.bredFrom) || undefined,
     line: str(s.line) || undefined,
+    lastMolt,
   };
 }
 
@@ -83,6 +89,25 @@ export function sanitizeInventory(raw: unknown): Record<string, number> {
     if (count > 0) out[id] = count;
   }
   return out;
+}
+
+function sanitizePaper(raw: unknown): PaperClip[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((entry) => {
+      const clip = asRecord(entry);
+      const headline = str(clip.headline);
+      if (!headline) return null;
+      return {
+        date: str(clip.date),
+        headline: headline.slice(0, 120),
+        won: clip.won === true,
+        fighter: str(clip.fighter).slice(0, 18),
+        rival: str(clip.rival).slice(0, 32),
+      };
+    })
+    .filter((clip): clip is PaperClip => !!clip)
+    .slice(0, 8);
 }
 
 export function migrateSave(persisted: unknown, fromVersion: number): SaveState {
@@ -130,12 +155,12 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
     inventory: sanitizeInventory(p.inventory),
     rosterCap: Math.max(4, num(p.rosterCap, 6)),
     activeTeam: (Array.isArray(p.activeTeam) ? p.activeTeam : []).filter(
-      (id): id is string => typeof id === "string" && spiders.some((s) => s.id === id),
+      (id): id is string => typeof id === "string" && spiders.some((s) => s.id === id && !s.retired),
     ),
     selectedId:
       typeof p.selectedId === "string" && spiders.some((s) => s.id === p.selectedId)
         ? p.selectedId
-        : (spiders[0]?.id ?? null),
+        : (spiders.find((s) => !s.retired)?.id ?? spiders[0]?.id ?? null),
     huntsLeft: num(p.huntsLeft, 6),
     dayStamp: str(p.dayStamp),
     wins: num(p.wins),
@@ -154,6 +179,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       bouts: num(careerRaw.bouts),
       stripped: num(careerRaw.stripped),
       clutches: num(careerRaw.clutches),
+      perfectMolts: num(careerRaw.perfectMolts),
     },
     dailyContract: {
       ...generatedContract,
@@ -168,6 +194,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
     rivalRecords,
     earnedBadges: Array.isArray(p.earnedBadges) ? p.earnedBadges.filter((id): id is string => typeof id === "string") : [],
     yardSeries,
+    paper: sanitizePaper(p.paper),
   } satisfies SaveState;
   void fromVersion;
   return save;

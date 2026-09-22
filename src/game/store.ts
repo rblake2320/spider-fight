@@ -21,6 +21,7 @@ import {
   applyXp,
   applyRivalGrit,
   canFight,
+  canMolt,
   effective,
   filledHp,
   molt,
@@ -46,6 +47,9 @@ import { nightlyReward, nightlyRival } from "./night-card";
 import { SERIES_BONUS_CASH, SERIES_BONUS_POINTS, yardSeriesLineup } from "./series";
 import { recordRivalMoves } from "./rival-intel";
 import { canCallWidow } from "./boss";
+import { traitHuntChance, traitTrainCost } from "./traits";
+import { activeSpiders, canRelease, canRetire, releaseCash, retire } from "./rafters";
+import { pushPaper, writeClip } from "./paper";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -73,6 +77,7 @@ const emptySave = (): SaveState => ({
   rivalRecords: {},
   earnedBadges: [],
   yardSeries: null,
+  paper: [],
 });
 
 type Session = {
@@ -123,6 +128,8 @@ type Game = SaveState &
     startYardSeries: (playerId: string) => string | null;
     continueYardSeries: () => string | null;
     setClutch: (aId: string, bId: string) => string | null;
+    retireSpider: (id: string) => string | null;
+    releaseSpider: (id: string) => string | null;
     applyResult: (out: FightOutcome, finalSpider: Spider) => void;
     clearResult: () => void;
     collectDaily: () => void;
@@ -176,7 +183,7 @@ export const useGame = create<Game>()(
 
       hydrate: () => {
         const s = get();
-        if (s.dayStamp !== todayStamp() || s.dailyContract.date !== todayStamp() || s.dailyWebChallenge.date !== todayStamp()) {
+        if (s.dayStamp !== todayStamp() || s.dailyContract.date !== todayStamp() || s.dailyWebChallenge?.date !== todayStamp()) {
           set({
             huntsLeft: HUNTS_PER_DAY,
             dayStamp: todayStamp(),
@@ -186,6 +193,7 @@ export const useGame = create<Game>()(
           });
         }
         if (!s.career) set({ career: { ...EMPTY_CAREER } });
+        if (!s.paper) set({ paper: [] });
         set({ hydrated: true });
         setSfxEnabled(s.settings.sfx);
         setMusicEnabled(s.settings.music);
@@ -312,7 +320,8 @@ export const useGame = create<Game>()(
         const g = get();
         const s = g.spiders.find((x) => x.id === spiderId);
         if (!s) return "No spider";
-        const cost = 10 + s.trained[stat] * 6;
+        if (s.retired) return "Hung in the rafters";
+        const cost = traitTrainCost(s.traits, 10 + s.trained[stat] * 6);
         if (g.cash < cost) return "Not enough cash";
         if (s.energy < 16) return "Too tired";
         if (s.injury) return "Injured";
@@ -336,6 +345,8 @@ export const useGame = create<Game>()(
 
       restSpider: (spiderId) => {
         const g = get();
+        const spider = g.spiders.find((s) => s.id === spiderId);
+        if (spider?.retired) return "Hung in the rafters";
         const cost = 6;
         if (g.cash < cost) return "Not enough cash";
         set({
@@ -358,11 +369,17 @@ export const useGame = create<Game>()(
       tryMolt: (spiderId) => {
         const s = get().spiders.find((x) => x.id === spiderId);
         if (!s) return "No spider";
-        const next = molt(s);
-        if (!next) return s.moltReady < 70 ? "Not ready to molt" : "Already at the top";
+        const blocked = canMolt(s);
+        if (blocked) return blocked;
         const g = get();
-        const spiders = patchSpider(g.spiders, spiderId, () => next);
-        const career = { ...(g.career ?? EMPTY_CAREER), molts: (g.career?.molts ?? 0) + 1 };
+        const next = molt(s, mulberry32(seedFrom(s.id + String(s.moltReady) + String(Date.now()))));
+        if (!next) return "Already at the top";
+        const spiders = patchSpider(g.spiders, spiderId, () => next.spider);
+        const career = {
+          ...(g.career ?? EMPTY_CAREER),
+          molts: (g.career?.molts ?? 0) + 1,
+          perfectMolts: (g.career?.perfectMolts ?? 0) + (next.quality === "perfect" ? 1 : 0),
+        };
         set({ spiders, career, ...badgeProgress(g, { spiders, career, wins: g.wins, seen: g.seen }) });
         return null;
       },
@@ -386,7 +403,7 @@ export const useGame = create<Game>()(
         if (g.rank < hab.rank) return "Rank locked";
         if (g.huntsLeft <= 0) return "That's all the light tonight";
         if (g.cash < hab.cost) return "Can't cover the trip";
-        const lead = g.spiders.find((s) => s.id === g.selectedId) ?? g.spiders[0];
+        const lead = g.spiders.find((s) => s.id === g.selectedId && !s.retired) ?? g.spiders.find((s) => !s.retired);
         const sky = tonightSky();
         const energyCost = hab.energy + sky.energy;
         if (lead && lead.energy < energyCost) return "Your lead spider is spent";
@@ -418,7 +435,9 @@ export const useGame = create<Game>()(
         const rng = mulberry32(seedFrom(g.stableName + String(Date.now())));
         const sky = tonightSky();
         const bait = applyBait(g.activeBait, mixHunt(hab.weights, sky));
-        if (rng.next() > 0.28 + quality * 0.5 + bait.chanceBonus + sky.chance) return null;
+        const lead = g.spiders.find((s) => s.id === g.selectedId && !s.retired) ?? g.spiders.find((s) => !s.retired);
+        const luck = lead ? traitHuntChance(lead.traits) : 0;
+        if (rng.next() > 0.28 + quality * 0.5 + bait.chanceBonus + sky.chance + luck) return null;
         const caught = rollSpider(rng, { habitat: { ...hab, weights: bait.weights }, rank: g.rank });
         const seen = g.seen.includes(caught.speciesId) ? g.seen : [...g.seen, caught.speciesId];
         set({
@@ -433,7 +452,7 @@ export const useGame = create<Game>()(
       keepCatch: () => {
         const g = get();
         if (!g.pendingCatch) return "Nothing in the jar";
-        if (g.spiders.length >= g.rosterCap) return "Stable is full";
+        if (activeSpiders(g.spiders).length >= g.rosterCap) return "Stable is full. Hang a veteran or let one go.";
         const caught = g.pendingCatch;
         set({
           spiders: [...g.spiders, caught],
@@ -522,23 +541,14 @@ export const useGame = create<Game>()(
         const a = g.spiders.find((s) => s.id === aId);
         const b = g.spiders.find((s) => s.id === bId);
         if (!a || !b) return "Pick two";
-        const reason = canClutch(a, b, g.spiders.length, g.rosterCap);
+        const reason = canClutch(a, b, activeSpiders(g.spiders).length, g.rosterCap);
         if (reason) return reason;
         const cost = clutchCost(g.rank);
         if (g.cash < cost) return "Not enough cash";
         const baby = makeClutch(a, b, mulberry32(seedFrom(a.id + b.id + String(Date.now()))), g.stableName);
-        const spiders = [
-          ...patchSpider(
-            patchSpider(g.spiders, a.id, (s) => ({
-              ...s,
-              energy: s.energy - 28,
-              moltReady: clamp(s.moltReady + 6, 0, 100),
-            })),
-            b.id,
-            (s) => ({ ...s, energy: s.energy - 28, moltReady: clamp(s.moltReady + 6, 0, 100) }),
-          ),
-          baby,
-        ];
+        const rest = (s: Spider) =>
+          s.retired ? s : { ...s, energy: s.energy - 28, moltReady: clamp(s.moltReady + 6, 0, 100) };
+        const spiders = [...patchSpider(patchSpider(g.spiders, a.id, rest), b.id, rest), baby];
         const career = { ...g.career, clutches: (g.career.clutches ?? 0) + 1 };
         const seen = g.seen.includes(baby.speciesId) ? g.seen : [...g.seen, baby.speciesId];
         set({
@@ -549,6 +559,45 @@ export const useGame = create<Game>()(
           screen: "spider",
           career,
           ...badgeProgress(g, { spiders, career, wins: g.wins, seen }),
+        });
+        return null;
+      },
+
+      retireSpider: (id) => {
+        const g = get();
+        const spider = g.spiders.find((s) => s.id === id);
+        if (!spider) return "No spider";
+        const reason = canRetire(spider, activeSpiders(g.spiders).length);
+        if (reason) return reason;
+        const spiders = patchSpider(g.spiders, id, retire);
+        set({
+          spiders,
+          activeTeam: g.activeTeam.filter((slot) => slot !== id),
+          selectedId: g.selectedId === id ? (spiders.find((s) => !s.retired)?.id ?? id) : g.selectedId,
+          ...badgeProgress(g, { spiders, career: g.career, wins: g.wins, seen: g.seen }),
+        });
+        return null;
+      },
+
+      releaseSpider: (id) => {
+        const g = get();
+        const spider = g.spiders.find((s) => s.id === id);
+        if (!spider) return "No spider";
+        const reason = canRelease(spider, activeSpiders(g.spiders).length);
+        if (reason) return reason;
+        let inventory = { ...g.inventory };
+        for (const itemId of Object.values(spider.gear)) {
+          if (itemId) inventory = addInv(inventory, itemId);
+        }
+        const spiders = g.spiders.filter((s) => s.id !== id);
+        const pay = releaseCash(spider);
+        set({
+          cash: g.cash + pay,
+          inventory,
+          spiders,
+          activeTeam: g.activeTeam.filter((slot) => slot !== id),
+          selectedId: g.selectedId === id ? (spiders.find((s) => !s.retired)?.id ?? null) : g.selectedId,
+          screen: g.selectedId === id ? "stable" : g.screen,
         });
         return null;
       },
@@ -624,6 +673,12 @@ export const useGame = create<Game>()(
           ? { ...g.yardSeries, stage: g.yardSeries.stage + 1 }
           : null;
         const seriesFinished = isSeries && (!out.won || !nextSeries || nextSeries.stage >= nextSeries.rivals.length);
+        const clip = writeClip({
+          date: g.dayStamp,
+          fighter: patched.name,
+          rival: out.rivalId,
+          out: { ...out, sky: tonightSky().name },
+        });
         set({
           cash,
           rank: badges.rank,
@@ -636,12 +691,13 @@ export const useGame = create<Game>()(
           result: out,
           career,
           dailyContract: !practice && out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
-          dailyWebChallenge: practice ? g.dailyWebChallenge : advanceWebChallenge(g.dailyWebChallenge, landedWebMove),
+          dailyWebChallenge: practice ? g.dailyWebChallenge : advanceWebChallenge(g.dailyWebChallenge ?? makeDailyWebChallenge(g.dayStamp, g.rank), landedWebMove),
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
           earnedBadges: badges.earnedBadges,
           yardSeries: seriesFinished ? null : nextSeries,
           flags: seriesFinished ? { ...g.flags, yardSeries: g.dayStamp } : g.flags,
           tutorial: g.tutorial === 5 ? 6 : g.tutorial,
+          paper: practice ? (g.paper ?? []) : pushPaper(g.paper ?? [], clip),
         });
       },
 
@@ -752,6 +808,7 @@ export const useGame = create<Game>()(
         rivalRecords: s.rivalRecords,
         earnedBadges: s.earnedBadges,
         yardSeries: s.yardSeries,
+        paper: s.paper,
       }),
     },
   ),

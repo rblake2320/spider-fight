@@ -40,3 +40,11 @@ test("offspring carry both names and sit under a yard line", () => {
   assert.ok(baby.base.power < hen.base.power || baby.stage === "nymph");
   assert.ok(baby.traits.includes("Yard-bred"));
 });
+
+test("retired champions can still throw a clutch", () => {
+  const hen = grown(31, "female");
+  hen.retired = true;
+  hen.energy = 0;
+  const rooster = grown(32, "male");
+  assert.equal(canClutch(hen, rooster, 2, 6), null);
+});

@@ -57,7 +57,7 @@ export function FightSelect() {
   const [wager, setWager] = useState(10);
   const [err, setErr] = useState<string | null>(null);
   const [mind, setMind] = useState<"checking" | "live" | "dark">("checking");
-  const player = spiders.find((s) => s.id === selectedId) ?? spiders.find((s) => !canFight(s)) ?? spiders[0];
+  const player = spiders.find((s) => s.id === selectedId && !s.retired) ?? spiders.find((s) => !s.retired && !canFight(s)) ?? spiders.find((s) => !s.retired);
   const windowed = RIVALS.filter(
     (r) => isShipped(r) && !r.always && r.rank <= rank + 1 && r.rank >= Math.max(0, rank - 1),
   );

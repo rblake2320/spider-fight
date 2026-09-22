@@ -13,9 +13,12 @@ import {
   xpToNext,
 } from "./content";
 import { clamp, mulberry32, type Rng, uid } from "./rng";
+import { traitMoltShift, traitStats } from "./traits";
+import { rafterBonus } from "./rafters";
 import type {
   GearSlot,
   Habitat,
+  MoltQuality,
   MorphColors,
   Rarity,
   Sex,
@@ -59,6 +62,7 @@ export function luckOf(s: Spider): number {
 
 export function effective(s: Spider): Stats {
   let e = addStats(s.base, s.trained);
+  e = addStats(e, traitStats(s.traits));
   for (const id of Object.values(s.gear)) {
     if (!id) continue;
     const b = ITEMS[id]?.bonus;
@@ -76,7 +80,8 @@ export function trainingTotal(s: Spider): number {
 
 export function spiderScore(s: Spider): number {
   const gearScore = Object.values(s.gear).filter(Boolean).length * 8;
-  return Math.max(0, s.wins * 32 - s.losses * 6 + s.level * 12 + trainingTotal(s) * 5 + gearScore);
+  const rafterScore = s.retired ? 20 : 0;
+  return Math.max(0, s.wins * 32 - s.losses * 6 + s.level * 12 + trainingTotal(s) * 5 + gearScore + rafterScore);
 }
 
 export function filledHp(s: Spider): number {
@@ -85,7 +90,7 @@ export function filledHp(s: Spider): number {
 }
 
 export function canFight(s: Spider): string | null {
-  if (s.retired) return "Retired";
+  if (s.retired) return "Hung in the rafters";
   if (s.injury && s.injury.fightsLeft > 0) return s.injury.label;
   if (s.energy < 18) return "Too tired";
   if (s.morale < 20) return "Rattled";
@@ -161,10 +166,10 @@ export function rollSpider(
 
 /** Bench spiders add a modest, non-persistent web support bonus to their lead. */
 export function teamSupport(fighter: Spider, roster: Spider[], teamIds: string[]): Partial<Stats> {
-  if (!teamIds.includes(fighter.id)) return {};
-  const allies = roster.filter((spider) => spider.id !== fighter.id && teamIds.includes(spider.id));
+  if (!teamIds.includes(fighter.id)) return rafterBonus(roster, fighter);
+  const allies = roster.filter((spider) => spider.id !== fighter.id && teamIds.includes(spider.id) && !spider.retired);
   const webStyles = new Set(allies.map((spider) => SPECIES[spider.speciesId]?.web.style).filter(Boolean));
-  return { grit: allies.length, silk: webStyles.size };
+  return addStats(addStats({ ...ZERO_STATS }, { grit: allies.length, silk: webStyles.size }), rafterBonus(roster, fighter));
 }
 
 /** Applies a crew's authored toughness after the species and rank roll. */
@@ -219,30 +224,66 @@ export function applyXp(s: Spider, amount: number): Spider {
   return next;
 }
 
-export function molt(s: Spider): Spider | null {
+export function canMolt(s: Spider): string | null {
+  if (s.retired) return "Hung in the rafters";
   const idx = STAGE_ORDER.indexOf(s.stage);
-  if (idx < 0 || idx >= STAGE_ORDER.length - 1) return null;
-  if (s.moltReady < 70) return null;
+  if (idx < 0 || idx >= STAGE_ORDER.length - 1) return "Already at the top";
+  if (s.moltReady < 70) return "Not ready to molt";
+  return null;
+}
+
+export function rollMoltQuality(rng: Rng, traits: string[]): MoltQuality {
+  const shift = traitMoltShift(traits);
+  const perfect = clamp(0.12 + shift.perfect, 0.04, 0.42);
+  const rough = clamp(0.16 + shift.rough, 0.04, 0.42);
+  const n = rng.next();
+  if (n < perfect) return "perfect";
+  if (n > 1 - rough) return "rough";
+  return "clean";
+}
+
+export function molt(s: Spider, rng: Rng): { spider: Spider; quality: MoltQuality } | null {
+  if (canMolt(s)) return null;
+  const idx = STAGE_ORDER.indexOf(s.stage);
   const stage = STAGE_ORDER[idx + 1]!;
-  const grown = addStats(s.base, {
-    power: 2,
-    speed: 1,
-    grit: 2,
-    venom: 1,
-    silk: 1,
-    size: 3,
-  });
+  const quality = rollMoltQuality(rng, s.traits);
+  const growth =
+    quality === "perfect"
+      ? { power: 3, speed: 2, grit: 3, venom: 2, silk: 2, size: 4 }
+      : quality === "rough"
+        ? { power: 1, speed: 0, grit: 1, venom: 0, silk: 0, size: 2 }
+        : { power: 2, speed: 1, grit: 2, venom: 1, silk: 1, size: 3 };
+  const grown = addStats(s.base, growth);
+  const trained = { ...s.trained };
+  if (quality === "rough") {
+    const keys = (Object.keys(trained) as Array<keyof Stats>).filter((key) => trained[key] > 0);
+    if (keys.length) trained[rng.pick(keys)] -= 1;
+  }
+  const injury =
+    quality === "perfect"
+      ? null
+      : quality === "rough"
+        ? { label: "Split coming out", fightsLeft: 2 }
+        : { label: "Soft from molt", fightsLeft: 1 };
   const next: Spider = {
     ...s,
     stage,
     base: grown,
+    trained,
     moltReady: 0,
+    lastMolt: quality,
     energy: maxEnergy(grown.size),
     hp: maxHp(grown.size, grown.grit, stage),
-    morale: Math.min(100, s.morale + 12),
-    injury: { label: "Soft from molt", fightsLeft: 1 },
+    morale: clamp(s.morale + (quality === "perfect" ? 20 : quality === "rough" ? -8 : 12), 0, 100),
+    injury,
   };
-  return next;
+  return { spider: next, quality };
+}
+
+export function moltLine(name: string, quality: MoltQuality): string {
+  if (quality === "perfect") return `${name} came out glass-clean.`;
+  if (quality === "rough") return `${name} tore coming out. Soft and sore.`;
+  return `${name} molted. Soft for a night.`;
 }
 
 export function decayTrained(s: Spider, rng: Rng): { spider: Spider; decay: Partial<Stats> } {

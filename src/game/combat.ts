@@ -3,6 +3,7 @@ import { callKo, callRound } from "./caller";
 import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
 import { addStats, colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
+import { traitAi, traitHeat } from "./traits";
 import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile, WebStyle } from "./types";
 
 export type Fighter = {
@@ -160,6 +161,8 @@ function pickAi(f: StickFight): MoveId {
   ];
   const signature = weights.find((entry) => entry.item === f.rivalStyle);
   if (signature) signature.w += 3;
+  const bias = traitAi(f.enemy.spider.traits);
+  for (const entry of weights) entry.w += bias[entry.item] ?? 0;
   if (f.enemy.stam < 14) return "brace";
   return rng.weighted(weights);
 }
@@ -409,7 +412,8 @@ function attackPower(f: Fighter, move: MoveId): number {
   const core = s.power * 1.1 + s.size * 0.35 + s.venom * 0.45 + s.speed * 0.2;
   const stamPen = f.stam < 12 ? 0.7 : 1;
   const signature = f.web.move === move && move !== "brace" ? 1.16 : 1;
-  return (8 + core * 0.55) * m.power * stamPen * signature;
+  const heat = traitHeat(f.spider.traits, f.hp / Math.max(1, f.max));
+  return (8 + core * 0.55) * m.power * stamPen * signature * heat;
 }
 
 function applyWebSignature(fighter: Fighter, opponent: Fighter, move: MoveId): void {

@@ -53,7 +53,7 @@ test("migrate keeps unknown species from crashing", () => {
     },
     1,
   );
-  assert.equal(next.version, 6);
+  assert.equal(next.version, 7);
   assert.equal(next.spiders[0]?.speciesId, "hentz");
   assert.equal(next.spiders[0]?.gear.wraps, undefined);
   assert.equal(next.inventory.cricket, 2);
@@ -64,6 +64,7 @@ test("migrate keeps unknown species from crashing", () => {
   assert.deepEqual(next.rivalRecords.tom, { wins: 2, losses: 1, streak: 2 });
   assert.equal(next.rivalRecords.ghost, undefined);
   assert.deepEqual(next.earnedBadges, []);
+  assert.deepEqual(next.paper, []);
   speciesOf("nope");
 });
 

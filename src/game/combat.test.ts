@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { applyEnemyTell, countersFor, createFight, MAX_ROUNDS, queuePlayerMove, stepFight } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
-import { applyRivalGrit, rollSpider, teamSupport } from "./spiders";
+import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
 
 function makeFight() {
   const player = rollSpider(mulberry32(11), { speciesId: "hentz", stage: "adult" });
@@ -109,7 +109,7 @@ test("bench spiders add temporary team support without changing the spider save"
   const fight = createFight(lead, bench, 10, "tom", "Alley Tom", null, bonus);
   assert.equal(bonus.grit, 1);
   assert.equal(bonus.silk, 1);
-  assert.equal(fight.player.stats.grit, lead.base.grit + 1);
+  assert.equal(fight.player.stats.grit, effective(lead).grit + 1);
   assert.equal(lead.base.grit + (lead.trained.grit ?? 0), lead.base.grit);
 });
 

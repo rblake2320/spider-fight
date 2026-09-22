@@ -3,7 +3,7 @@ import type { Habitat, Item, Rival, Species } from "./types.ts";
 
 /** Shipped content year. Bump this when a pack goes live — old saves keep working. */
 export const SHIPPED_SEASON = 3;
-export const BUILD = "1.3.0";
+export const BUILD = "1.4.0";
 
 export type SeasonPack = {
   id: number;

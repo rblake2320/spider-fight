@@ -11,11 +11,11 @@ export function clutchCost(rank: number): number {
 export function canClutch(a: Spider, b: Spider, rosterLen: number, rosterCap: number): string | null {
   if (a.id === b.id) return "Need two spiders";
   if (rosterLen >= rosterCap) return "Stable is full";
-  if (a.retired || b.retired) return "Retired stock stays retired";
   if (a.injury || b.injury) return "Wait till the plates harden";
   if (!GROWN.includes(a.stage) || !GROWN.includes(b.stage)) return "Both need to be adult";
   if (a.sex !== "female" && b.sex !== "female") return "Need a hen on the line";
-  if (a.energy < 28 || b.energy < 28) return "Too tired to set a clutch";
+  if (!a.retired && a.energy < 28) return "Too tired to set a clutch";
+  if (!b.retired && b.energy < 28) return "Too tired to set a clutch";
   if (a.morale < 30 || b.morale < 30) return "Rattled stock won't pair";
   return null;
 }

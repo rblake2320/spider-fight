@@ -20,6 +20,7 @@ export type WebStyle = "orb" | "cross" | "tangle" | "spoked" | "golden";
 export type GearSlot = "wraps" | "fang" | "silk" | "stim" | "charm";
 export type ItemKind = GearSlot | "feed" | "bait" | "tonic" | "upgrade";
 export type ShopTab = "gear" | "feed" | "tonics" | "bait" | "stable";
+export type MoltQuality = "perfect" | "clean" | "rough";
 
 export type Stats = {
   power: number;
@@ -64,6 +65,7 @@ export type Spider = {
   retired: boolean;
   bredFrom?: string;
   line?: string;
+  lastMolt?: MoltQuality;
 };
 
 export type Species = {
@@ -193,6 +195,15 @@ export type CareerLog = {
   bouts: number;
   stripped: number;
   clutches: number;
+  perfectMolts: number;
+};
+
+export type PaperClip = {
+  date: string;
+  headline: string;
+  won: boolean;
+  fighter: string;
+  rival: string;
 };
 
 export type ContractKind = "hunt" | "train" | "win";
@@ -258,4 +269,5 @@ export type SaveState = {
   rivalRecords: Record<string, RivalRecord>;
   earnedBadges: string[];
   yardSeries: YardSeries | null;
+  paper: PaperClip[];
 };
