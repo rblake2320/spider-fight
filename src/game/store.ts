@@ -53,6 +53,7 @@ import { activeSpiders, canRelease, canRetire, releaseCash, retire } from "./raf
 import { pushPaper, writeClip } from "./paper";
 import { dailyStreakBonus, nextDailyStreak } from "./daily-streak";
 import { streakReward } from "./streak";
+import { archiveFight, pushFightArchive } from "./fight-archive";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -82,6 +83,7 @@ const emptySave = (): SaveState => ({
   earnedBadges: [],
   yardSeries: null,
   paper: [],
+  fightArchive: [],
 });
 
 type Session = {
@@ -708,6 +710,7 @@ export const useGame = create<Game>()(
           flags: seriesFinished ? { ...g.flags, yardSeries: g.dayStamp } : g.flags,
           tutorial: g.tutorial === 5 ? 6 : g.tutorial,
           paper: practice ? (g.paper ?? []) : pushPaper(g.paper ?? [], clip),
+          fightArchive: pushFightArchive(g.fightArchive ?? [], archiveFight(g.dayStamp, patched.name, out)),
         });
       },
 
@@ -825,6 +828,7 @@ export const useGame = create<Game>()(
         earnedBadges: s.earnedBadges,
         yardSeries: s.yardSeries,
         paper: s.paper,
+        fightArchive: s.fightArchive,
       }),
     },
   ),

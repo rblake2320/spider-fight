@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fightShareText } from "./share.ts";
+import { archiveShareText, fightShareText } from "./share.ts";
 
 test("fight share text includes result, reward, and the recent tape", () => {
   const text = fightShareText("Night Yard", {
@@ -48,4 +48,14 @@ test("practice share text never claims a purse or xp", () => {
   assert.match(text, /Practice tape saved · no stakes/);
   assert.ok(!text.includes("xp"));
   assert.ok(!text.includes("Purse"));
+});
+
+test("an archived tape can be shared without inventing current rewards", () => {
+  const text = archiveShareText("Porch Crew", {
+    date: "2026-9-21", fighter: "Cinder", enemyName: "Alley Tom", rivalId: "tom", won: true, practice: false,
+    wager: 10, purse: 36, points: 21, rounds: [{ round: 2, playerMove: "lunge", enemyMove: "feint", result: "edge", playerDamage: 0, enemyDamage: 12 }],
+  });
+  assert.match(text, /Purse \$36/);
+  assert.match(text, /Circuit \+21 pts/);
+  assert.match(text, /R2: Lunge\/Feint/);
 });

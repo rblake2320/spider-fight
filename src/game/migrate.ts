@@ -1,6 +1,6 @@
 import { ITEMS, RIVALS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
 import { isShipped } from "./catalog.ts";
-import type { CareerLog, MoltQuality, PaperClip, SaveState, Spider, Stats, YardSeries } from "./types.ts";
+import type { CareerLog, FightArchive, FightRound, MoltQuality, PaperClip, SaveState, Spider, Stats, YardSeries } from "./types.ts";
 import { makeDailyContract, makeDailyWebChallenge } from "./contracts.ts";
 import type { MoveId } from "./types.ts";
 
@@ -110,6 +110,41 @@ function sanitizePaper(raw: unknown): PaperClip[] {
     .slice(0, 8);
 }
 
+function sanitizeFightArchive(raw: unknown): FightArchive[] {
+  if (!Array.isArray(raw)) return [];
+  const moveIds = ["lunge", "grapple", "feint", "brace", "yank", "drop"] as const;
+  const validMove = (value: unknown): value is FightRound["playerMove"] => typeof value === "string" && moveIds.includes(value as FightRound["playerMove"]);
+  const archives: FightArchive[] = [];
+  for (const entry of raw) {
+    if (archives.length >= 12) break;
+    const tape = asRecord(entry);
+    const enemyName = str(tape.enemyName).slice(0, 32);
+    const rivalId = str(tape.rivalId).slice(0, 32);
+    if (!enemyName || !rivalId) continue;
+    const rounds: FightRound[] = [];
+    if (Array.isArray(tape.rounds)) {
+      for (const rawRound of tape.rounds.slice(-12)) {
+        const round = asRecord(rawRound);
+        if (!validMove(round.playerMove) || !validMove(round.enemyMove)) continue;
+        const result = round.result === "edge" || round.result === "hit" || round.result === "lock" ? round.result : "lock";
+        const playerSurge = str(round.playerSurge);
+        const enemySurge = str(round.enemySurge);
+        rounds.push({
+          round: Math.max(1, num(round.round, 1)), playerMove: round.playerMove, enemyMove: round.enemyMove, result,
+          playerDamage: Math.max(0, num(round.playerDamage)), enemyDamage: Math.max(0, num(round.enemyDamage)),
+          ...(playerSurge ? { playerSurge } : {}), ...(enemySurge ? { enemySurge } : {}),
+        });
+      }
+    }
+    archives.push({
+      date: str(tape.date), fighter: str(tape.fighter, "Unnamed").slice(0, 18), enemyName, rivalId,
+      won: tape.won === true, practice: tape.practice === true, wager: Math.max(0, num(tape.wager)),
+      purse: Math.max(0, num(tape.purse)), ...(typeof tape.points === "number" ? { points: num(tape.points) } : {}), rounds,
+    });
+  }
+  return archives;
+}
+
 export function migrateSave(persisted: unknown, fromVersion: number): SaveState {
   const p = asRecord(persisted);
   const spiders = (Array.isArray(p.spiders) ? p.spiders : []).map(sanitizeSpider).filter((s): s is Spider => !!s);
@@ -197,6 +232,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
     earnedBadges: Array.isArray(p.earnedBadges) ? p.earnedBadges.filter((id): id is string => typeof id === "string") : [],
     yardSeries,
     paper: sanitizePaper(p.paper),
+    fightArchive: sanitizeFightArchive(p.fightArchive),
   } satisfies SaveState;
   void fromVersion;
   return save;

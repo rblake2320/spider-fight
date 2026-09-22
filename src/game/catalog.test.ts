@@ -84,7 +84,24 @@ test("migrate keeps unknown species from crashing", () => {
   assert.equal(next.rivalRecords.ghost, undefined);
   assert.deepEqual(next.earnedBadges, []);
   assert.deepEqual(next.paper, []);
+  assert.deepEqual(next.fightArchive, []);
   speciesOf("nope");
+});
+
+test("migrate retains valid completed fight tape and removes invalid move data", () => {
+  const next = migrateSave({
+    fightArchive: [{
+      date: "2026-9-21", fighter: "Cinder", enemyName: "Alley Tom", rivalId: "tom", won: true, practice: false,
+      wager: 10, purse: 36, points: 21,
+      rounds: [
+        { round: 1, playerMove: "lunge", enemyMove: "feint", result: "edge", playerDamage: 0, enemyDamage: 12 },
+        { round: 2, playerMove: "bogus", enemyMove: "feint", result: "edge", playerDamage: 0, enemyDamage: 12 },
+      ],
+    }],
+  }, 10);
+  assert.equal(next.fightArchive.length, 1);
+  assert.equal(next.fightArchive[0]?.rounds.length, 1);
+  assert.equal(next.fightArchive[0]?.points, 21);
 });
 
 test("migrate retains a valid suspended yard series and rejects a foreign one", () => {

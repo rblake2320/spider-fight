@@ -16,6 +16,7 @@ import { jevStatus } from "@/lib/jev";
 import { cn } from "@/lib/utils";
 import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
 import { DAILY_STREAK_CAP, dailyStreakBonus } from "@/game/daily-streak";
+import { archiveShareText } from "@/game/share";
 
 export function Yard() {
   const name = useGame((s) => s.stableName);
@@ -692,11 +693,13 @@ export function CareerView() {
   const career = useGame((s) => s.career);
   const earnedBadges = useGame((s) => s.earnedBadges);
   const paper = useGame((s) => s.paper);
+  const fightArchive = useGame((s) => s.fightArchive);
   const rollYear = useGame((s) => s.rollYear);
   const [msg, setMsg] = useState<string | null>(null);
   const [circuitBoard, setCircuitBoard] = useState<CircuitEntry[]>([]);
   const [boardState, setBoardState] = useState<"loading" | "ready" | "error">("loading");
   const [boardError, setBoardError] = useState<string | null>(null);
+  const [archiveShared, setArchiveShared] = useState<string | null>(null);
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
   const current = SEASONS.find((s) => s.id === careerSeasonId(season)) ?? SEASONS[0]!;
@@ -828,6 +831,40 @@ export function CareerView() {
               </li>
             ))}
           </ul>
+        </section>
+      ) : null}
+
+      {fightArchive.length ? (
+        <section className="rounded-xl border border-line bg-raised p-3">
+          <p className="text-xs uppercase tracking-widest text-dust">Yard archive</p>
+          <p className="mt-1 text-xs text-mute">Your last {fightArchive.length} complete tapes. Read what worked, then share a finished card.</p>
+          <ol className="mt-2 space-y-3">
+            {fightArchive.slice(0, 6).map((tape, index) => (
+              <li key={`${tape.date}-${tape.fighter}-${tape.rivalId}-${index}`} className="border-t border-line pt-2 first:border-0 first:pt-0">
+                <p className={tape.won ? "text-sm text-paper" : "text-sm text-dust"}>
+                  {tape.fighter} {tape.won ? "held" : "dropped"} vs {tape.enemyName}
+                  {tape.practice ? " · practice" : tape.points === undefined ? "" : ` · ${tape.points > 0 ? "+" : ""}${tape.points} pts`}
+                </p>
+                <p className="mt-1 text-xs text-dust">
+                  {tape.rounds.map((round) => `R${round.round} ${MOVES[round.playerMove].name}/${MOVES[round.enemyMove].name} ${round.result}`).join(" · ") || "No exchanges recorded"}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(archiveShareText(stableName, tape)).then(
+                      () => setArchiveShared("Match card copied."),
+                      () => setArchiveShared("Could not copy match card."),
+                    );
+                  }}
+                >
+                  Copy match card
+                </Button>
+              </li>
+            ))}
+          </ol>
+          {archiveShared ? <p className="mt-2 text-xs text-dust">{archiveShared}</p> : null}
         </section>
       ) : null}
 

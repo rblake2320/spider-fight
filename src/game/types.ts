@@ -210,6 +210,20 @@ export type PaperClip = {
   rival: string;
 };
 
+/** A compact, persistent tape so a player can revisit and share old calls. */
+export type FightArchive = {
+  date: string;
+  fighter: string;
+  enemyName: string;
+  rivalId: string;
+  won: boolean;
+  practice: boolean;
+  wager: number;
+  purse: number;
+  points?: number;
+  rounds: FightRound[];
+};
+
 export type ContractKind = "hunt" | "train" | "win";
 
 export type DailyContract = {
@@ -275,4 +289,5 @@ export type SaveState = {
   earnedBadges: string[];
   yardSeries: YardSeries | null;
   paper: PaperClip[];
+  fightArchive: FightArchive[];
 };

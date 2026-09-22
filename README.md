@@ -41,6 +41,7 @@ More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt resu
 - **Stick fights** — readable, timed counter rounds on a bamboo line (lunge, grapple, feint, brace, yank, drop)
 - **Rival trophies** — first wins over key crews lift one-of-a-kind, equipable gear to collect and build around
 - **Practice Thread** — learn a real opponent's tells with no cash, gear, rank, record, or daily progress at risk
+- **Yard archive** — keep the last twelve complete tapes, revisit every exchange, and copy an older match card to share
 - **Daily loop** — a rotating contract, a species-web challenge, nightly headliner, and three-call Yard Series
 - **Circuit** — personal spider scores, web marks, a collection Almanac, and an authenticated shared score board
 - **Black Widow** — Shadow Spar her from the first night to learn her tells with no stakes; the ranked call opens at District. Stick mind (Jev) throws for her when `TYPESAFE_API_KEY` is set; local instinct covers if the line is dark
