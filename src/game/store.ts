@@ -673,6 +673,7 @@ export const useGame = create<Game>()(
           { ...g, rank, rankPoints },
           { spiders, career, wins, seen: g.seen },
         );
+        if (!practice) out.points = badges.rankPoints - g.rankPoints;
         const signatureMove = SPECIES[finalSpider.speciesId]?.web.move;
         const landedWebMove = signatureMove
           ? out.rounds.some((round) => round.playerMove === signatureMove && round.result === "edge")

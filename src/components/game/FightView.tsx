@@ -203,7 +203,7 @@ export function FightSelect() {
             <p className="mt-1 text-xs text-dust">{Math.round(r.grit * 100)}% grit</p>
             {rankedCall ? (
               <p className="mt-1 text-xs text-paper">
-                Win ${stakes.purse} · +{stakes.points} pts <span className="text-mute">· loss −{stakes.lossPoints} pts</span>
+                Win ${stakes.purse} · +{stakes.points} pts <span className="text-mute">· loss up to −{stakes.lossPoints} pts</span>
                 {stakes.headlineCash ? <span className="text-moss"> · headliner included</span> : null}
                 {stakes.skyCash ? <span className="text-moss"> · +${stakes.skyCash} {sky.name}</span> : null}
               </p>
@@ -534,6 +534,11 @@ function ResultCard() {
       <ul className="space-y-1 text-sm">
         {result.practice ? <li className="text-moss">No stakes. Your yard stays exactly as it was.</li> : <li>Wager {result.won ? "returned in purse" : "gone"} · ${result.wager}</li>}
         {result.won && !result.practice ? <li className="text-moss">Purse ${result.purse}</li> : null}
+        {!result.practice && result.points !== undefined ? (
+          <li className={result.points > 0 ? "text-moss" : result.points < 0 ? "text-rust" : "text-dust"}>
+            Circuit {result.points > 0 ? "+" : result.points < 0 ? "−" : ""}{Math.abs(result.points)} pts
+          </li>
+        ) : null}
         {result.headlineBonus ? <li className="text-moss">Headliner bonus +${result.headlineBonus} · +{NIGHTLY_BONUS_POINTS} circuit</li> : null}
         {result.seriesBonus ? <li className="text-moss">Yard series bonus +${result.seriesBonus}</li> : null}
         {result.streakBonus ? <li className="text-moss">{result.streakBonus.label} +${result.streakBonus.cash} · +{result.streakBonus.points} circuit</li> : null}

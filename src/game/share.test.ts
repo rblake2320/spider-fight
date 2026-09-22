@@ -7,6 +7,7 @@ test("fight share text includes result, reward, and the recent tape", () => {
     won: true,
     wager: 10,
     purse: 28,
+    points: 16,
     xp: 36,
     stripped: [],
     decay: {},
@@ -21,6 +22,7 @@ test("fight share text includes result, reward, and the recent tape", () => {
   });
   assert.match(text, /Night Yard held the stick vs Black Widow/);
   assert.match(text, /Purse \$28/);
+  assert.match(text, /Circuit \+16 pts/);
   assert.match(text, /R3: Grapple\/Lunge/);
 });
 

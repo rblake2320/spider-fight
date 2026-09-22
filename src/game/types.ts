@@ -160,6 +160,8 @@ export type FightOutcome = {
   practice?: boolean;
   wager: number;
   purse: number;
+  /** Actual circuit-score change, including bonuses unlocked by this bout. */
+  points?: number;
   xp: number;
   stripped: string[];
   decay: Partial<Stats>;
