@@ -1,7 +1,7 @@
 import { MOVES, RANKS, SPECIES, maxHp } from "./content";
 import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
-import { colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
+import { addStats, colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
 import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile } from "./types";
 
 export type Fighter = {
@@ -38,6 +38,7 @@ export type StickFight = {
   rivalId: string;
   rivalName: string;
   rivalStyle: MoveId | null;
+  teamBonus: Partial<Stats>;
   lastText: string;
   outcome: FightOutcome | null;
   timing: number;
@@ -58,8 +59,8 @@ const TELL = 1.18;
 const RESOLVE = 0.9;
 const TELL_LOCK = 0.42;
 
-function makeFighter(s: Spider, attach: number, facing: 1 | -1): Fighter {
-  const stats = effective(s);
+function makeFighter(s: Spider, attach: number, facing: 1 | -1, bonus: Partial<Stats> = {}): Fighter {
+  const stats = addStats(effective(s), bonus);
   const hp = maxHp(stats.size, stats.grit, s.stage);
   return {
     spider: s,
@@ -90,9 +91,10 @@ export function createFight(
   rivalId: string,
   rivalName: string,
   rivalStyle: MoveId | null = null,
+  teamBonus: Partial<Stats> = {},
 ): StickFight {
   return {
-    player: makeFighter(player, 0.36, 1),
+    player: makeFighter(player, 0.36, 1, teamBonus),
     enemy: makeFighter(enemy, 0.64, -1),
     phase: "intro",
     phaseT: 0,
@@ -104,6 +106,7 @@ export function createFight(
     rivalId,
     rivalName,
     rivalStyle,
+    teamBonus,
     lastText: "On the stick.",
     outcome: null,
     timing: 0,

@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { applyEnemyTell, createFight, queuePlayerMove, stepFight } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
-import { applyRivalGrit, rollSpider } from "./spiders";
+import { applyRivalGrit, rollSpider, teamSupport } from "./spiders";
 
 function makeFight() {
   const player = rollSpider(mulberry32(11), { speciesId: "hentz", stage: "adult" });
@@ -69,4 +69,15 @@ test("crew grit changes the rolled opponent strength", () => {
   assert.ok(tougher.base.power > spider.base.power);
   assert.ok(softer.base.power < spider.base.power);
   assert.ok(tougher.hp > softer.hp);
+});
+
+test("bench spiders add temporary team support without changing the spider save", () => {
+  const lead = rollSpider(mulberry32(88), { speciesId: "hentz", stage: "adult" });
+  const bench = rollSpider(mulberry32(89), { speciesId: "cross", stage: "adult" });
+  const bonus = teamSupport(lead, [lead, bench], [lead.id, bench.id]);
+  const fight = createFight(lead, bench, 10, "tom", "Alley Tom", null, bonus);
+  assert.equal(bonus.grit, 1);
+  assert.equal(bonus.silk, 1);
+  assert.equal(fight.player.stats.grit, lead.base.grit + 1);
+  assert.equal(lead.base.grit + (lead.trained.grit ?? 0), lead.base.grit);
 });

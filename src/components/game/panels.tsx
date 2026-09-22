@@ -401,7 +401,7 @@ export function TeamView() {
       <header>
         <p className="text-xs uppercase tracking-widest text-dust">Traveling team</p>
         <h2 className="font-display text-3xl font-semibold">Three on the stick</h2>
-        <p className="text-sm text-dust">Best of the crate. Tap a slot, then a spider.</p>
+        <p className="text-sm text-dust">Bench spiders lend the lead +1 grit each and +1 silk per web style. Tap a slot, then a spider.</p>
       </header>
       <div className="grid grid-cols-3 gap-2">
         {slots.map((i) => {

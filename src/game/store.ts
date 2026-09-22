@@ -24,6 +24,7 @@ import {
   molt,
   rollSpider,
   starterSpider,
+  teamSupport,
 } from "./spiders";
 import { unlockAudio, setMusicEnabled, setSfxEnabled } from "./audio";
 import { isShipped } from "./catalog";
@@ -69,6 +70,7 @@ type Session = {
     playerId: string;
     wager: number;
     enemy: Spider;
+    teamBonus: Partial<Stats>;
   } | null;
   result: FightOutcome | null;
 };
@@ -418,7 +420,7 @@ export const useGame = create<Game>()(
           enemy.traits = ["Hourglass", "Venom queen", "Doesn't blink"];
         }
         set({
-          fight: { rivalId, playerId, wager, enemy },
+          fight: { rivalId, playerId, wager, enemy, teamBonus: teamSupport(player, g.spiders, g.activeTeam) },
           result: null,
           screen: "fight",
           cash: g.cash - wager,

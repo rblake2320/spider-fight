@@ -177,6 +177,7 @@ export function FightArena() {
       fightMeta.rivalId,
       crew?.name ?? fightMeta.enemy.name,
       crew?.style ?? null,
+      fightMeta.teamBonus,
     );
     askedRound.current = 0;
     jevDead.current = false;
@@ -192,6 +193,7 @@ export function FightArena() {
         fightMeta.rivalId,
         RIVALS.find((r) => r.id === fightMeta.rivalId)?.name ?? fightMeta.enemy.name,
         RIVALS.find((r) => r.id === fightMeta.rivalId)?.style ?? null,
+        fightMeta.teamBonus,
       );
     }
     const pullJev = (f: StickFight) => {
@@ -263,6 +265,11 @@ export function FightArena() {
       <p className="px-3 pb-1 text-center text-[10px] text-dust">
         {f.player.web.name} · {f.player.web.ability}
       </p>
+      {(f.teamBonus.grit || f.teamBonus.silk) ? (
+        <p className="px-3 pb-1 text-center text-[10px] text-moss">
+          Crew web +{f.teamBonus.grit ?? 0} grit · +{f.teamBonus.silk ?? 0} silk
+        </p>
+      ) : null}
       <div className="relative min-h-[240px] flex-1">
         <FightCanvas fight={f} className="absolute inset-0 h-full w-full" />
         <p className="pointer-events-none absolute bottom-2 left-0 right-0 text-center font-display text-lg text-paper drop-shadow">

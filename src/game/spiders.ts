@@ -159,6 +159,14 @@ export function rollSpider(
   };
 }
 
+/** Bench spiders add a modest, non-persistent web support bonus to their lead. */
+export function teamSupport(fighter: Spider, roster: Spider[], teamIds: string[]): Partial<Stats> {
+  if (!teamIds.includes(fighter.id)) return {};
+  const allies = roster.filter((spider) => spider.id !== fighter.id && teamIds.includes(spider.id));
+  const webStyles = new Set(allies.map((spider) => SPECIES[spider.speciesId]?.web.style).filter(Boolean));
+  return { grit: allies.length, silk: webStyles.size };
+}
+
 /** Applies a crew's authored toughness after the species and rank roll. */
 export function applyRivalGrit(spider: Spider, grit: number): Spider {
   const scale = clamp(grit, 0.65, 1.7);
