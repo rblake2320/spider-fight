@@ -701,7 +701,7 @@ function ResultCard() {
         <p className="rounded-xl bg-raised p-3 text-sm text-paper">
           <span className="text-xs uppercase tracking-widest text-dust">Stick mind</span>
           <br />
-          {read.label}. Drill {read.lesson} before the next call.
+          {read.label}. {read.lesson}
         </p>
       ) : result.jevReads ? (
         <p className="text-xs text-dust">
