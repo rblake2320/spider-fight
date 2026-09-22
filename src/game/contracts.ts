@@ -1,5 +1,5 @@
 import { mulberry32, seedFrom } from "./rng";
-import type { ContractKind, DailyContract, DailyWebChallenge } from "./types";
+import type { ContractKind, DailyContract, DailyWebChallenge, FightRound } from "./types";
 
 type ContractTemplate = Pick<DailyContract, "kind" | "title" | "detail" | "target" | "reward">;
 
@@ -29,8 +29,8 @@ export function makeDailyWebChallenge(date: string, rank: number): DailyWebChall
   return { date, target: 1, progress: 0, reward: 14 + rank * 3, points: 6 + rank, claimed: false };
 }
 
-export function advanceWebChallenge(challenge: DailyWebChallenge, landedWebMove: boolean): DailyWebChallenge {
-  if (challenge.claimed || !landedWebMove) return challenge;
+export function advanceWebChallenge(challenge: DailyWebChallenge, rounds: Pick<FightRound, "playerSurge">[]): DailyWebChallenge {
+  if (challenge.claimed || !rounds.some((round) => Boolean(round.playerSurge))) return challenge;
   return { ...challenge, progress: Math.min(challenge.target, challenge.progress + 1) };
 }
 

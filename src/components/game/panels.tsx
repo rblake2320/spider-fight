@@ -140,12 +140,12 @@ export function Yard() {
             <p className="tabular text-xs text-moss">${webChallenge.reward} · +{webChallenge.points} pts</p>
           </div>
           <p className="mt-1 font-medium">
-            {lead ? `${SPECIES[lead.speciesId]?.web.name} signature` : "Land a web signature"}
+            {lead ? `${SPECIES[lead.speciesId]?.web.name} showcase` : "Land a web showcase"}
           </p>
           <p className="mt-1 text-xs text-dust">
             {lead
-              ? `Win an exchange with ${MOVES[SPECIES[lead.speciesId]?.web.move ?? "lunge"].name}. Different species solve the stick their own way.`
-              : "Keep a spider, then land its species web move in a winning exchange."}
+              ? `Read two tells, then win with ${MOVES[SPECIES[lead.speciesId]?.web.move ?? "lunge"].name} to spend its charged web. Different species pay off in different ways.`
+              : "Keep a spider, build two reads, then spend its charged species web."}
           </p>
           <div className="mt-3 flex items-center justify-between gap-3">
             <p className="tabular text-sm text-paper">

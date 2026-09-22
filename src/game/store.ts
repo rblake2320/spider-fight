@@ -676,10 +676,6 @@ export const useGame = create<Game>()(
           { spiders, career, wins, seen: g.seen },
         );
         if (!practice) out.points = badges.rankPoints - g.rankPoints;
-        const signatureMove = SPECIES[finalSpider.speciesId]?.web.move;
-        const landedWebMove = signatureMove
-          ? out.rounds.some((round) => round.playerMove === signatureMove && round.result === "edge")
-          : false;
         const nextSeries = isSeries && out.won && g.yardSeries
           ? { ...g.yardSeries, stage: g.yardSeries.stage + 1 }
           : null;
@@ -703,7 +699,7 @@ export const useGame = create<Game>()(
           result: out,
           career,
           dailyContract: !practice && out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
-          dailyWebChallenge: practice ? g.dailyWebChallenge : advanceWebChallenge(g.dailyWebChallenge ?? makeDailyWebChallenge(g.dayStamp, g.rank), landedWebMove),
+          dailyWebChallenge: practice ? g.dailyWebChallenge : advanceWebChallenge(g.dailyWebChallenge ?? makeDailyWebChallenge(g.dayStamp, g.rank), out.rounds),
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
           earnedBadges: badges.earnedBadges,
           yardSeries: seriesFinished ? null : nextSeries,

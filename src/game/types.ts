@@ -239,7 +239,7 @@ export type DailyContract = {
   claimed: boolean;
 };
 
-/** Daily tactical card that rewards using the active spider's own web move. */
+/** Daily tactical card that rewards completing a charged species-web showcase. */
 export type DailyWebChallenge = {
   date: string;
   target: number;

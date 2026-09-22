@@ -21,12 +21,12 @@ test("only the matching activity advances and the reward becomes claimable at ta
   assert.equal(canClaimContract(advanceContract(one, "train")), true);
 });
 
-test("daily web challenge only advances from a landed signature move", () => {
+test("daily web challenge only advances from a charged species-web surge", () => {
   const card = makeDailyWebChallenge("2026-9-21", 2);
-  assert.equal(advanceWebChallenge(card, false).progress, 0);
-  const landed = advanceWebChallenge(card, true);
-  assert.equal(landed.progress, 1);
-  assert.equal(canClaimWebChallenge(landed), true);
-  assert.equal(landed.reward, 20);
-  assert.equal(landed.points, 8);
+  assert.equal(advanceWebChallenge(card, [{ playerSurge: undefined }]).progress, 0);
+  const surged = advanceWebChallenge(card, [{ playerSurge: "orb web catches hard" }]);
+  assert.equal(surged.progress, 1);
+  assert.equal(canClaimWebChallenge(surged), true);
+  assert.equal(surged.reward, 20);
+  assert.equal(surged.points, 8);
 });
