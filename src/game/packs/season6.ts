@@ -35,8 +35,8 @@ export const SEASON6_SPECIES: Record<string, Species> = {
 };
 
 export const SEASON6_HABITATS: Habitat[] = [
-  { id: "underpass", name: "Signal Underpass", blurb: "Wet concrete, old utility boxes, and sheet webs tuned to every passing truck.", image: "/images/bg/woods.jpg", rank: 6, cost: 88, energy: 25, weights: { uncommon: 42, rare: 42, legendary: 16 }, species: ["labyrinth", "gianthouse", "trashline", "bowl"], night: true, season: 6 },
-  { id: "switchback", name: "Last-Light Switchback", blurb: "A road above the river, moths in the beam, and one final line between the guardrails.", image: "/images/bg/porch.jpg", rank: 7, cost: 112, energy: 28, weights: { uncommon: 20, rare: 40, legendary: 40 }, species: ["bolas", "gianthouse", "labyrinth", "starbellied", "barkcrab"], night: true, season: 6 },
+  { id: "underpass", name: "Signal Underpass", blurb: "Wet concrete, old utility boxes, and sheet webs tuned to every passing truck.", image: "/images/bg/underpass.webp", rank: 6, cost: 88, energy: 25, weights: { uncommon: 42, rare: 42, legendary: 16 }, species: ["labyrinth", "gianthouse", "trashline", "bowl"], night: true, season: 6 },
+  { id: "switchback", name: "Last-Light Switchback", blurb: "A road above the river, moths in the beam, and one final line between the guardrails.", image: "/images/bg/switchback.webp", rank: 7, cost: 112, energy: 28, weights: { uncommon: 20, rare: 40, legendary: 40 }, species: ["bolas", "gianthouse", "labyrinth", "starbellied", "barkcrab"], night: true, season: 6 },
 ];
 
 export const SEASON6_ITEMS: Record<string, Item> = {

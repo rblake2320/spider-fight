@@ -189,6 +189,24 @@ test("World Tour spiders add their own payoff after the base web surge", () => {
   assert.match(webSurgeHint(barkcrab.player.web), /pin the line/);
 });
 
+test("Threshold Circuit spiders carry their named charged web payoffs", () => {
+  const resolve = (speciesId: "gianthouse" | "labyrinth" | "bolas", playerMove: "brace" | "feint" | "lunge", enemyMove: "yank" | "grapple" | "brace") => {
+    const player = rollSpider(mulberry32(231), { speciesId, stage: "adult" });
+    const enemy = rollSpider(mulberry32(232), { speciesId: "hentz", stage: "adult", asRival: true });
+    const fight = createFight(player, enemy, 10, "lastlight", "Last Light Line");
+    fight.player.webCharge = 2;
+    for (let i = 0; i < 24; i += 1) stepFight(fight, 0.05);
+    assert.equal(applyEnemyTell(fight, enemyMove, false), true);
+    queuePlayerMove(fight, playerMove);
+    for (let i = 0; i < 40 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
+    return fight;
+  };
+
+  assert.match(resolve("gianthouse", "brace", "yank").roundLog[0]?.playerSurge ?? "", /shell hardens/);
+  assert.match(resolve("labyrinth", "feint", "grapple").roundLog[0]?.playerSurge ?? "", /steals tempo/);
+  assert.match(resolve("bolas", "lunge", "brace").roundLog[0]?.playerSurge ?? "", /pins the line/);
+});
+
 test("crew style is carried into the fallback stick AI", () => {
   const player = rollSpider(mulberry32(55), { speciesId: "hentz", stage: "adult" });
   const enemy = rollSpider(mulberry32(66), { speciesId: "cross", stage: "adult", asRival: true });

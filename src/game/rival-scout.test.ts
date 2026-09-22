@@ -16,3 +16,12 @@ test("rival scouting ignores duplicate or unknown lineup ids", () => {
   assert.equal(profiles.length, 1);
   assert.equal(profiles[0]?.speciesId, "hentz");
 });
+
+test("Threshold Circuit's final crew shows its actual web answers", () => {
+  const profiles = rivalWebProfiles(RIVALS.find((rival) => rival.id === "lastlight")!);
+  assert.deepEqual(profiles.map((profile) => [profile.species, profile.web, profile.move]), [
+    ["Bolas Spider", "Moth bolas", "Lunge"],
+    ["Giant House Spider", "Funnel sheet", "Brace"],
+    ["Starbellied Orbweaver", "Stadium spokes", "Lunge"],
+  ]);
+});

@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { HABITATS, ITEMS, RIVALS, SAVE_VERSION, SPECIES } from "./content.ts";
 import { careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonOf, speciesOf } from "./catalog.ts";
 import { migrateSave } from "./migrate.ts";
@@ -52,6 +54,12 @@ test("season 2 through 6 content is live and available to the circuit", () => {
   assert.equal(isShipped(SPECIES.gianthouse!), true);
   assert.ok(HABITATS.some((h) => h.id === "switchback" && isShipped(h)));
   assert.ok(RIVALS.some((r) => r.id === "lastlight" && isShipped(r)));
+});
+
+test("every hunt ground points at a shipped background asset", () => {
+  for (const habitat of HABITATS) {
+    assert.ok(existsSync(resolve(process.cwd(), "public", habitat.image.replace(/^\//, ""))), `${habitat.id} is missing ${habitat.image}`);
+  }
 });
 
 test("a career starts in Porch Year and holds at the newest released circuit", () => {
