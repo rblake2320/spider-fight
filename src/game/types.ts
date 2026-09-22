@@ -131,6 +131,8 @@ export type Rival = {
   bias: string[];
   teamSize: number;
   grit: number;
+  always?: boolean;
+  mind?: boolean;
 };
 
 export type FightOutcome = {

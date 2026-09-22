@@ -599,6 +599,17 @@ export const SLOT_LABEL: Record<GearSlot, string> = {
 };
 
 export const RIVALS: Rival[] = [
+  {
+    id: "jev",
+    name: "Jev",
+    rank: 1,
+    quote: "I read the stick. You throw.",
+    bias: ["hentz", "golden", "joro", "marbled"],
+    teamSize: 1,
+    grit: 1.35,
+    always: true,
+    mind: true,
+  },
   { id: "tom", name: "Alley Tom", rank: 0, quote: "Found mine in a trash can.", bias: ["hentz"], teamSize: 1, grit: 0.7 },
   { id: "june", name: "June on the Fence", rank: 0, quote: "Don't blink.", bias: ["hentz", "cross"], teamSize: 1, grit: 0.85 },
   { id: "kudzu", name: "The Kudzu Kids", rank: 1, quote: "We run the ditch.", bias: ["hentz", "catface"], teamSize: 2, grit: 0.9 },

@@ -371,10 +371,16 @@ export const useGame = create<Game>()(
         if (reason) return reason;
         if (g.cash < wager) return "Can't cover the wager";
         const rival = RIVALS.find((r) => r.id === rivalId) ?? RIVALS[0]!;
+        const fightRank = rival.always ? Math.max(g.rank, rival.rank) : rival.rank;
         const rng = mulberry32(seedFrom(rival.id + String(g.rank) + player.id.slice(0, 4)));
         const bias = rng.pick(rival.bias.filter((id) => SPECIES[id]) as string[]) || "hentz";
-        const stage = g.rank < 1 ? "juvenile" : g.rank < 3 ? "adult" : g.rank < 5 ? "veteran" : "champion";
-        const enemy = rollSpider(rng, { speciesId: bias, rank: rival.rank, stage, asRival: true });
+        const stage =
+          fightRank < 1 ? "juvenile" : fightRank < 3 ? "adult" : fightRank < 5 ? "veteran" : "champion";
+        const enemy = rollSpider(rng, { speciesId: bias, rank: fightRank, stage, asRival: true });
+        if (rival.mind) {
+          enemy.name = "Jev";
+          enemy.traits = ["Stick mind", "Counts the legs", "Doesn't blink"];
+        }
         set({
           fight: { rivalId, playerId, wager, enemy },
           result: null,

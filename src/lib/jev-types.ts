@@ -12,7 +12,7 @@ export type FighterSnap = {
 
 export type StickSnapshot = {
   round: number;
-  rival: { name: string; grit: number };
+  rival: { name: string; grit: number; mind?: boolean };
   player: FighterSnap;
   enemy: FighterSnap;
 };

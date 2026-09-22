@@ -8,7 +8,7 @@ import { useGame } from "@/game/store";
 import { canFight, portraitOf, STAGE_LABEL } from "@/game/spiders";
 import { SPECIES, RIVALS, RANKS, SLOT_LABEL, ITEMS } from "@/game/content";
 import type { MoveId } from "@/game/types";
-import { askRivalMove, judgeBout } from "@/lib/jev";
+import { askRivalMove, judgeBout, jevStatus } from "@/lib/jev";
 import type { StickSnapshot } from "@/lib/jev-types";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,7 @@ function packFight(f: StickFight): StickSnapshot {
   });
   return {
     round: f.round,
-    rival: { name: f.rivalName, grit: rival?.grit ?? 1 },
+    rival: { name: f.rivalName, grit: rival?.grit ?? 1, mind: !!rival?.mind },
     player: snap(f.player),
     enemy: snap(f.enemy),
   };
@@ -43,9 +43,19 @@ export function FightSelect() {
   const setScreen = useGame((s) => s.setScreen);
   const [wager, setWager] = useState(10);
   const [err, setErr] = useState<string | null>(null);
+  const [mind, setMind] = useState<"checking" | "live" | "dark">("checking");
   const player = spiders.find((s) => s.id === selectedId) ?? spiders.find((s) => !canFight(s)) ?? spiders[0];
-  const rivals = RIVALS.filter((r) => r.rank <= rank + 1 && r.rank >= Math.max(0, rank - 1));
+  const windowed = RIVALS.filter(
+    (r) => !r.always && r.rank <= rank + 1 && r.rank >= Math.max(0, rank - 1),
+  );
+  const rivals = [...RIVALS.filter((r) => r.always), ...windowed];
   const purse = RANKS[rank]?.purse ?? 18;
+
+  useEffect(() => {
+    void jevStatus()
+      .then((s) => setMind(s?.live ? "live" : "dark"))
+      .catch(() => setMind("dark"));
+  }, []);
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
@@ -94,7 +104,10 @@ export function FightSelect() {
           <button
             key={r.id}
             type="button"
-            className="rounded-xl border border-line bg-panel p-3 text-left"
+            className={cn(
+              "rounded-xl border bg-panel p-3 text-left",
+              r.mind ? "border-rust/70" : "border-line",
+            )}
             onClick={() => {
               if (!player) return;
               const msg = prepare(r.id, player.id, wager);
@@ -103,9 +116,22 @@ export function FightSelect() {
           >
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-medium">{r.name}</span>
-              <span className="text-xs text-dust">{RANKS[r.rank]?.name}</span>
+              <span className="text-xs text-dust">
+                {r.mind
+                  ? mind === "live"
+                    ? "Stick mind · live"
+                    : mind === "checking"
+                      ? "Stick mind"
+                      : "Stick mind · local"
+                  : RANKS[r.rank]?.name}
+              </span>
             </div>
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
+            {r.mind ? (
+              <p className="mt-1 text-xs text-dust">
+                Always on the line. Scales with your rank. Jev hangs on the far silk and throws for itself.
+              </p>
+            ) : null}
           </button>
         ))}
       </div>
@@ -128,7 +154,14 @@ export function FightArena() {
   const jevDead = useRef(false);
 
   if (fightMeta && player && !sim.current && !result) {
-    sim.current = createFight(player, fightMeta.enemy, fightMeta.wager, fightMeta.rivalId, fightMeta.enemy.name);
+    const crew = RIVALS.find((r) => r.id === fightMeta.rivalId);
+    sim.current = createFight(
+      player,
+      fightMeta.enemy,
+      fightMeta.wager,
+      fightMeta.rivalId,
+      crew?.name ?? fightMeta.enemy.name,
+    );
     askedRound.current = 0;
     jevDead.current = false;
   }
@@ -136,7 +169,13 @@ export function FightArena() {
   useEffect(() => {
     if (!fightMeta || !player) return;
     if (!sim.current) {
-      sim.current = createFight(player, fightMeta.enemy, fightMeta.wager, fightMeta.rivalId, fightMeta.enemy.name);
+      sim.current = createFight(
+        player,
+        fightMeta.enemy,
+        fightMeta.wager,
+        fightMeta.rivalId,
+        RIVALS.find((r) => r.id === fightMeta.rivalId)?.name ?? fightMeta.enemy.name,
+      );
     }
     const pullJev = (f: StickFight) => {
       if (jevDead.current || f.failedJev) return;
@@ -197,7 +236,11 @@ export function FightArena() {
         <p className="shrink-0 text-dust">Rd {f.round}</p>
         <Hp name={f.enemy.name} hp={f.enemy.hp} max={f.enemy.max} side="right" />
       </div>
-      {f.jevMinded ? (
+      {RIVALS.find((r) => r.id === f.rivalId)?.mind ? (
+        <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-rust">
+          {f.jevMinded ? "Jev on the far silk" : "Jev hanging — waiting on the line"}
+        </p>
+      ) : f.jevMinded ? (
         <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-dust">Reads the stick</p>
       ) : null}
       <div className="relative min-h-[240px] flex-1">
@@ -324,7 +367,11 @@ function ResultCard() {
           {read.label}. Drill {read.lesson} before the next call.
         </p>
       ) : result.jevReads ? (
-        <p className="text-xs text-dust">Rival read the stick {result.jevReads} times.</p>
+        <p className="text-xs text-dust">
+          {result.enemyName === "Jev" || result.rivalId === "jev"
+            ? `Jev read the stick ${result.jevReads} times.`
+            : `Rival read the stick ${result.jevReads} times.`}
+        </p>
       ) : null}
       <p className="text-sm text-mute">
         {result.won

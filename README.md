@@ -20,6 +20,10 @@ Playable on phone and desktop.
 
 ![Lunge](docs/screenshots/12-fight-round.png)
 
+![Call Jev](docs/screenshots/14-jev-select.png)
+
+![Jev on the far silk](docs/screenshots/15-jev-fight.png)
+
 ![Shop](docs/screenshots/07-shop.png)
 
 ![Stable](docs/screenshots/04-stable.png)
@@ -32,7 +36,7 @@ More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt resu
 - **Stable** of fighters that molt, take injury, and lose gear on a drop
 - **Train / shop / team** — cash buys wraps, fangs, silk, stims, bait
 - **Stick fights** — real-time hanging combat on a bamboo line (lunge, grapple, feint, brace, yank, drop)
-- **Stick mind (Jev)** — rivals pick moves with TypeSafe’s System One model when `TYPESAFE_API_KEY` is set; local instinct covers if the line is dark
+- **Stick mind (Jev)** — Jev is a named opponent on the fight card (always on the line, scales with you). Other crews also pick with TypeSafe’s System One when `TYPESAFE_API_KEY` is set; local instinct covers if the line is dark
 
 ## Run it
 
