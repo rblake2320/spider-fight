@@ -176,6 +176,9 @@ export type FightRound = {
   result: "edge" | "hit" | "lock";
   playerDamage: number;
   enemyDamage: number;
+  /** A charged species web fired this round. Kept on the tape so wins are explainable. */
+  playerSurge?: string;
+  enemySurge?: string;
 };
 
 export type CareerLog = {

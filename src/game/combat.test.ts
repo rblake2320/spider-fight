@@ -55,6 +55,22 @@ test("a species web changes its signature move outcome", () => {
   assert.equal(fight.player.stam, 59); // 50 - 8, regular brace +10, Cross brace +7
 });
 
+test("two correct reads prime a visible species-web surge", () => {
+  const cross = rollSpider(mulberry32(133), { speciesId: "cross", stage: "adult" });
+  const enemy = rollSpider(mulberry32(144), { speciesId: "hentz", stage: "adult", asRival: true });
+  const fight = createFight(cross, enemy, 10, "tom", "Alley Tom");
+  fight.player.webCharge = 2;
+  fight.player.hp = Math.round(fight.player.max * 0.55);
+  for (let i = 0; i < 24; i += 1) stepFight(fight, 0.05);
+  assert.equal(applyEnemyTell(fight, "brace", false), true);
+  queuePlayerMove(fight, "brace");
+  for (let i = 0; i < 30 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
+
+  assert.equal(fight.player.webCharge, 0);
+  assert.ok(fight.player.hp > Math.round(fight.player.max * 0.55));
+  assert.equal(fight.roundLog[0]?.playerSurge, "cross brace restores shell");
+});
+
 test("crew style is carried into the fallback stick AI", () => {
   const player = rollSpider(mulberry32(55), { speciesId: "hentz", stage: "adult" });
   const enemy = rollSpider(mulberry32(66), { speciesId: "cross", stage: "adult", asRival: true });

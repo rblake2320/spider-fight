@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, createFight, queuePlayerMove, type StickFight } from "@/game/combat";
+import { applyEnemyTell, createFight, queuePlayerMove, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -275,6 +275,9 @@ export function FightArena() {
       <p className="px-3 pb-1 text-center text-[10px] text-dust">
         {f.player.web.name} · {f.player.web.ability}
       </p>
+      <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-moss">
+        Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web.style)}
+      </p>
       {(f.teamBonus.grit || f.teamBonus.silk) ? (
         <p className="px-3 pb-1 text-center text-[10px] text-moss">
           Crew web +{f.teamBonus.grit ?? 0} grit · +{f.teamBonus.silk ?? 0} silk
@@ -412,6 +415,7 @@ function ResultCard() {
                   {round.result === "edge" ? `edge +${round.enemyDamage}` : round.result === "hit" ? `hit −${round.playerDamage}` : "lock"}
                 </span>
                 <span>{MOVES[round.enemyMove].name}</span>
+                {round.playerSurge ? <span className="text-moss">web surge</span> : null}
               </li>
             ))}
           </ol>

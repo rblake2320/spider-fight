@@ -2,7 +2,7 @@ import { MOVES, RANKS, SPECIES, maxHp } from "./content";
 import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
 import { addStats, colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
-import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile } from "./types";
+import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile, WebStyle } from "./types";
 
 export type Fighter = {
   spider: Spider;
@@ -12,6 +12,8 @@ export type Fighter = {
   stam: number;
   attachX: number;
   silk: number;
+  /** Earned by reading a rival correctly; spent by the species signature move. */
+  webCharge: number;
   angle: number;
   aVel: number;
   pose: MoveId | "idle" | "hurt" | "ko" | "intro";
@@ -61,6 +63,14 @@ const RESOLVE = 0.9;
 const TELL_LOCK = 0.42;
 export const MAX_ROUNDS = 12;
 
+export function webSurgeHint(style: WebStyle): string {
+  if (style === "cross") return "restore shell and stamina";
+  if (style === "tangle") return "drain rival stamina";
+  if (style === "spoked") return "snap for bonus damage";
+  if (style === "golden") return "bite back and recover";
+  return "catch hard for bonus damage";
+}
+
 function makeFighter(s: Spider, attach: number, facing: 1 | -1, bonus: Partial<Stats> = {}): Fighter {
   const stats = addStats(effective(s), bonus);
   const hp = maxHp(stats.size, stats.grit, s.stage);
@@ -72,6 +82,7 @@ function makeFighter(s: Spider, attach: number, facing: 1 | -1, bonus: Partial<S
     stam: 100,
     attachX: attach,
     silk: 0.22,
+    webCharge: 0,
     angle: facing * 0.18,
     aVel: 0,
     pose: "intro",
@@ -324,15 +335,19 @@ function resolveRound(f: StickFight): void {
 
   let pDmg = 0;
   let eDmg = 0;
+  let playerSurge: string | undefined;
+  let enemySurge: string | undefined;
   if (cmp > 0) {
     pDmg = pAtk * (0.85 + cmp * 0.25);
     if (eMove === "brace") pDmg *= 0.45;
     applyHit(f, f.enemy, pDmg, pMove);
+    f.player.webCharge = clamp(f.player.webCharge + 1, 0, 3);
     f.lastText = `${f.player.name} — ${MOVES[pMove].name}`;
   } else if (cmp < 0) {
     eDmg = eAtk * (0.85 - cmp * 0.25);
     if (pMove === "brace") eDmg *= 0.45;
     applyHit(f, f.player, eDmg, eMove);
+    f.enemy.webCharge = clamp(f.enemy.webCharge + 1, 0, 3);
     f.lastText = `${f.enemy.name} — ${MOVES[eMove].name}`;
   } else {
     pDmg = pAtk * 0.55;
@@ -346,6 +361,8 @@ function resolveRound(f: StickFight): void {
   if (eMove === "brace") f.enemy.stam = clamp(f.enemy.stam + 10, 0, 100);
   applyWebSignature(f.player, f.enemy, pMove);
   applyWebSignature(f.enemy, f.player, eMove);
+  if (cmp >= 0) playerSurge = applyWebSurge(f, f.player, f.enemy, pMove);
+  if (cmp <= 0) enemySurge = applyWebSurge(f, f.enemy, f.player, eMove);
   f.roundLog.push({
     round: f.round,
     playerMove: pMove,
@@ -353,6 +370,8 @@ function resolveRound(f: StickFight): void {
     result: cmp > 0 ? "edge" : cmp < 0 ? "hit" : "lock",
     playerDamage: Math.round(eDmg),
     enemyDamage: Math.round(pDmg),
+    playerSurge,
+    enemySurge,
   });
 }
 
@@ -463,6 +482,39 @@ function buildOutcome(f: StickFight): FightOutcome {
     jevReads: f.jevReads,
     rounds: f.roundLog,
   };
+}
+
+/**
+ * Two good reads prime a web. A player must then choose that spider's signature
+ * move while holding the exchange to cash it in. Styles intentionally reward
+ * different approaches, rather than being a hidden stat bonus.
+ */
+function applyWebSurge(f: StickFight, fighter: Fighter, opponent: Fighter, move: MoveId): string | undefined {
+  if (fighter.webCharge < 2 || fighter.web.move !== move) return undefined;
+  fighter.webCharge = 0;
+  let label = "";
+  if (fighter.web.style === "cross") {
+    fighter.hp = clamp(fighter.hp + 12 + fighter.stats.grit * 0.35, 0, fighter.max);
+    fighter.stam = clamp(fighter.stam + 10, 0, 100);
+    label = "cross brace restores shell";
+  } else if (fighter.web.style === "tangle") {
+    opponent.stam = clamp(opponent.stam - 18, 0, 100);
+    label = "tangle drains stamina";
+  } else if (fighter.web.style === "spoked") {
+    applyHit(f, opponent, 7 + fighter.stats.speed * 0.45, move);
+    fighter.silk = clamp(fighter.silk - 0.05, 0.14, 0.4);
+    label = "spoked web snaps tight";
+  } else if (fighter.web.style === "golden") {
+    applyHit(f, opponent, 6 + fighter.stats.silk * 0.5, move);
+    fighter.hp = clamp(fighter.hp + 7, 0, fighter.max);
+    label = "gold silk bites back";
+  } else {
+    applyHit(f, opponent, 6 + fighter.stats.silk * 0.4, move);
+    opponent.silk = clamp(opponent.silk + 0.035, 0.14, 0.4);
+    label = "orb web catches hard";
+  }
+  f.lastText = `${fighter.name}'s ${fighter.web.name} surges — ${label}.`;
+  return label;
 }
 
 export { bobPos as fighterBob };
