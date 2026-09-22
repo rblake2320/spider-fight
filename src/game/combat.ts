@@ -37,6 +37,7 @@ export type StickFight = {
   wager: number;
   rivalId: string;
   rivalName: string;
+  rivalStyle: MoveId | null;
   lastText: string;
   outcome: FightOutcome | null;
   timing: number;
@@ -82,7 +83,14 @@ function makeFighter(s: Spider, attach: number, facing: 1 | -1): Fighter {
   };
 }
 
-export function createFight(player: Spider, enemy: Spider, wager: number, rivalId: string, rivalName: string): StickFight {
+export function createFight(
+  player: Spider,
+  enemy: Spider,
+  wager: number,
+  rivalId: string,
+  rivalName: string,
+  rivalStyle: MoveId | null = null,
+): StickFight {
   return {
     player: makeFighter(player, 0.36, 1),
     enemy: makeFighter(enemy, 0.64, -1),
@@ -95,6 +103,7 @@ export function createFight(player: Spider, enemy: Spider, wager: number, rivalI
     wager,
     rivalId,
     rivalName,
+    rivalStyle,
     lastText: "On the stick.",
     outcome: null,
     timing: 0,
@@ -122,6 +131,8 @@ function pickAi(f: StickFight): MoveId {
     { item: "yank", w: 2 + s.silk * 0.16 },
     { item: "drop", w: f.player.pose === "lunge" ? 2.5 : 0.8 },
   ];
+  const signature = weights.find((entry) => entry.item === f.rivalStyle);
+  if (signature) signature.w += 3;
   if (f.enemy.stam < 14) return "brace";
   return rng.weighted(weights);
 }

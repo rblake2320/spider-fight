@@ -129,6 +129,7 @@ export function FightSelect() {
               </span>
             </div>
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
+            {r.style ? <p className="mt-1 text-xs text-dust">Tends toward {MOVES[r.style].name.toLowerCase()}.</p> : null}
             {(() => {
               const record = rivalRecords[r.id];
               return record ? (
@@ -173,6 +174,7 @@ export function FightArena() {
       fightMeta.wager,
       fightMeta.rivalId,
       crew?.name ?? fightMeta.enemy.name,
+      crew?.style ?? null,
     );
     askedRound.current = 0;
     jevDead.current = false;
@@ -187,6 +189,7 @@ export function FightArena() {
         fightMeta.wager,
         fightMeta.rivalId,
         RIVALS.find((r) => r.id === fightMeta.rivalId)?.name ?? fightMeta.enemy.name,
+        RIVALS.find((r) => r.id === fightMeta.rivalId)?.style ?? null,
       );
     }
     const pullJev = (f: StickFight) => {

@@ -144,6 +144,7 @@ export type Rival = {
   bias: string[];
   teamSize: number;
   grit: number;
+  style?: MoveId;
   always?: boolean;
   mind?: boolean;
   season?: number;

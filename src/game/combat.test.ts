@@ -54,3 +54,10 @@ test("a species web changes its signature move outcome", () => {
   assert.equal(fight.player.web.name, "Cross brace");
   assert.equal(fight.player.stam, 59); // 50 - 8, regular brace +10, Cross brace +7
 });
+
+test("crew style is carried into the fallback stick AI", () => {
+  const player = rollSpider(mulberry32(55), { speciesId: "hentz", stage: "adult" });
+  const enemy = rollSpider(mulberry32(66), { speciesId: "cross", stage: "adult", asRival: true });
+  const fight = createFight(player, enemy, 10, "tom", "Alley Tom", "brace");
+  assert.equal(fight.rivalStyle, "brace");
+});

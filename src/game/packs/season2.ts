@@ -150,6 +150,7 @@ export const SEASON2_RIVALS: Rival[] = [
     bias: ["brownwidow", "wolf"],
     teamSize: 2,
     grit: 1.15,
+    style: "grapple",
     season: 2,
   },
   {
@@ -160,6 +161,7 @@ export const SEASON2_RIVALS: Rival[] = [
     bias: ["wolf", "jumper"],
     teamSize: 2,
     grit: 1.22,
+    style: "lunge",
     season: 2,
   },
 ];
