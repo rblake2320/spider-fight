@@ -13,6 +13,7 @@ import { SEASON2_HABITATS, SEASON2_ITEMS, SEASON2_RIVALS, SEASON2_SPECIES } from
 import { SEASON3_HABITATS, SEASON3_ITEMS, SEASON3_RIVALS, SEASON3_SPECIES } from "./packs/season3.ts";
 import { SEASON4_HABITATS, SEASON4_ITEMS, SEASON4_RIVALS, SEASON4_SPECIES } from "./packs/season4.ts";
 import { SEASON5_HABITATS, SEASON5_ITEMS, SEASON5_RIVALS, SEASON5_SPECIES } from "./packs/season5.ts";
+import { SEASON6_HABITATS, SEASON6_ITEMS, SEASON6_RIVALS, SEASON6_SPECIES } from "./packs/season6.ts";
 
 export const SAVE_VERSION = 13;
 export const MAX_STAT = 42;
@@ -280,7 +281,7 @@ export const SPECIES: Record<string, Species> = {
   },
 };
 
-Object.assign(SPECIES, SEASON2_SPECIES, SEASON3_SPECIES, SEASON4_SPECIES, SEASON5_SPECIES);
+Object.assign(SPECIES, SEASON2_SPECIES, SEASON3_SPECIES, SEASON4_SPECIES, SEASON5_SPECIES, SEASON6_SPECIES);
 
 export const SPECIES_LIST = Object.values(SPECIES);
 
@@ -354,7 +355,7 @@ export const HABITATS: Habitat[] = [
   },
 ];
 
-HABITATS.push(...SEASON2_HABITATS, ...SEASON3_HABITATS, ...SEASON4_HABITATS, ...SEASON5_HABITATS);
+HABITATS.push(...SEASON2_HABITATS, ...SEASON3_HABITATS, ...SEASON4_HABITATS, ...SEASON5_HABITATS, ...SEASON6_HABITATS);
 
 export const ITEMS: Record<string, Item> = {
   "porch-twine": {
@@ -608,6 +609,18 @@ export const ITEMS: Record<string, Item> = {
     rewardOnly: true,
     rank: 0,
   },
+  "last-light-lens": {
+    id: "last-light-lens",
+    name: "Last-Light Lens",
+    kind: "charm",
+    slot: "charm",
+    price: 0,
+    blurb: "A road reflector cut from the final lamp. First Last Light Line win only.",
+    bonus: { speed: 3, luck: 5 },
+    rewardOnly: true,
+    rank: 0,
+    season: 6,
+  },
   cricket: {
     id: "cricket",
     name: "Field Cricket",
@@ -706,7 +719,7 @@ export const ITEMS: Record<string, Item> = {
   },
 };
 
-Object.assign(ITEMS, SEASON2_ITEMS, SEASON3_ITEMS, SEASON4_ITEMS, SEASON5_ITEMS);
+Object.assign(ITEMS, SEASON2_ITEMS, SEASON3_ITEMS, SEASON4_ITEMS, SEASON5_ITEMS, SEASON6_ITEMS);
 
 export const ITEM_LIST = Object.values(ITEMS);
 
@@ -746,7 +759,7 @@ export const RIVALS: Rival[] = [
   { id: "world", name: "Stick World", rank: 7, quote: "Hold it.", bias: ["joro", "golden", "marbled"], teamSize: 3, grit: 1.6, style: "grapple" },
 ];
 
-RIVALS.push(...SEASON2_RIVALS, ...SEASON3_RIVALS, ...SEASON4_RIVALS, ...SEASON5_RIVALS);
+RIVALS.push(...SEASON2_RIVALS, ...SEASON3_RIVALS, ...SEASON4_RIVALS, ...SEASON5_RIVALS, ...SEASON6_RIVALS);
 
 export const NAMES_F = [
   "Cinder", "Dixie", "Magnolia", "Junebug", "Clover", "Sable", "Moth", "Pecan",

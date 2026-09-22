@@ -26,8 +26,8 @@ test("item and species ids match their keys", () => {
   for (const [id, item] of Object.entries(ITEMS)) assert.equal(item.id, id);
 });
 
-test("season 2 through 5 content is live and available to the circuit", () => {
-  assert.equal(SHIPPED_SEASON, 5);
+test("season 2 through 6 content is live and available to the circuit", () => {
+  assert.equal(SHIPPED_SEASON, 6);
   assert.ok(SPECIES.brownwidow);
   assert.equal(seasonOf(SPECIES.brownwidow!), 2);
   assert.equal(isShipped(SPECIES.brownwidow!), true);
@@ -47,6 +47,11 @@ test("season 2 through 5 content is live and available to the circuit", () => {
   assert.equal(isShipped(SPECIES.barkcrab!), true);
   assert.ok(HABITATS.some((h) => h.id === "rooftop" && isShipped(h)));
   assert.ok(RIVALS.some((r) => r.id === "towerline" && isShipped(r)));
+  assert.ok(SPECIES.gianthouse);
+  assert.equal(seasonOf(SPECIES.gianthouse!), 6);
+  assert.equal(isShipped(SPECIES.gianthouse!), true);
+  assert.ok(HABITATS.some((h) => h.id === "switchback" && isShipped(h)));
+  assert.ok(RIVALS.some((r) => r.id === "lastlight" && isShipped(r)));
 });
 
 test("a career starts in Porch Year and holds at the newest released circuit", () => {
