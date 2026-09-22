@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { fightShareText } from "@/game/share";
 import { shareMatchCard } from "@/game/share-client";
 import { NIGHTLY_BONUS_CASH, NIGHTLY_BONUS_POINTS, nightlyRival } from "@/game/night-card";
-import { tonightSky } from "@/game/sky";
+import { skyFightEffects, tonightSky } from "@/game/sky";
 import { rivalIntel } from "@/game/rival-intel";
 import { WIDOW_UNLOCK_RANK, widowCallMode } from "@/game/boss";
 import { RIVAL_TROPHIES } from "@/game/rewards";
@@ -71,6 +71,7 @@ export function FightSelect() {
   const purse = RANKS[rank]?.purse ?? 18;
   const headline = nightlyRival(todayStamp(), rank);
   const sky = tonightSky();
+  const stickEffects = skyFightEffects(sky);
   const nextHeater = nextStreakReward(winStreak);
 
   useEffect(() => {
@@ -90,6 +91,13 @@ export function FightSelect() {
         <p className="text-xs uppercase tracking-widest text-moss">Tonight's headliner</p>
         <p className="mt-1 font-medium">{headline.name}</p>
         <p className="mt-1 text-xs text-dust">Win this call for +${NIGHTLY_BONUS_CASH} and +{NIGHTLY_BONUS_POINTS} circuit points.</p>
+      </section>
+      <section className="rounded-xl border border-line bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-dust">Tonight's stick</p>
+        <p className="mt-1 font-medium">{sky.name}</p>
+        <p className="mt-1 text-xs text-dust">
+          {stickEffects.length ? `${stickEffects.join(" · ")} to both spiders.` : "No stat shift. Read the stick clean."}
+        </p>
       </section>
       <section className="rounded-xl border border-line bg-raised p-3">
         <div className="flex items-center justify-between gap-2">
@@ -372,6 +380,7 @@ export function FightArena() {
   const readMoves = f.phase === "telegraph" && f.tellReady && f.enemy.tell ? countersFor(f.enemy.tell) : [];
   const readWindow = readWindowPercent(f);
   const readSeconds = Math.ceil(readWindowSeconds(f) * 10) / 10;
+  const stickEffects = skyFightEffects(tonightSky());
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-ink">
@@ -393,6 +402,7 @@ export function FightArena() {
       <p className="px-3 pb-1 text-center text-[10px] text-rust">
         Opponent · {SPECIES[f.enemy.spider.speciesId]?.common ?? f.enemy.spider.speciesId} · {f.enemy.web.name} · {f.enemy.web.ability}
       </p>
+      {stickEffects.length ? <p className="px-3 pb-1 text-center text-[10px] text-dust">{tonightSky().name} · {stickEffects.join(" · ")} to both</p> : null}
       <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-moss">
         Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web)}
       </p>

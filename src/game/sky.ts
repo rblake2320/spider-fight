@@ -98,6 +98,13 @@ export function tonightSky(day = todayStamp()): Sky {
   return rng.weighted(WEIGHTS);
 }
 
+/** Human-readable stick conditions, kept beside the mechanical stat modifiers. */
+export function skyFightEffects(sky: Pick<Sky, "fight">): string[] {
+  return (Object.entries(sky.fight) as [keyof Stats, number][])
+    .filter(([, value]) => value !== 0)
+    .map(([stat, value]) => `${value > 0 ? "+" : ""}${value} ${stat}`);
+}
+
 export function mixHunt(base: Partial<Record<Rarity, number>>, sky: Sky): Partial<Record<Rarity, number>> {
   const out: Partial<Record<Rarity, number>> = { ...base };
   for (const [key, value] of Object.entries(sky.hunt) as [Rarity, number][]) {
