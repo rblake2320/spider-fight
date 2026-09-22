@@ -272,6 +272,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 2, speed: 2, grit: 2, venom: 2, silk: 2, size: 1 },
     traits: ["Hourglass", "Venom queen", "Doesn't blink"],
     habitats: [],
+    web: { name: "Widow's thread", style: "tangle", move: "lunge", ability: "Lunge hits harder" },
   },
 };
 
