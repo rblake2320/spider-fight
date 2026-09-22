@@ -399,7 +399,8 @@ export function FightArena() {
   // A choice before the read is just a blind guess. Open the buttons when the
   // actual tell is visible, then keep the round genuinely timed from there.
   const locked = f.phase !== "telegraph" || !f.tellReady || f.playerLocked;
-  const readMoves = f.phase === "telegraph" && f.tellReady && f.enemy.tell ? countersFor(f.enemy.tell) : [];`n  const bestRead = f.enemy.tell ? bestCounterFor(f.enemy.tell) : null;
+  const readMoves = f.phase === "telegraph" && f.tellReady && f.enemy.tell ? countersFor(f.enemy.tell) : [];
+  const bestRead = f.enemy.tell ? bestCounterFor(f.enemy.tell) : null;
   const readWindow = readWindowPercent(f);
   const readSeconds = Math.ceil(readWindowSeconds(f) * 10) / 10;
   const stickEffects = skyFightEffects(tonightSky());
