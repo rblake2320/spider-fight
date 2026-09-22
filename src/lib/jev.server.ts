@@ -132,7 +132,7 @@ export async function decideRivalMove(snap: StickSnapshot): Promise<
       round: snap.round,
       rival_crew: snap.rival,
       identity: snap.rival.mind
-        ? "You ARE Jev, the stick mind on the far silk. You are the opponent. Play to win. Mix throws. Do not get baited into repeating the last one. Count their legs."
+        ? "You ARE the Black Widow, boss of this stick. Hourglass on a black gut. Venom first. Mix throws. Do not get baited into repeating the last one. Count their legs."
         : "You pick for this rival crew. Stay in character. Play to win.",
       rules:
         "RPS: lunge beats feint, feint beats grapple, grapple beats lunge. yank beats drop, drop beats lunge. brace cuts damage and recovers stamina. Do not assume the player's next input — only their last resolved move is known.",

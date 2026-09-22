@@ -119,17 +119,17 @@ export function FightSelect() {
               <span className="text-xs text-dust">
                 {r.mind
                   ? mind === "live"
-                    ? "Stick mind · live"
+                    ? "Boss · live"
                     : mind === "checking"
-                      ? "Stick mind"
-                      : "Stick mind · local"
+                      ? "Boss"
+                      : "Boss · local"
                   : RANKS[r.rank]?.name}
               </span>
             </div>
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
             {r.mind ? (
               <p className="mt-1 text-xs text-dust">
-                Always on the line. Scales with your rank. Jev hangs on the far silk and throws for itself.
+                Always on the line. Scales with your rank. The Widow hangs on the far silk. Stick mind throws for her.
               </p>
             ) : null}
           </button>
@@ -238,7 +238,7 @@ export function FightArena() {
       </div>
       {RIVALS.find((r) => r.id === f.rivalId)?.mind ? (
         <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-rust">
-          {f.jevMinded ? "Jev on the far silk" : "Jev hanging — waiting on the line"}
+          {f.jevMinded ? "The Widow on the far silk" : "The Widow hanging — waiting on the line"}
         </p>
       ) : f.jevMinded ? (
         <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-dust">Reads the stick</p>
@@ -368,8 +368,8 @@ function ResultCard() {
         </p>
       ) : result.jevReads ? (
         <p className="text-xs text-dust">
-          {result.enemyName === "Jev" || result.rivalId === "jev"
-            ? `Jev read the stick ${result.jevReads} times.`
+          {result.enemyName === "Black Widow" || result.rivalId === "widow"
+            ? `The Widow read the stick ${result.jevReads} times.`
             : `Rival read the stick ${result.jevReads} times.`}
         </p>
       ) : null}

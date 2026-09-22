@@ -13,6 +13,7 @@ export type SpiderDraw = {
   t: number;
   plump: number;
   hurtFlash: number;
+  mark?: "hourglass";
 };
 
 function lerp(a: number, b: number, t: number): number {
@@ -153,6 +154,7 @@ function drawBody(
   scale: number,
   facing: number,
   pose: DrawPose,
+  mark?: "hourglass",
 ): void {
   const abdW = 16 * scale * lerp(0.85, 1.25, plump);
   const abdH = 20 * scale * lerp(0.9, 1.2, plump);
@@ -176,25 +178,43 @@ function drawBody(
   ctx.stroke();
 
   // folium leaf
-  ctx.beginPath();
-  ctx.moveTo(0, -abdH * 0.72);
-  ctx.bezierCurveTo(abdW * 0.28, -abdH * 0.2, abdW * 0.22, abdH * 0.3, 0, abdH * 0.7);
-  ctx.bezierCurveTo(-abdW * 0.22, abdH * 0.3, -abdW * 0.28, -abdH * 0.2, 0, -abdH * 0.72);
-  ctx.fillStyle = `${colors.folium}cc`;
-  ctx.fill();
-
-  // speckles
-  ctx.fillStyle = colors.speckle;
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 2;
-    const rx = Math.cos(a) * abdW * 0.45;
-    const ry = Math.sin(a) * abdH * 0.4;
+  if (mark !== "hourglass") {
     ctx.beginPath();
-    ctx.ellipse(rx, ry, 1.1 * scale, 0.7 * scale, a, 0, Math.PI * 2);
-    ctx.globalAlpha = 0.55;
+    ctx.moveTo(0, -abdH * 0.72);
+    ctx.bezierCurveTo(abdW * 0.28, -abdH * 0.2, abdW * 0.22, abdH * 0.3, 0, abdH * 0.7);
+    ctx.bezierCurveTo(-abdW * 0.22, abdH * 0.3, -abdW * 0.28, -abdH * 0.2, 0, -abdH * 0.72);
+    ctx.fillStyle = `${colors.folium}cc`;
+    ctx.fill();
+  } else {
+    ctx.fillStyle = "#e02020";
+    ctx.beginPath();
+    ctx.moveTo(0, -abdH * 0.42);
+    ctx.lineTo(abdW * 0.34, -abdH * 0.04);
+    ctx.lineTo(-abdW * 0.34, -abdH * 0.04);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, abdH * 0.48);
+    ctx.lineTo(abdW * 0.34, abdH * 0.1);
+    ctx.lineTo(-abdW * 0.34, abdH * 0.1);
+    ctx.closePath();
     ctx.fill();
   }
-  ctx.globalAlpha = 1;
+
+  // speckles
+  if (mark !== "hourglass") {
+    ctx.fillStyle = colors.speckle;
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2;
+      const rx = Math.cos(a) * abdW * 0.45;
+      const ry = Math.sin(a) * abdH * 0.4;
+      ctx.beginPath();
+      ctx.ellipse(rx, ry, 1.1 * scale, 0.7 * scale, a, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.55;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
 
   // spinnerets
   ctx.beginPath();
@@ -320,7 +340,7 @@ export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
   const ox = 6 * d.scale;
   const oy = -2 * d.scale;
   back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1));
-  drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose);
+  drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark);
   front.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2.4 * d.scale, l, d.scale, 1));
 
   ctx.restore();

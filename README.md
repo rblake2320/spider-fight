@@ -20,9 +20,9 @@ Playable on phone and desktop.
 
 ![Lunge](docs/screenshots/12-fight-round.png)
 
-![Call Jev](docs/screenshots/14-jev-select.png)
+![Call the Widow](docs/screenshots/14-jev-select.png)
 
-![Jev on the far silk](docs/screenshots/15-jev-fight.png)
+![The Widow on the far silk](docs/screenshots/15-jev-fight.png)
 
 ![Shop](docs/screenshots/07-shop.png)
 
@@ -36,7 +36,7 @@ More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt resu
 - **Stable** of fighters that molt, take injury, and lose gear on a drop
 - **Train / shop / team** — cash buys wraps, fangs, silk, stims, bait
 - **Stick fights** — real-time hanging combat on a bamboo line (lunge, grapple, feint, brace, yank, drop)
-- **Stick mind (Jev)** — Jev is a named opponent on the fight card (always on the line, scales with you). Other crews also pick with TypeSafe’s System One when `TYPESAFE_API_KEY` is set; local instinct covers if the line is dark
+- **Black Widow** — always on the fight card, scales with you, hourglass on a black gut. Stick mind (Jev) throws for her when `TYPESAFE_API_KEY` is set; local instinct covers if the line is dark
 
 ## Run it
 

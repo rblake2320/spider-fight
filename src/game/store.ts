@@ -378,8 +378,10 @@ export const useGame = create<Game>()(
           fightRank < 1 ? "juvenile" : fightRank < 3 ? "adult" : fightRank < 5 ? "veteran" : "champion";
         const enemy = rollSpider(rng, { speciesId: bias, rank: fightRank, stage, asRival: true });
         if (rival.mind) {
-          enemy.name = "Jev";
-          enemy.traits = ["Stick mind", "Counts the legs", "Doesn't blink"];
+          enemy.name = "Black Widow";
+          enemy.sex = "female";
+          enemy.speciesId = "widow";
+          enemy.traits = ["Hourglass", "Venom queen", "Doesn't blink"];
         }
         set({
           fight: { rivalId, playerId, wager, enemy },

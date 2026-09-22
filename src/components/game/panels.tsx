@@ -472,8 +472,8 @@ export function SettingsView() {
           {mind === "checking"
             ? "Checking the line…"
             : mind === "live"
-              ? "Jev is live. Call Jev out on the fight card — Jev hangs on the far silk and throws for itself. Other crews also pick with it. Hunts get a keep/release read."
-              : "Stick mind is dark. You can still call Jev out; Jev falls back to yard instinct until the line comes up."}
+              ? "Jev is live. Call the Black Widow on the fight card — she hangs on the far silk and the stick mind throws for her. Other crews also pick with it. Hunts get a keep/release read."
+              : "Stick mind is dark. You can still call the Black Widow; she falls back to yard instinct until the line comes up."}
         </p>
       </div>
       <label className="text-sm text-dust">

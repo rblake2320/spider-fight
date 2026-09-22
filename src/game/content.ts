@@ -242,6 +242,28 @@ export const SPECIES: Record<string, Species> = {
     traits: ["Joro", "Invasive", "Showboat"],
     habitats: ["fair", "woods", "garden"],
   },
+  widow: {
+    id: "widow",
+    common: "Southern Black Widow",
+    latin: "Latrodectus mactans",
+    rarity: "legendary",
+    blurb: "Hourglass on a black gut. Venom first. Boss of the stick.",
+    portraits: { default: "/images/spiders/hentz-f.jpg" },
+    colors: {
+      abdomen: "#0c0c0c",
+      abdomenLight: "#1c1c1c",
+      folium: "#e02020",
+      speckle: "#e02020",
+      cephalothorax: "#0a0a0a",
+      legDark: "#050505",
+      legLight: "#2a2a2a",
+      fang: "#8a1010",
+    },
+    bases: { power: 9, speed: 8, grit: 10, venom: 14, silk: 8, size: 6 },
+    spread: { power: 2, speed: 2, grit: 2, venom: 2, silk: 2, size: 1 },
+    traits: ["Hourglass", "Venom queen", "Doesn't blink"],
+    habitats: [],
+  },
 };
 
 export const SPECIES_LIST = Object.values(SPECIES);
@@ -600,13 +622,13 @@ export const SLOT_LABEL: Record<GearSlot, string> = {
 
 export const RIVALS: Rival[] = [
   {
-    id: "jev",
-    name: "Jev",
+    id: "widow",
+    name: "Black Widow",
     rank: 1,
-    quote: "I read the stick. You throw.",
-    bias: ["hentz", "golden", "joro", "marbled"],
+    quote: "Hourglass. Full stop.",
+    bias: ["widow"],
     teamSize: 1,
-    grit: 1.35,
+    grit: 1.4,
     always: true,
     mind: true,
   },

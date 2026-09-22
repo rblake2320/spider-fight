@@ -95,6 +95,7 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
         t: now / 1000,
         plump: plumpP,
         hurtFlash: p.hurtFlash,
+        mark: p.spider.speciesId === "widow" ? "hourglass" : undefined,
       });
       drawSpider(ctx, {
         x: ex,
@@ -107,6 +108,7 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
         t: now / 1000 + 1.7,
         plump: plumpE,
         hurtFlash: e.hurtFlash,
+        mark: e.spider.speciesId === "widow" ? "hourglass" : undefined,
       });
 
       f.particles.forEach((pt) => {
