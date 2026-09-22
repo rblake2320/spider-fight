@@ -22,8 +22,10 @@ export function Yard() {
   const contract = useGame((s) => s.dailyContract);
   const claimContract = useGame((s) => s.claimDailyContract);
   const flags = useGame((s) => s.flags);
+  const tutorial = useGame((s) => s.tutorial);
   const lead = spiders[0];
   const next = RANKS[rank + 1];
+  const firstNight = FIRST_NIGHT[tutorial];
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-auto">
       <div className="relative h-52 shrink-0">
@@ -69,6 +71,18 @@ export function Yard() {
           <Action label="Team" onClick={() => setScreen("team")} />
           <Action label="Circuit" onClick={() => setScreen("career")} />
         </div>
+        {firstNight ? (
+          <section className="rounded-xl border border-moss/50 bg-raised p-3">
+            <p className="text-xs uppercase tracking-widest text-moss">First night · {firstNight.step}/4</p>
+            <p className="mt-1 font-medium">{firstNight.title}</p>
+            <p className="mt-1 text-xs text-dust">{firstNight.detail}</p>
+            {firstNight.screen ? (
+              <Button className="mt-3" size="sm" variant="outline" onClick={() => setScreen(firstNight.screen!)}>
+                {firstNight.action}
+              </Button>
+            ) : null}
+          </section>
+        ) : null}
         <section className="rounded-xl border border-rust/50 bg-raised p-3">
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-xs uppercase tracking-widest text-rust">Tonight's bounty</p>
@@ -95,6 +109,30 @@ export function Yard() {
     </div>
   );
 }
+
+const FIRST_NIGHT: Partial<Record<number, { step: number; title: string; detail: string; action: string; screen?: "hunt" | "train" | "fight" }>> = {
+  1: {
+    step: 1,
+    title: "Walk the Night Porch",
+    detail: "Take one free hunt. Every species carries its own web and signature move.",
+    action: "Go hunting",
+    screen: "hunt",
+  },
+  3: {
+    step: 2,
+    title: "Put in a drill",
+    detail: "Training changes your spider's body and lifts its yard score.",
+    action: "Open training",
+    screen: "train",
+  },
+  4: {
+    step: 3,
+    title: "Call the first fight",
+    detail: "Watch the rival's style, use your web move, and keep the rounds timed.",
+    action: "Find a rival",
+    screen: "fight",
+  },
+};
 
 function todayHint(): string {
   const d = new Date();

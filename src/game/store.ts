@@ -302,6 +302,7 @@ export const useGame = create<Game>()(
         set({
           cash: g.cash - cost,
           dailyContract: advanceContract(g.dailyContract, "train"),
+          tutorial: g.tutorial === 3 ? 4 : g.tutorial,
           spiders,
           ...badgeProgress(g, { spiders, career: g.career, wins: g.wins, seen: g.seen }),
         });
@@ -373,6 +374,7 @@ export const useGame = create<Game>()(
           pendingCatch: null,
           inventory,
           screen: "hunt",
+          tutorial: g.tutorial === 1 ? 2 : g.tutorial,
           career: { ...g.career, hunts: g.career.hunts + 1 },
           dailyContract: advanceContract(g.dailyContract, "hunt"),
           spiders: lead
@@ -391,7 +393,12 @@ export const useGame = create<Game>()(
         if (rng.next() > 0.28 + quality * 0.5 + bait.chanceBonus) return null;
         const caught = rollSpider(rng, { habitat: { ...hab, weights: bait.weights }, rank: g.rank });
         const seen = g.seen.includes(caught.speciesId) ? g.seen : [...g.seen, caught.speciesId];
-        set({ pendingCatch: caught, seen, ...badgeProgress(g, { spiders: g.spiders, career: g.career, wins: g.wins, seen }) });
+        set({
+          pendingCatch: caught,
+          seen,
+          tutorial: g.tutorial === 2 ? 3 : g.tutorial,
+          ...badgeProgress(g, { spiders: g.spiders, career: g.career, wins: g.wins, seen }),
+        });
         return caught;
       },
 
@@ -439,6 +446,7 @@ export const useGame = create<Game>()(
           result: null,
           screen: "fight",
           cash: g.cash - wager,
+          tutorial: g.tutorial === 4 ? 5 : g.tutorial,
         });
         return null;
       },
@@ -498,6 +506,7 @@ export const useGame = create<Game>()(
           dailyContract: out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
           earnedBadges: badges.earnedBadges,
+          tutorial: g.tutorial === 5 ? 6 : g.tutorial,
         });
       },
 
