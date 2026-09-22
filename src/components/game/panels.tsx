@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ITEMS, ITEM_LIST, MOVES, RANKS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
-import { BUILD, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
+import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
 import { listCircuitBoard, postCircuitScore, type CircuitEntry } from "@/lib/circuit-board";
@@ -690,7 +690,7 @@ export function CareerView() {
   const [boardError, setBoardError] = useState<string | null>(null);
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
-  const current = SEASONS.find((s) => s.id === SHIPPED_SEASON) ?? SEASONS[0]!;
+  const current = SEASONS.find((s) => s.id === careerSeasonId(season)) ?? SEASONS[0]!;
   const fieldGuide = SPECIES_LIST.filter(isShipped);
   const foundSpecies = fieldGuide.filter((species) => seen.includes(species.id)).length;
 

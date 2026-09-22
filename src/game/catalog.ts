@@ -51,6 +51,15 @@ export function seasonName(id: number): string {
   return SEASONS.find((s) => s.id === id)?.name ?? `Season ${id}`;
 }
 
+/**
+ * A player's career year is separate from the newest content pack. New yards
+ * begin in Porch Year even when later packs have shipped; after the last
+ * released pack, keep the latest available circuit name until a new one opens.
+ */
+export function careerSeasonId(year: number): number {
+  return Math.max(1, Math.min(Math.floor(year), SHIPPED_SEASON));
+}
+
 export function speciesOf(id: string): Species {
   return SPECIES[id] ?? SPECIES.hentz!;
 }

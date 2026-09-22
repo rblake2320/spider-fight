@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { HABITATS, ITEMS, RIVALS, SPECIES } from "./content.ts";
-import { SEASONS, SHIPPED_SEASON, isShipped, seasonOf, speciesOf } from "./catalog.ts";
+import { careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonOf, speciesOf } from "./catalog.ts";
 import { migrateSave } from "./migrate.ts";
 
 test("every habitat species exists", () => {
@@ -36,6 +36,12 @@ test("season 2 and 3 content are live and available to the circuit", () => {
   assert.equal(seasonOf(SPECIES.fishing!), 3);
   assert.equal(isShipped(SPECIES.fishing!), true);
   assert.ok(HABITATS.some((h) => h.id === "feedstore" && isShipped(h)));
+});
+
+test("a career starts in Porch Year and holds at the newest released circuit", () => {
+  assert.equal(careerSeasonId(1), 1);
+  assert.equal(careerSeasonId(2), 2);
+  assert.equal(careerSeasonId(99), SHIPPED_SEASON);
 });
 
 test("the Widow Knot is a boss-only reward", () => {
