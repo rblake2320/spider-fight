@@ -23,3 +23,27 @@ test("fight share text includes result, reward, and the recent tape", () => {
   assert.match(text, /Purse \$28/);
   assert.match(text, /R3: Grapple\/Lunge/);
 });
+
+test("practice share text never claims a purse or xp", () => {
+  const text = fightShareText("Porch Crew", {
+    won: false,
+    practice: true,
+    wager: 0,
+    purse: 0,
+    xp: 8,
+    stripped: [],
+    decay: {},
+    loot: null,
+    injury: null,
+    koMove: null,
+    playerHp: 0,
+    enemyHp: 12,
+    enemyName: "Alley Tom",
+    rivalId: "tom",
+    rounds: [],
+  });
+  assert.match(text, /no-stakes practice thread/);
+  assert.match(text, /Practice tape saved · no stakes/);
+  assert.ok(!text.includes("xp"));
+  assert.ok(!text.includes("Purse"));
+});
