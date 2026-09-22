@@ -43,7 +43,7 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
     let raf = 0;
     const tick = window.setInterval(() => {
       if (simulationOwners.get(fight) === owner) stepFight(fightRef.current, 0.05);
-    }, 150);
+    }, 75);
     const loop = (now: number) => {
       if (simulationOwners.get(fight) !== owner) return;
       const f = fightRef.current;

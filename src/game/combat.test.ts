@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, createFight, queuePlayerMove, stepFight } from "./combat";
+import { applyEnemyTell, createFight, MAX_ROUNDS, queuePlayerMove, stepFight } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, rollSpider, teamSupport } from "./spiders";
@@ -80,4 +80,18 @@ test("bench spiders add temporary team support without changing the spider save"
   assert.equal(bonus.silk, 1);
   assert.equal(fight.player.stats.grit, lead.base.grit + 1);
   assert.equal(lead.base.grit + (lead.trained.grit ?? 0), lead.base.grit);
+});
+
+test("a twelve-round fight ends on a visible judges decision", () => {
+  const fight = makeFight();
+  fight.phase = "resolve";
+  fight.phaseT = 1;
+  fight.round = MAX_ROUNDS;
+  fight.player.hp = Math.round(fight.player.max * 0.7);
+  fight.enemy.hp = Math.round(fight.enemy.max * 0.2);
+  stepFight(fight, 0.05);
+
+  assert.equal(fight.phase, "ko");
+  assert.equal(fight.decisionWinner, "player");
+  assert.match(fight.lastText, /judges' decision/);
 });

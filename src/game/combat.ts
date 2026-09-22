@@ -52,12 +52,14 @@ export type StickFight = {
   failedJev: boolean;
   pendingJev: MoveId | null;
   roundLog: FightRound[];
+  decisionWinner: "player" | "enemy" | null;
 };
 
 const INTRO = 1.15;
 const TELL = 1.18;
 const RESOLVE = 0.9;
 const TELL_LOCK = 0.42;
+export const MAX_ROUNDS = 12;
 
 function makeFighter(s: Spider, attach: number, facing: 1 | -1, bonus: Partial<Stats> = {}): Fighter {
   const stats = addStats(effective(s), bonus);
@@ -120,6 +122,7 @@ export function createFight(
     failedJev: false,
     pendingJev: null,
     roundLog: [],
+    decisionWinner: null,
   };
 }
 
@@ -228,10 +231,12 @@ export function stepFight(f: StickFight, dt: number): void {
       if (f.player.hp <= 0 || f.enemy.hp <= 0) {
         f.phase = "ko";
         f.phaseT = 0;
-        const won = f.player.hp > 0;
+        const won = f.decisionWinner ? f.decisionWinner === "player" : f.player.hp > 0;
         f.player.pose = won ? "idle" : "ko";
         f.enemy.pose = won ? "ko" : "idle";
         f.lastText = won ? `${f.player.name} holds the stick.` : `${f.enemy.name} takes it.`;
+      } else if (f.round >= MAX_ROUNDS) {
+        finishOnPoints(f);
       } else {
         beginTell(f);
       }
@@ -242,6 +247,19 @@ export function stepFight(f: StickFight, dt: number): void {
     f.outcome = buildOutcome(f);
     f.phase = "done";
   }
+}
+
+export function finishOnPoints(f: StickFight): void {
+  const playerPct = f.player.hp / Math.max(1, f.player.max);
+  const enemyPct = f.enemy.hp / Math.max(1, f.enemy.max);
+  const lead = playerPct - enemyPct;
+  const won = Math.abs(lead) > 0.025 ? lead > 0 : f.player.stam >= f.enemy.stam;
+  f.decisionWinner = won ? "player" : "enemy";
+  f.phase = "ko";
+  f.phaseT = 0;
+  f.player.pose = won ? "idle" : "hurt";
+  f.enemy.pose = won ? "hurt" : "idle";
+  f.lastText = won ? `${f.player.name} takes the judges' decision.` : `${f.enemy.name} takes the judges' decision.`;
 }
 
 function beginTell(f: StickFight): void {
@@ -388,7 +406,7 @@ export function bobPos(fi: Fighter): { x: number; y: number } {
 }
 
 function buildOutcome(f: StickFight): FightOutcome {
-  const won = f.player.hp > 0;
+  const won = f.decisionWinner ? f.decisionWinner === "player" : f.player.hp > 0;
   const rng = mulberry32(seedFrom(f.player.spider.id + f.round + String(f.wager)));
   const rank = RANKS[clamp(Math.floor(f.wager / 20), 0, RANKS.length - 1)] ?? RANKS[0]!;
   const purse = won ? Math.round(rank.purse * (0.8 + luckOf(f.player.spider) * 0.03) + f.wager) : 0;
