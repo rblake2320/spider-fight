@@ -82,6 +82,9 @@ export function HuntSelect() {
                         : "Free walk"}{" "}
                   · {h.blurb}
                 </p>
+                <p className="mt-1 line-clamp-1 text-[11px] text-moss">
+                  On this line: {h.species.map((id) => SPECIES[id]?.common ?? id).join(" · ")}
+                </p>
               </div>
             </div>
           </button>
