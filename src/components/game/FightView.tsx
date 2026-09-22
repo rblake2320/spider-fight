@@ -27,6 +27,8 @@ import { rivalWebProfiles } from "@/game/rival-scout";
 import { practiceSummary } from "@/game/practice-summary";
 import { strongestTapePlay } from "@/game/fight-playbook";
 import { CLASS_BLURB, CLASS_LABEL, meetingLine, sizeClassOfSpider } from "@/game/weight";
+import { postCircuitScore, type CircuitPlacement } from "@/lib/circuit-board";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -523,21 +525,44 @@ function Hp({ name, hp, max, side }: { name: string; hp: number; max: number; si
 }
 
 function ResultCard() {
+  const { user, isPending: isSessionPending } = useCurrentUserState();
   const result = useGame((s) => s.result)!;
   const stableName = useGame((s) => s.stableName);
+  const rank = useGame((s) => s.rank);
+  const points = useGame((s) => s.rankPoints);
+  const wins = useGame((s) => s.wins);
+  const season = useGame((s) => s.season);
   const spiders = useGame((s) => s.spiders);
   const selectedId = useGame((s) => s.selectedId);
   const clear = useGame((s) => s.clearResult);
   const prepareFight = useGame((s) => s.prepareFight);
   const startPractice = useGame((s) => s.startPractice);
   const continueYardSeries = useGame((s) => s.continueYardSeries);
+  const setScreen = useGame((s) => s.setScreen);
   const yardSeries = useGame((s) => s.yardSeries);
   const [read, setRead] = useState<{ label: string; lesson: string } | null>(null);
   const [shared, setShared] = useState<string | null>(null);
   const [rematchError, setRematchError] = useState<string | null>(null);
+  const [circuitPost, setCircuitPost] = useState<"idle" | "posting" | "posted" | "error">("idle");
+  const [circuitPlacement, setCircuitPlacement] = useState<CircuitPlacement | null>(null);
   const fighter = spiders.find((spider) => spider.id === selectedId && !spider.retired) ?? spiders.find((spider) => !spider.retired);
   const practice = result.practice ? practiceSummary(result) : null;
   const tapePlay = strongestTapePlay(result.rounds);
+
+  const postWinToCircuit = () => {
+    if (!user) {
+      clear();
+      setScreen("career");
+      return;
+    }
+    setCircuitPost("posting");
+    void postCircuitScore({ data: { stableName, score: points, wins, rank, season } })
+      .then((placement) => {
+        setCircuitPlacement(placement);
+        setCircuitPost("posted");
+      })
+      .catch(() => setCircuitPost("error"));
+  };
 
   useEffect(() => {
     let alive = true;
@@ -673,6 +698,17 @@ function ResultCard() {
         Share match card
       </Button>
       {shared ? <p className="text-center text-xs text-dust">{shared}</p> : null}
+      {result.won && !result.practice ? (
+        <section className="rounded-xl border border-moss/50 bg-moss/10 p-3">
+          <p className="text-xs uppercase tracking-widest text-moss">Circuit call</p>
+          <p className="mt-1 text-xs text-dust">Put this yard’s latest score where other crews can chase it.</p>
+          <Button className="mt-3 w-full" variant="primary" disabled={circuitPost === "posting" || isSessionPending} onClick={postWinToCircuit}>
+            {isSessionPending ? "Checking Circuit…" : !user ? "Open Circuit board" : circuitPost === "posting" ? "Posting score…" : circuitPost === "posted" ? "Score posted" : "Post this win to Circuit"}
+          </Button>
+          {circuitPost === "posted" && circuitPlacement ? <p className="mt-2 text-center text-xs text-moss">Posted · #{circuitPlacement.position} of {circuitPlacement.total} active yards.</p> : null}
+          {circuitPost === "error" ? <p className="mt-2 text-center text-xs text-rust">Could not post this score. Try again from the Circuit board.</p> : null}
+        </section>
+      ) : null}
       {!result.practice && !result.won && !yardSeries ? (
         <Button
           variant="primary"
