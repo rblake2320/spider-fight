@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { shareMatchCard } from "./share-client.ts";
 import { archiveShareText, fightShareText } from "./share.ts";
 
 test("fight share text includes result, reward, and the recent tape", () => {
@@ -58,4 +59,16 @@ test("an archived tape can be shared without inventing current rewards", () => {
   assert.match(text, /Purse \$36/);
   assert.match(text, /Circuit \+21 pts/);
   assert.match(text, /R2: Lunge\/Feint/);
+});
+
+test("match cards use the native share sheet and fall back to copying", async () => {
+  let shared = "";
+  const native = { share: async ({ text }: ShareData) => { shared = text ?? ""; }, clipboard: { writeText: async () => assert.fail("clipboard should not run") } } as unknown as Navigator;
+  assert.equal(await shareMatchCard("held the stick", native), "shared");
+  assert.equal(shared, "held the stick");
+
+  let copied = "";
+  const fallback = { clipboard: { writeText: async (text: string) => { copied = text; } } } as unknown as Navigator;
+  assert.equal(await shareMatchCard("tape", fallback), "copied");
+  assert.equal(copied, "tape");
 });

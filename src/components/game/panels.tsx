@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
 import { DAILY_STREAK_CAP, dailyStreakBonus } from "@/game/daily-streak";
 import { archiveShareText } from "@/game/share";
+import { shareMatchCard } from "@/game/share-client";
 
 export function Yard() {
   const name = useGame((s) => s.stableName);
@@ -925,13 +926,12 @@ export function CareerView() {
                   variant="outline"
                   className="mt-2"
                   onClick={() => {
-                    void navigator.clipboard.writeText(archiveShareText(stableName, tape)).then(
-                      () => setArchiveShared("Match card copied."),
-                      () => setArchiveShared("Could not copy match card."),
-                    );
+                    void shareMatchCard(archiveShareText(stableName, tape)).then((status) => {
+                      setArchiveShared(status === "shared" ? "Match card shared." : status === "copied" ? "Match card copied." : status === "cancelled" ? "Share cancelled." : "Could not share match card.");
+                    });
                   }}
                 >
-                  Copy match card
+                  Share match card
                 </Button>
               </li>
             ))}

@@ -13,6 +13,7 @@ import { askRivalMove, judgeBout, jevStatus } from "@/lib/jev";
 import type { StickSnapshot } from "@/lib/jev-types";
 import { cn } from "@/lib/utils";
 import { fightShareText } from "@/game/share";
+import { shareMatchCard } from "@/game/share-client";
 import { NIGHTLY_BONUS_CASH, NIGHTLY_BONUS_POINTS, nightlyRival } from "@/game/night-card";
 import { tonightSky } from "@/game/sky";
 import { rivalIntel } from "@/game/rival-intel";
@@ -604,19 +605,9 @@ function ResultCard() {
         variant="outline"
         onClick={() => {
           const text = fightShareText(stableName, result);
-          void (async () => {
-            try {
-              if (navigator.share) {
-                await navigator.share({ title: "Spider Fight", text });
-                setShared("Match card shared.");
-                return;
-              }
-              await navigator.clipboard.writeText(text);
-              setShared("Match card copied.");
-            } catch {
-              setShared("Share cancelled.");
-            }
-          })();
+          void shareMatchCard(text).then((status) => {
+            setShared(status === "shared" ? "Match card shared." : status === "copied" ? "Match card copied." : status === "cancelled" ? "Share cancelled." : "Could not share match card.");
+          });
         }}
       >
         Share match card
