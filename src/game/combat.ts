@@ -4,7 +4,7 @@ import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
 import { addStats, colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
 import { traitAi, traitHeat } from "./traits";
-import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile, WebStyle } from "./types";
+import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile } from "./types";
 
 export type Fighter = {
   spider: Spider;
@@ -80,13 +80,18 @@ export function readWindowSeconds(fight: Pick<StickFight, "phase" | "phaseT" | "
   return (readWindowPercent(fight) / 100) * READ_WINDOW_SECONDS;
 }
 
-export function webSurgeHint(style: WebStyle): string {
-  if (style === "cross") return "restore shell and stamina";
-  if (style === "tangle") return "drain rival stamina";
-  if (style === "spoked") return "snap for bonus damage";
-  if (style === "golden") return "bite back and recover";
-  if (style === "sheet") return "tighten the sheet and recover stamina";
-  return "catch hard for bonus damage";
+export function webSurgeHint(web: Pick<WebProfile, "style" | "surge">): string {
+  const base =
+    web.style === "cross" ? "restore shell and stamina"
+      : web.style === "tangle" ? "drain rival stamina"
+        : web.style === "spoked" ? "snap for bonus damage"
+          : web.style === "golden" ? "bite back and recover"
+            : web.style === "sheet" ? "tighten the sheet and recover stamina"
+              : "catch hard for bonus damage";
+  if (web.surge === "harden") return `${base}, then harden shell`;
+  if (web.surge === "reel") return `${base}, then steal tempo`;
+  if (web.surge === "ambush") return `${base}, then pin the line`;
+  return base;
 }
 
 function makeFighter(s: Spider, attach: number, facing: 1 | -1, bonus: Partial<Stats> = {}): Fighter {
@@ -582,6 +587,17 @@ function applyWebSurge(f: StickFight, fighter: Fighter, opponent: Fighter, move:
     applyHit(f, opponent, 6 + fighter.stats.silk * 0.4, move);
     opponent.silk = clamp(opponent.silk + 0.035, 0.14, 0.4);
     label = "orb web catches hard";
+  }
+  if (fighter.web.surge === "harden") {
+    fighter.hp = clamp(fighter.hp + 7 + fighter.stats.grit * 0.2, 0, fighter.max);
+    label += "; shell hardens";
+  } else if (fighter.web.surge === "reel") {
+    opponent.stam = clamp(opponent.stam - 9, 0, 100);
+    label += "; steals tempo";
+  } else if (fighter.web.surge === "ambush") {
+    applyHit(f, opponent, 8 + fighter.stats.speed * 0.35, move);
+    opponent.stam = clamp(opponent.stam - 6, 0, 100);
+    label += "; pins the line";
   }
   f.lastText = `${fighter.name}'s ${fighter.web.name} surges — ${label}.`;
   return label;

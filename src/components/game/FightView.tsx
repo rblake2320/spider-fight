@@ -393,7 +393,7 @@ export function FightArena() {
         Opponent · {SPECIES[f.enemy.spider.speciesId]?.common ?? f.enemy.spider.speciesId} · {f.enemy.web.name} · {f.enemy.web.ability}
       </p>
       <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-moss">
-        Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web.style)}
+        Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web)}
       </p>
       {f.enemy.tell && readMoves.length ? (
         <p className="mx-3 rounded-md border border-moss/40 bg-moss/10 px-2 py-1 text-center text-[11px] text-paper">

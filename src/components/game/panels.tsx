@@ -323,7 +323,7 @@ export function SpiderDetail() {
             <p className="text-xs uppercase tracking-widest text-moss">Web kit</p>
             <p className="mt-1 font-medium">{spec.web.name} · {spec.web.style} web</p>
             <p className="mt-1 text-xs text-dust">Signature: {MOVES[spec.web.move].name} · {spec.web.ability}</p>
-            <p className="mt-1 text-xs text-paper">At two web charge: {webSurgeHint(spec.web.style)}.</p>
+            <p className="mt-1 text-xs text-paper">At two web charge: {webSurgeHint(spec.web)}.</p>
           </section>
         ) : null}
         <XpBar level={spider.level} xp={spider.xp} />

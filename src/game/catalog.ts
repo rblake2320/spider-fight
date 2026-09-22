@@ -41,7 +41,7 @@ export const SEASONS: SeasonPack[] = [
     id: 5,
     name: "World Tour",
     blurb: "Freight yards, rooftop beacons, and the crews who travel farther than the stick.",
-    adds: ["Freight Depot", "Rooftop Water Tower", "Banded Garden Spider", "Trashline Orbweaver", "Tower Line"],
+    adds: ["Freight Depot", "Rooftop Water Tower", "Banded Garden Spider", "Trashline Orbweaver", "Bark Crab Spider", "Tower Line"],
   },
 ];
 

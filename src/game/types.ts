@@ -91,6 +91,8 @@ export type WebProfile = {
   style: WebStyle;
   move: MoveId;
   ability: string;
+  /** An authored payoff layered onto the web-style surge. */
+  surge?: "harden" | "reel" | "ambush";
 };
 
 export type MorphColors = {

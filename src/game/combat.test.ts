@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, bestCounterFor, countersFor, createFight, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight } from "./combat";
+import { applyEnemyTell, bestCounterFor, countersFor, createFight, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight, webSurgeHint } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
@@ -132,6 +132,35 @@ test("the Bowl and Doily spends its sheet web to recover stamina and tighten the
   assert.equal(fight.player.stam, 54); // 50 - 14 for yank, then +18 from the sheet surge
   assert.equal(fight.enemy.silk, 0.4); // yank, its signature pull, then the sheet surge caps the rival line
   assert.equal(fight.roundLog[0]?.playerSurge, "sheet web tightens the line");
+});
+
+test("World Tour spiders add their own payoff after the base web surge", () => {
+  const resolve = (speciesId: "bandedgarden" | "trashline" | "barkcrab", playerMove: "brace" | "feint" | "lunge", enemyMove: "yank" | "grapple" | "brace") => {
+    const player = rollSpider(mulberry32(201), { speciesId, stage: "adult" });
+    const enemy = rollSpider(mulberry32(202), { speciesId: "hentz", stage: "adult", asRival: true });
+    const fight = createFight(player, enemy, 10, "tom", "Alley Tom");
+    fight.player.webCharge = 2;
+    fight.player.hp = Math.round(fight.player.max * 0.5);
+    for (let i = 0; i < 24; i += 1) stepFight(fight, 0.05);
+    assert.equal(applyEnemyTell(fight, enemyMove, false), true);
+    queuePlayerMove(fight, playerMove);
+    for (let i = 0; i < 40 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
+    return fight;
+  };
+
+  const banded = resolve("bandedgarden", "brace", "yank");
+  assert.match(banded.roundLog[0]?.playerSurge ?? "", /shell hardens/);
+  assert.ok(banded.player.hp > banded.player.max * 0.5);
+  assert.equal(banded.enemy.stam, 68); // yank costs 14, freight lattice drains another 18.
+
+  const trashline = resolve("trashline", "feint", "grapple");
+  assert.match(trashline.roundLog[0]?.playerSurge ?? "", /steals tempo/);
+  assert.equal(trashline.enemy.stam, 73); // Grapple costs 18, Scrap cross steals 9 more.
+
+  const barkcrab = resolve("barkcrab", "lunge", "brace");
+  assert.match(barkcrab.roundLog[0]?.playerSurge ?? "", /pins the line/);
+  assert.equal(barkcrab.enemy.stam, 94); // Brace recovers to full, then Cedar snare pins 6.
+  assert.match(webSurgeHint(barkcrab.player.web), /pin the line/);
 });
 
 test("crew style is carried into the fallback stick AI", () => {

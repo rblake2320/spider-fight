@@ -10,7 +10,7 @@ export const SEASON5_SPECIES: Record<string, Species> = {
     bases: { power: 9, speed: 7, grit: 12, venom: 5, silk: 11, size: 8 },
     spread: { power: 3, speed: 2, grit: 3, venom: 2, silk: 3, size: 2 },
     traits: ["Banded crown", "Rail brace", "Late hitter"], habitats: ["depot", "rooftop"],
-    web: { name: "Freight lattice", style: "tangle", move: "brace", ability: "Brace restores stamina" }, season: 5,
+    web: { name: "Freight lattice", style: "tangle", move: "brace", ability: "Brace restores stamina and hardens shell", surge: "harden" }, season: 5,
   },
   trashline: {
     id: "trashline", common: "Trashline Orbweaver", latin: "Cyclosa turbinata", rarity: "uncommon",
@@ -20,7 +20,7 @@ export const SEASON5_SPECIES: Record<string, Species> = {
     bases: { power: 6, speed: 12, grit: 7, venom: 9, silk: 10, size: 5 },
     spread: { power: 2, speed: 3, grit: 2, venom: 3, silk: 3, size: 1 },
     traits: ["Scrap blind", "Quick turn", "Silk hoarder"], habitats: ["depot", "rooftop"],
-    web: { name: "Scrap cross", style: "cross", move: "feint", ability: "Feint hits harder" }, season: 5,
+    web: { name: "Scrap cross", style: "cross", move: "feint", ability: "Feint hits harder and steals tempo", surge: "reel" }, season: 5,
   },
   barkcrab: {
     id: "barkcrab", common: "Bark Crab Spider", latin: "Bassaniana versicolor", rarity: "legendary",
@@ -30,7 +30,7 @@ export const SEASON5_SPECIES: Record<string, Species> = {
     bases: { power: 12, speed: 10, grit: 9, venom: 8, silk: 6, size: 9 },
     spread: { power: 3, speed: 3, grit: 3, venom: 3, silk: 2, size: 3 },
     traits: ["Bark runner", "Ground hunter", "Hot-blooded"], habitats: ["rooftop"],
-    web: { name: "Cedar snare", style: "orb", move: "lunge", ability: "Lunge hits harder" }, season: 5,
+    web: { name: "Cedar snare", style: "orb", move: "lunge", ability: "Lunge hits harder and pins the line", surge: "ambush" }, season: 5,
   },
 };
 
