@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, createFight, queuePlayerMove, webSurgeHint, type StickFight } from "@/game/combat";
+import { applyEnemyTell, countersFor, createFight, queuePlayerMove, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -257,6 +257,7 @@ export function FightArena() {
   }
   const f = sim.current;
   const locked = f.phase !== "telegraph" || f.playerLocked;
+  const readMoves = f.phase === "telegraph" && f.tellReady && f.enemy.tell ? countersFor(f.enemy.tell) : [];
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-ink">
@@ -278,6 +279,13 @@ export function FightArena() {
       <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-moss">
         Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web.style)}
       </p>
+      {f.enemy.tell && readMoves.length ? (
+        <p className="mx-3 rounded-md border border-moss/40 bg-moss/10 px-2 py-1 text-center text-[11px] text-paper">
+          Read {MOVES[f.enemy.tell].name} · counter with {readMoves.map((move) => MOVES[move].name).join(" or ")}
+        </p>
+      ) : (
+        <p className="px-3 pb-1 text-center text-[11px] text-dust">Watch the tell. A correct counter earns web charge.</p>
+      )}
       {(f.teamBonus.grit || f.teamBonus.silk) ? (
         <p className="px-3 pb-1 text-center text-[10px] text-moss">
           Crew web +{f.teamBonus.grit ?? 0} grit · +{f.teamBonus.silk ?? 0} silk

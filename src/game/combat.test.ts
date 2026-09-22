@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, createFight, MAX_ROUNDS, queuePlayerMove, stepFight } from "./combat";
+import { applyEnemyTell, countersFor, createFight, MAX_ROUNDS, queuePlayerMove, stepFight } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, rollSpider, teamSupport } from "./spiders";
@@ -38,6 +38,13 @@ test("a selected move locks the player input and resolves as that move", () => {
   assert.equal(fight.roundLog.length, 1);
   assert.equal(fight.roundLog[0]?.playerMove, "grapple");
   assert.equal(fight.roundLog[0]?.enemyMove, fight.lastEnemyMove);
+});
+
+test("the live read guide only recommends moves that win the exchange", () => {
+  assert.deepEqual(countersFor("lunge"), ["grapple", "drop"]);
+  assert.deepEqual(countersFor("grapple"), ["feint"]);
+  assert.ok(countersFor("brace").includes("lunge"));
+  assert.ok(!countersFor("brace").includes("yank"));
 });
 
 test("a species web changes its signature move outcome", () => {

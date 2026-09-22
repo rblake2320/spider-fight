@@ -185,6 +185,11 @@ function rps(a: MoveId, b: MoveId): number {
   return 0;
 }
 
+/** Moves that win the current exchange. Used by the live read card and tests. */
+export function countersFor(move: MoveId): MoveId[] {
+  return (Object.keys(MOVES) as MoveId[]).filter((candidate) => rps(candidate, move) > 0);
+}
+
 function spend(f: Fighter, move: MoveId): void {
   f.stam = clamp(f.stam - MOVES[move].stamina, 0, 100);
 }
