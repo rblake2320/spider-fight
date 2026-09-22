@@ -112,3 +112,25 @@ test("the drill that earns a Circuit mark returns its name and reward to the tra
     useGame.setState(before, true);
   }
 });
+
+test("a ranked win that crosses a threshold records the new Circuit division on the result", () => {
+  const before = useGame.getState();
+  try {
+    const player = rollSpider(mulberry32(61), { speciesId: "hentz", stage: "adult" });
+    const enemy = rollSpider(mulberry32(62), { speciesId: "cross", stage: "adult", asRival: true });
+    const outcome: FightOutcome = {
+      won: true, wager: 0, purse: 0, xp: 0, stripped: [], decay: {}, loot: null,
+      injury: null, koMove: null, playerHp: 10, enemyHp: 0, enemyName: enemy.name, rivalId: "june", rounds: [],
+    };
+    useGame.setState({
+      spiders: [player], selectedId: player.id, cash: 100, rank: 0, rankPoints: 35,
+      career: { ...EMPTY_CAREER }, seen: ["hentz", "cross"], earnedBadges: [],
+      fight: { rivalId: "june", playerId: player.id, wager: 0, practice: false, enemy, teamBonus: {}, headline: false, seriesStage: null },
+    });
+    useGame.getState().applyResult(outcome, player);
+    assert.equal(useGame.getState().rank, 1);
+    assert.deepEqual(outcome.rankUp, { name: "Backyard", blurb: "Kids on the fence, cash in a coffee can." });
+  } finally {
+    useGame.setState(before, true);
+  }
+});

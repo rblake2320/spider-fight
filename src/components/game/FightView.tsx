@@ -581,6 +581,13 @@ function ResultCard() {
           <p className="mt-1 text-xs text-dust">{result.discovery.ability}</p>
         </section>
       ) : null}
+      {result.rankUp ? (
+        <section className="rounded-xl border border-paper/50 bg-panel p-3 text-paper">
+          <p className="text-xs uppercase tracking-widest text-moss">Circuit promotion</p>
+          <p className="mt-1 font-display text-2xl">{result.rankUp.name}</p>
+          <p className="mt-1 text-xs text-dust">{result.rankUp.blurb}</p>
+        </section>
+      ) : null}
       {result.rounds.length ? (
         <section className="rounded-xl bg-raised p-3">
           <p className="text-xs uppercase tracking-widest text-dust">Fight tape</p>

@@ -693,6 +693,10 @@ export const useGame = create<Game>()(
           out.badges = unlockedBadges.map((badge) => ({ name: badge.name, reward: badge.reward }));
         }
         if (!practice) out.points = badges.rankPoints - g.rankPoints;
+        if (!practice && badges.rank > g.rank) {
+          const promoted = RANKS[badges.rank];
+          if (promoted) out.rankUp = { name: promoted.name, blurb: promoted.blurb };
+        }
         const nextSeries = isSeries && out.won && g.yardSeries
           ? { ...g.yardSeries, stage: g.yardSeries.stage + 1 }
           : null;

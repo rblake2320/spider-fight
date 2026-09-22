@@ -183,6 +183,8 @@ export type FightOutcome = {
   discovery?: { species: string; web: string; ability: string };
   /** Circuit marks earned by this ranked bout, including their actual point reward. */
   badges?: { name: string; reward: number }[];
+  /** The rank crossed during this bout, so the result card can make progression tangible. */
+  rankUp?: { name: string; blurb: string };
   rounds: FightRound[];
 };
 
