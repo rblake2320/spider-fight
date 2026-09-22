@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { MoveId } from "@/game/types";
 import type { BoutSnap, CatchSnap, StickSnapshot } from "./jev-types";
+import { maximumBoutDominance } from "./bout-summary";
 
 export type { BoutSnap, CatchSnap, StickSnapshot };
 
@@ -198,6 +199,8 @@ export async function judgeBout(snap: BoutSnap): Promise<
       enemy_hp_left: snap.enemyHp,
       wager: snap.wager,
       gear_stripped: snap.stripped,
+      player_edges: snap.playerEdges,
+      enemy_edges: snap.enemyEdges,
     },
     {
       dominance: {
@@ -206,7 +209,7 @@ export async function judgeBout(snap: BoutSnap): Promise<
         criteria: [
           "Toss-up scrap, either could have held it",
           "Clear winner, but they had to work",
-          "Domination — the loser never had the stick",
+          "Domination — the loser never won an exchange",
         ],
       },
       lesson: {
@@ -234,7 +237,7 @@ export async function judgeBout(snap: BoutSnap): Promise<
     "1": "clear winner",
     "2": "domination",
   };
-  const nearest = String(Math.round(Math.min(2, Math.max(0, dominance.score))));
+  const nearest = String(Math.round(Math.min(maximumBoutDominance(snap), Math.max(0, dominance.score))));
   return {
     ok: true,
     dominance: dominance.score,

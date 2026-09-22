@@ -529,6 +529,8 @@ function ResultCard() {
         enemyHp: result.enemyHp,
         stripped: result.stripped,
         wager: result.wager,
+        playerEdges: result.rounds.filter((round) => round.result === "edge" && round.enemyDamage > 0).length,
+        enemyEdges: result.rounds.filter((round) => round.result === "edge" && round.playerDamage > 0).length,
       },
     })
       .then((res) => {
@@ -540,7 +542,7 @@ function ResultCard() {
     return () => {
       alive = false;
     };
-  }, [result.enemyName, result.won, result.playerHp, result.enemyHp, result.wager, result.xp, result.stripped]);
+  }, [result.enemyName, result.won, result.playerHp, result.enemyHp, result.wager, result.xp, result.stripped, result.rounds]);
 
   return (
     <div className="flex h-full flex-col items-stretch justify-center gap-4 p-6">

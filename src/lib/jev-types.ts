@@ -37,4 +37,7 @@ export type BoutSnap = {
   enemyHp: number;
   stripped: string[];
   wager: number;
+  /** Exchanges actually won on the tape; verdicts must not contradict them. */
+  playerEdges: number;
+  enemyEdges: number;
 };
