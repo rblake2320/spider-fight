@@ -28,10 +28,18 @@ test("a selected move locks the player input and resolves as that move", () => {
   const fight = makeFight();
   for (let i = 0; i < 24; i += 1) stepFight(fight, 0.05);
 
+  // The opening beat is the silhouette only; a move cannot be committed until
+  // the rival's actual tell is visible.
+  queuePlayerMove(fight, "grapple");
+  assert.equal(fight.playerLocked, false);
+  assert.equal(fight.player.queued, null);
+  for (let i = 0; i < 6; i += 1) stepFight(fight, 0.05);
+  assert.equal(fight.tellReady, true);
+
   queuePlayerMove(fight, "grapple");
   assert.equal(fight.playerLocked, true);
   assert.equal(fight.player.queued, "grapple");
-  for (let i = 0; i < 30 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
+  for (let i = 0; i < 40 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
 
   assert.equal(fight.phase, "resolve");
   assert.equal(fight.lastPlayerMove, "grapple");
@@ -56,7 +64,7 @@ test("a species web changes its signature move outcome", () => {
   fight.player.stam = 50;
   assert.equal(applyEnemyTell(fight, "lunge", false), true);
   queuePlayerMove(fight, "brace");
-  for (let i = 0; i < 30 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
+  for (let i = 0; i < 40 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
 
   assert.equal(fight.player.web.name, "Cross brace");
   assert.equal(fight.player.stam, 59); // 50 - 8, regular brace +10, Cross brace +7
@@ -71,7 +79,7 @@ test("two correct reads prime a visible species-web surge", () => {
   for (let i = 0; i < 24; i += 1) stepFight(fight, 0.05);
   assert.equal(applyEnemyTell(fight, "brace", false), true);
   queuePlayerMove(fight, "brace");
-  for (let i = 0; i < 30 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
+  for (let i = 0; i < 40 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
 
   assert.equal(fight.player.webCharge, 0);
   assert.ok(fight.player.hp > Math.round(fight.player.max * 0.55));

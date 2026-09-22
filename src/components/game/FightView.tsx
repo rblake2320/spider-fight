@@ -295,7 +295,9 @@ export function FightArena() {
     );
   }
   const f = sim.current;
-  const locked = f.phase !== "telegraph" || f.playerLocked;
+  // A choice before the read is just a blind guess. Open the buttons when the
+  // actual tell is visible, then keep the round genuinely timed from there.
+  const locked = f.phase !== "telegraph" || !f.tellReady || f.playerLocked;
   const readMoves = f.phase === "telegraph" && f.tellReady && f.enemy.tell ? countersFor(f.enemy.tell) : [];
 
   return (

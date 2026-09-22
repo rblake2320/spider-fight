@@ -60,9 +60,11 @@ export type StickFight = {
 };
 
 const INTRO = 1.15;
-const TELL = 1.18;
+// Players choose only after the tell is exposed. Keep the visible read long
+// enough for a real reaction while preserving the pressure of timed rounds.
+const TELL = 1.7;
 const RESOLVE = 0.9;
-const TELL_LOCK = 0.42;
+const TELL_LOCK = 0.28;
 export const MAX_ROUNDS = 12;
 
 export function webSurgeHint(style: WebStyle): string {
@@ -204,7 +206,7 @@ function impulse(f: Fighter, toward: number, amt: number): void {
 }
 
 export function queuePlayerMove(f: StickFight, move: MoveId): void {
-  if (f.phase !== "telegraph" || f.playerLocked) return;
+  if (f.phase !== "telegraph" || !f.tellReady || f.playerLocked) return;
   if (f.player.stam < MOVES[move].stamina * 0.5) return;
   f.player.queued = move;
   f.playerLocked = true;
