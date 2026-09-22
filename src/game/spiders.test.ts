@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { mulberry32 } from "./rng.ts";
-import { canMolt, molt, rollMoltQuality, rollSpider } from "./spiders.ts";
+import { canMolt, molt, recoveryRests, rollMoltQuality, rollSpider } from "./spiders.ts";
 
 test("molt quality is seeded, and a ready adult can shed", () => {
   assert.equal(rollMoltQuality({ ...mulberry32(1), next: () => 0.01 }, ["Molt glutton"]), "perfect");
@@ -32,4 +32,12 @@ test("a hung spider and an unready nymph cannot molt", () => {
   spider.retired = false;
   spider.moltReady = 10;
   assert.match(canMolt(spider) ?? "", /ready/i);
+});
+
+test("injury recovery tells the yard exactly how many rests remain", () => {
+  const spider = rollSpider(mulberry32(6), { speciesId: "hentz" });
+  spider.injury = { label: "Split femur", fightsLeft: 3 };
+  assert.equal(recoveryRests(spider), 3);
+  spider.injury.fightsLeft = 0;
+  assert.equal(recoveryRests(spider), 0);
 });

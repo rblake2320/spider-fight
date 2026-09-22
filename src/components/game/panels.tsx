@@ -8,7 +8,7 @@ import { listCircuitBoard, postCircuitScore, type CircuitEntry, type CircuitPlac
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
-import { canFight, canMolt, effective, moltLine, portraitOf, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
+import { canFight, canMolt, effective, moltLine, portraitOf, recoveryRests, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
 import { traitBlurb, traitTrainCost } from "@/game/traits";
 import { activeSpiders, canRelease, canRetire, rafterSpiders, releaseCash } from "@/game/rafters";
 import type { GearSlot, ItemKind, Stats } from "@/game/types";
@@ -488,6 +488,7 @@ export function TrainView() {
         <p className="text-sm text-dust">
           Energy {s.energy} · molt {s.moltReady}/100 · {formatCash(cash)}
         </p>
+        {recoveryRests(s) ? <p className="mt-1 text-xs text-rust">{s.injury?.label} · {recoveryRests(s)} rest{recoveryRests(s) === 1 ? "" : "s"} to clear</p> : null}
       </header>
       <div className="flex gap-2 overflow-x-auto">
         {live.map((sp) => (
@@ -515,7 +516,7 @@ export function TrainView() {
       })}
       <div className="flex gap-2">
         <Button className="flex-1" variant="outline" onClick={() => setMsg(rest(s.id) ?? "Rested")}>
-          Rest $6
+          Rest $6{recoveryRests(s) ? ` · ${recoveryRests(s)} left` : ""}
         </Button>
         <Button
           className="flex-1"

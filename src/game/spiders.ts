@@ -97,6 +97,11 @@ export function canFight(s: Spider): string | null {
   return null;
 }
 
+/** Number of $6 rests still required before this spider can return to the stick. */
+export function recoveryRests(s: Pick<Spider, "injury">): number {
+  return Math.max(0, s.injury?.fightsLeft ?? 0);
+}
+
 export function rollSpider(
   rng: Rng,
   opts: {
