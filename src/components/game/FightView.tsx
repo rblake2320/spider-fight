@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, arenaOpponentName, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, moveForKey, queuePlayerMove, READ_WINDOW_SECONDS, readWindowPercent, readWindowSeconds, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint, type StickFight } from "@/game/combat";
+import { applyEnemyTell, arenaOpponentName, bestCounterFor, countersFor, createFight, moveForKey, openingReadWindow, queuePlayerMove, READ_WINDOW_SECONDS, readWindowPercent, readWindowSeconds, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -281,6 +281,7 @@ export function FightArena() {
   const timingAssist = useGame((s) => s.settings.timingAssist);
   const setScreen = useGame((s) => s.setScreen);
   const player = spiders.find((s) => s.id === fightMeta?.playerId);
+  const firstRankedCall = Boolean(player && fightMeta && !fightMeta.practice && player.wins + player.losses === 0);
   const sim = useRef<StickFight | null>(null);
   const [, bump] = useState(0);
   const askedRound = useRef(0);
@@ -300,7 +301,7 @@ export function FightArena() {
       sky.fight,
       sky.id,
       fightMeta.practice,
-      timingAssist ? ASSIST_READ_WINDOW_SECONDS : READ_WINDOW_SECONDS,
+      openingReadWindow(player.wins, player.losses, fightMeta.practice, timingAssist),
     );
     askedRound.current = 0;
     jevDead.current = false;
@@ -321,7 +322,7 @@ export function FightArena() {
         sky.fight,
         sky.id,
         fightMeta.practice,
-        timingAssist ? ASSIST_READ_WINDOW_SECONDS : READ_WINDOW_SECONDS,
+        openingReadWindow(player.wins, player.losses, fightMeta.practice, timingAssist),
       );
     }
     const pullJev = (f: StickFight) => {
@@ -420,7 +421,7 @@ export function FightArena() {
       <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-moss">
         Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web)}
       </p>
-      {f.readWindow > READ_WINDOW_SECONDS ? <p className="px-3 pb-1 text-center text-[10px] text-dust">Focus timing · extended read window</p> : null}
+      {f.readWindow > READ_WINDOW_SECONDS ? <p className="px-3 pb-1 text-center text-[10px] text-dust">{firstRankedCall ? "First-call focus" : "Focus timing"} · extended read window</p> : null}
       {f.enemy.tell && readMoves.length ? (
         <p className="mx-3 rounded-md border border-moss/40 bg-moss/10 px-2 py-1 text-center text-[11px] text-paper">
           Read {MOVES[f.enemy.tell].name} · counter with {readMoves.map((move) => MOVES[move].name).join(" or ")}

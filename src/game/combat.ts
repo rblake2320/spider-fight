@@ -86,6 +86,18 @@ export function readWindowSeconds(fight: Pick<StickFight, "phase" | "phaseT" | "
   return (readWindowPercent(fight) / 100) * fight.readWindow;
 }
 
+/** The first scored call teaches the same timed read with enough room to learn it. */
+export function openingReadWindow(
+  wins: number,
+  losses: number,
+  practice: boolean,
+  timingAssist: boolean,
+): number {
+  return timingAssist || (!practice && wins + losses === 0)
+    ? ASSIST_READ_WINDOW_SECONDS
+    : READ_WINDOW_SECONDS;
+}
+
 export function hasSweetTiming(timing: number): boolean {
   return Math.abs(timing - SWEET_TIMING_CENTER) < SWEET_TIMING_TOLERANCE;
 }

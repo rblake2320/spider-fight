@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, arenaOpponentName, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, hasSweetTiming, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint } from "./combat";
+import { applyEnemyTell, arenaOpponentName, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, hasSweetTiming, MAX_ROUNDS, moveForKey, openingReadWindow, queuePlayerMove, readWindowPercent, readWindowSeconds, READ_WINDOW_SECONDS, stepFight, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
@@ -70,6 +70,14 @@ test("focus timing extends the visible read window without changing the standard
   assisted.phase = "telegraph";
   assisted.tellReady = true;
   assert.equal(readWindowSeconds(assisted), ASSIST_READ_WINDOW_SECONDS);
+});
+
+test("a first ranked call gets focus timing, while practice and later calls keep their selected pace", () => {
+  assert.equal(openingReadWindow(0, 0, false, false), ASSIST_READ_WINDOW_SECONDS);
+  assert.equal(openingReadWindow(1, 0, false, false), READ_WINDOW_SECONDS);
+  assert.equal(openingReadWindow(0, 1, false, false), READ_WINDOW_SECONDS);
+  assert.equal(openingReadWindow(0, 0, true, false), READ_WINDOW_SECONDS);
+  assert.equal(openingReadWindow(4, 3, false, true), ASSIST_READ_WINDOW_SECONDS);
 });
 
 test("sweet timing is only awarded inside the player-visible moss band", () => {
