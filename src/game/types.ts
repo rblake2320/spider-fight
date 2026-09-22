@@ -206,6 +206,7 @@ export type RivalRecord = {
   wins: number;
   losses: number;
   streak: number;
+  moves?: Partial<Record<MoveId, number>>;
 };
 
 export type YardSeries = {

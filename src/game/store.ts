@@ -35,6 +35,7 @@ import { applyBait } from "./bait";
 import { badgeReward, newlyEarnedBadges } from "./badges";
 import { nightlyReward, nightlyRival } from "./night-card";
 import { SERIES_BONUS_CASH, SERIES_BONUS_POINTS, yardSeriesLineup } from "./series";
+import { recordRivalMoves } from "./rival-intel";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -507,9 +508,10 @@ export const useGame = create<Game>()(
         const seriesStage = g.fight?.seriesStage;
         const isSeries = seriesStage !== null && seriesStage !== undefined && g.yardSeries?.date === g.dayStamp;
         const priorRival = g.rivalRecords[out.rivalId] ?? { wins: 0, losses: 0, streak: 0 };
+        const scoutedMoves = recordRivalMoves(priorRival.moves, out.rounds);
         const rivalRecord = out.won
-          ? { ...priorRival, wins: priorRival.wins + 1, streak: priorRival.streak + 1 }
-          : { ...priorRival, losses: priorRival.losses + 1, streak: 0 };
+          ? { ...priorRival, wins: priorRival.wins + 1, streak: priorRival.streak + 1, moves: scoutedMoves }
+          : { ...priorRival, losses: priorRival.losses + 1, streak: 0, moves: scoutedMoves };
         if (out.won) {
           const prize = (RANKS[g.rank]?.purse ?? 18) + out.wager + headlineReward.cash;
           cash += prize;

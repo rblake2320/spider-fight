@@ -2,6 +2,7 @@ import { ITEMS, RIVALS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
 import { isShipped } from "./catalog.ts";
 import type { CareerLog, SaveState, Spider, Stats, YardSeries } from "./types.ts";
 import { makeDailyContract } from "./contracts.ts";
+import type { MoveId } from "./types.ts";
 
 const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0 };
 
@@ -95,7 +96,14 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       .filter(([id]) => RIVALS.some((r) => r.id === id))
       .map(([id, raw]) => {
         const record = asRecord(raw);
-        return [id, { wins: Math.max(0, num(record.wins)), losses: Math.max(0, num(record.losses)), streak: Math.max(0, num(record.streak)) }];
+        const rawMoves = asRecord(record.moves);
+        const moves = Object.fromEntries(
+          Object.entries(rawMoves)
+            .filter(([move, count]) => ["lunge", "grapple", "feint", "brace", "yank", "drop"].includes(move) && num(count) > 0)
+            .map(([move, count]) => [move, Math.max(0, num(count))]),
+        ) as Partial<Record<MoveId, number>>;
+        const base = { wins: Math.max(0, num(record.wins)), losses: Math.max(0, num(record.losses)), streak: Math.max(0, num(record.streak)) };
+        return [id, Object.keys(moves).length ? { ...base, moves } : base];
       }),
   );
   const date = str(dailyRaw.date, str(p.dayStamp));

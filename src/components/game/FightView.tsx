@@ -14,6 +14,7 @@ import type { StickSnapshot } from "@/lib/jev-types";
 import { cn } from "@/lib/utils";
 import { fightShareText } from "@/game/share";
 import { NIGHTLY_BONUS_CASH, NIGHTLY_BONUS_POINTS, nightlyRival } from "@/game/night-card";
+import { rivalIntel } from "@/game/rival-intel";
 import { todayStamp } from "@/game/rng";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
@@ -164,10 +165,17 @@ export function FightSelect() {
             {(() => {
               const record = rivalRecords[r.id];
               return record ? (
-                <p className="mt-1 text-xs text-moss">
-                  Yard card: {record.wins}–{record.losses}
-                  {record.streak > 1 ? ` · ${record.streak} straight` : ""}
-                </p>
+                <>
+                  <p className="mt-1 text-xs text-moss">
+                    Yard card: {record.wins}–{record.losses}
+                    {record.streak > 1 ? ` · ${record.streak} straight` : ""}
+                  </p>
+                  {rivalIntel(record.moves).length ? (
+                    <p className="mt-1 text-xs text-dust">
+                      Tape says: {rivalIntel(record.moves).map((entry) => `${MOVES[entry.move].name} ×${entry.count}`).join(" · ")}
+                    </p>
+                  ) : null}
+                </>
               ) : (
                 <p className="mt-1 text-xs text-dust">No calls on this crew yet.</p>
               );
