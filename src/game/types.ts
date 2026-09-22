@@ -173,6 +173,7 @@ export type FightOutcome = {
   jevReads?: number;
   headlineBonus?: number;
   seriesBonus?: number;
+  streakBonus?: { cash: number; points: number; label: string };
   sky?: string;
   rounds: FightRound[];
 };
@@ -259,6 +260,7 @@ export type SaveState = {
   dayStamp: string;
   wins: number;
   losses: number;
+  winStreak: number;
   tutorial: number;
   settings: { sfx: boolean; music: boolean; reduceMotion: boolean };
   seen: string[];

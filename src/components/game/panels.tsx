@@ -684,6 +684,7 @@ export function CareerView() {
   const stableName = useGame((s) => s.stableName);
   const wins = useGame((s) => s.wins);
   const losses = useGame((s) => s.losses);
+  const winStreak = useGame((s) => s.winStreak);
   const seen = useGame((s) => s.seen);
   const spiders = useGame((s) => s.spiders);
   const inventory = useGame((s) => s.inventory);
@@ -746,7 +747,7 @@ export function CareerView() {
         <p className="text-xs uppercase tracking-widest text-dust">Circuit</p>
         <h2 className="font-display text-3xl font-semibold">{rankName(rank)}</h2>
         <p className="text-sm text-dust">
-          Year {season} · {current.name} · {wins}–{losses} on the stick
+          Year {season} · {current.name} · {wins}–{losses} on the stick{winStreak ? ` · ${winStreak} straight` : ""}
         </p>
         <p className="text-xs text-moss">
           Circuit score {points}

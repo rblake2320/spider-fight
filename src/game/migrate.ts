@@ -165,6 +165,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
     dayStamp: str(p.dayStamp),
     wins: num(p.wins),
     losses: num(p.losses),
+    winStreak: Math.max(0, num(p.winStreak)),
     tutorial: num(p.tutorial),
     settings: {
       sfx: asRecord(p.settings).sfx !== false,

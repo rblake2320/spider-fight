@@ -52,6 +52,7 @@ import { traitHuntChance, traitTrainCost } from "./traits";
 import { activeSpiders, canRelease, canRetire, releaseCash, retire } from "./rafters";
 import { pushPaper, writeClip } from "./paper";
 import { dailyStreakBonus, nextDailyStreak } from "./daily-streak";
+import { streakReward } from "./streak";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -69,6 +70,7 @@ const emptySave = (): SaveState => ({
   dayStamp: todayStamp(),
   wins: 0,
   losses: 0,
+  winStreak: 0,
   tutorial: 0,
   settings: { sfx: true, music: true, reduceMotion: false },
   seen: ["hentz"],
@@ -612,6 +614,7 @@ export const useGame = create<Game>()(
         const rank = g.rank;
         let wins = g.wins;
         let losses = g.losses;
+        let winStreak = g.winStreak;
         let inventory = { ...g.inventory };
         const seriesStage = g.fight?.seriesStage;
         const isSeries = seriesStage !== null && seriesStage !== undefined && g.yardSeries?.date === g.dayStamp;
@@ -628,6 +631,13 @@ export const useGame = create<Game>()(
           cash += stakes.purse;
           out.purse = stakes.purse;
           rankPoints += stakes.points;
+          winStreak += 1;
+          const heater = streakReward(winStreak);
+          if (heater) {
+            cash += heater.cash;
+            rankPoints += heater.points;
+            out.streakBonus = { cash: heater.cash, points: heater.points, label: heater.label };
+          }
           if (stakes.headlineCash) out.headlineBonus = stakes.headlineCash;
           if (isSeries) {
             const bonusCash = SERIES_BONUS_CASH[seriesStage] ?? 0;
@@ -646,6 +656,7 @@ export const useGame = create<Game>()(
           }
         } else if (!practice) {
           losses += 1;
+          winStreak = 0;
           rankPoints = Math.max(0, rankPoints - 6);
         }
         const originalSpider = g.spiders.find((spider) => spider.id === finalSpider.id) ?? finalSpider;
@@ -682,6 +693,7 @@ export const useGame = create<Game>()(
           rankPoints: badges.rankPoints,
           wins,
           losses,
+          winStreak,
           inventory,
           spiders,
           fight: null,
@@ -797,6 +809,7 @@ export const useGame = create<Game>()(
         dayStamp: s.dayStamp,
         wins: s.wins,
         losses: s.losses,
+        winStreak: s.winStreak,
         tutorial: s.tutorial,
         settings: s.settings,
         seen: s.seen,

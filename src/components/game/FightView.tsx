@@ -20,6 +20,7 @@ import { WIDOW_UNLOCK_RANK, widowCallMode } from "@/game/boss";
 import { RIVAL_TROPHIES } from "@/game/rewards";
 import { todayStamp } from "@/game/rng";
 import { fightStakes } from "@/game/fight-stakes";
+import { nextStreakReward } from "@/game/streak";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -47,6 +48,7 @@ export function FightSelect() {
   const spiders = useGame((s) => s.spiders);
   const rank = useGame((s) => s.rank);
   const cash = useGame((s) => s.cash);
+  const winStreak = useGame((s) => s.winStreak);
   const selectedId = useGame((s) => s.selectedId);
   const prepare = useGame((s) => s.prepareFight);
   const startPractice = useGame((s) => s.startPractice);
@@ -67,6 +69,7 @@ export function FightSelect() {
   const purse = RANKS[rank]?.purse ?? 18;
   const headline = nightlyRival(todayStamp(), rank);
   const sky = tonightSky();
+  const nextHeater = nextStreakReward(winStreak);
 
   useEffect(() => {
     void jevStatus()
@@ -96,6 +99,13 @@ export function FightSelect() {
             Practice
           </Button>
         </div>
+      </section>
+      <section className="rounded-xl border border-rust/45 bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-rust">Yard heater</p>
+        <p className="mt-1 text-sm text-paper">{winStreak ? `${winStreak} ranked wins straight` : "Start a ranked win streak."}</p>
+        <p className="mt-1 text-xs text-dust">
+          {nextHeater.wins - winStreak === 1 ? "Next ranked win" : `${nextHeater.wins - winStreak} more ranked wins`} lifts {nextHeater.label}: +${nextHeater.cash} and +{nextHeater.points} circuit points.
+        </p>
       </section>
       <section className="rounded-xl border border-paper/25 bg-panel p-3">
         <div className="flex items-center justify-between gap-2">
@@ -266,7 +276,7 @@ export function FightArena() {
     if (!fightMeta || !player) return;
     if (!sim.current) {
       const sky = tonightSky();
-      sim.current = createFight(
+    sim.current = createFight(
         player,
         fightMeta.enemy,
         fightMeta.wager,
@@ -516,6 +526,7 @@ function ResultCard() {
         {result.won && !result.practice ? <li className="text-moss">Purse ${result.purse}</li> : null}
         {result.headlineBonus ? <li className="text-moss">Headliner bonus +${result.headlineBonus} · +{NIGHTLY_BONUS_POINTS} circuit</li> : null}
         {result.seriesBonus ? <li className="text-moss">Yard series bonus +${result.seriesBonus}</li> : null}
+        {result.streakBonus ? <li className="text-moss">{result.streakBonus.label} +${result.streakBonus.cash} · +{result.streakBonus.points} circuit</li> : null}
         {result.sky ? <li className="text-dust">{tonightSky().name} on the stick</li> : null}
         {result.practice ? null : <li>+{result.xp} xp</li>}
         {result.stripped.map((id) => (
