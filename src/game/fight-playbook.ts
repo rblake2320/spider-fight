@@ -1,4 +1,4 @@
-import type { FightRound, MoveId } from "./types";
+import type { FightRound, MoveId, Stats } from "./types";
 
 export type TapePlay = {
   enemyMove: MoveId;
@@ -6,6 +6,20 @@ export type TapePlay = {
   edges: number;
   hits: number;
 };
+
+/** Each move has one drill that makes the observed answer more reliable on the stick. */
+export const MOVE_TRAINING_STAT: Record<MoveId, keyof Stats> = {
+  lunge: "power",
+  grapple: "grit",
+  feint: "speed",
+  brace: "grit",
+  yank: "silk",
+  drop: "venom",
+};
+
+export function trainingStatForMove(move: MoveId): keyof Stats {
+  return MOVE_TRAINING_STAT[move];
+}
 
 /**
  * Turns the recorded tape into one concrete next-read recommendation.

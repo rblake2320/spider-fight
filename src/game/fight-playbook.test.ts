@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { strongestTapePlay } from "./fight-playbook.ts";
+import { strongestTapePlay, trainingStatForMove } from "./fight-playbook.ts";
 
 test("the tape recommends an observed counter that earned the most real edges", () => {
   const play = strongestTapePlay([
@@ -16,4 +16,11 @@ test("the tape stays quiet when no player answer earned an edge", () => {
   assert.equal(strongestTapePlay([
     { round: 1, playerMove: "lunge", enemyMove: "brace", result: "hit", playerDamage: 7, enemyDamage: 0 },
   ]), null);
+});
+
+test("every fight answer points to a concrete matching drill", () => {
+  assert.deepEqual(
+    ["lunge", "grapple", "feint", "brace", "yank", "drop"].map((move) => trainingStatForMove(move as "lunge" | "grapple" | "feint" | "brace" | "yank" | "drop")),
+    ["power", "grit", "speed", "grit", "silk", "venom"],
+  );
 });

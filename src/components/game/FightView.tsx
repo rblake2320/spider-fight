@@ -5,7 +5,7 @@ import { applyEnemyTell, arenaOpponentName, bestCounterFor, countersFor, createF
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
-import { canFight, portraitOf, STAGE_LABEL } from "@/game/spiders";
+import { canFight, portraitOf, STAGE_LABEL, STAT_LABEL } from "@/game/spiders";
 import { hideSrcOf } from "@/game/hides";
 import { SPECIES, RIVALS, RANKS, SLOT_LABEL, ITEMS } from "@/game/content";
 import { isShipped } from "@/game/catalog";
@@ -25,7 +25,7 @@ import { fightStakes } from "@/game/fight-stakes";
 import { nextStreakReward } from "@/game/streak";
 import { rivalWebProfiles } from "@/game/rival-scout";
 import { practiceSummary } from "@/game/practice-summary";
-import { strongestTapePlay } from "@/game/fight-playbook";
+import { strongestTapePlay, trainingStatForMove } from "@/game/fight-playbook";
 import { CLASS_BLURB, CLASS_LABEL, meetingLine, sizeClassOfSpider } from "@/game/weight";
 import { postCircuitScore, type CircuitPlacement } from "@/lib/circuit-board";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -537,17 +537,20 @@ function ResultCard() {
   const clear = useGame((s) => s.clearResult);
   const prepareFight = useGame((s) => s.prepareFight);
   const startPractice = useGame((s) => s.startPractice);
+  const train = useGame((s) => s.train);
   const continueYardSeries = useGame((s) => s.continueYardSeries);
   const setScreen = useGame((s) => s.setScreen);
   const yardSeries = useGame((s) => s.yardSeries);
   const [read, setRead] = useState<{ label: string; lesson: string } | null>(null);
   const [shared, setShared] = useState<string | null>(null);
   const [rematchError, setRematchError] = useState<string | null>(null);
+  const [drillMessage, setDrillMessage] = useState<string | null>(null);
   const [circuitPost, setCircuitPost] = useState<"idle" | "posting" | "posted" | "error">("idle");
   const [circuitPlacement, setCircuitPlacement] = useState<CircuitPlacement | null>(null);
   const fighter = spiders.find((spider) => spider.id === selectedId && !spider.retired) ?? spiders.find((spider) => !spider.retired);
   const practice = result.practice ? practiceSummary(result) : null;
   const tapePlay = strongestTapePlay(result.rounds);
+  const tapeDrill = tapePlay ? trainingStatForMove(tapePlay.playerMove) : null;
 
   const postWinToCircuit = () => {
     if (!user) {
@@ -664,6 +667,20 @@ function ResultCard() {
           <p className="mt-1 text-xs text-dust">
             That line earned {tapePlay.edges} edge{tapePlay.edges === 1 ? "" : "s"}{tapePlay.hits ? ` and took ${tapePlay.hits} hit${tapePlay.hits === 1 ? "" : "s"}` : ""} in this tape.
           </p>
+          {fighter && tapeDrill ? (
+            <Button
+              className="mt-3 w-full"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const error = train(fighter.id, tapeDrill);
+                setDrillMessage(error ?? `Drilled ${STAT_LABEL[tapeDrill]}. ${fighter.name}'s stick build just changed.`);
+              }}
+            >
+              Drill {STAT_LABEL[tapeDrill]} from this tape
+            </Button>
+          ) : null}
+          {drillMessage ? <p className="mt-2 text-center text-xs text-moss">{drillMessage}</p> : null}
         </section>
       ) : null}
       {read ? (
