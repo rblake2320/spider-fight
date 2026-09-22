@@ -1,7 +1,8 @@
 import { trainingTotal } from "./spiders";
+import { SPECIES_LIST } from "./content";
 import type { CareerLog, Spider } from "./types";
 
-export type BadgeId = "first-molt" | "drill-five" | "yard-five" | "field-guide" | "first-clutch" | "glass-shell" | "rafter-one" | "world-title";
+export type BadgeId = "first-molt" | "drill-five" | "yard-five" | "field-guide" | "web-scholar" | "whole-yard" | "first-clutch" | "glass-shell" | "rafter-one" | "world-title";
 
 export type Badge = {
   id: BadgeId;
@@ -10,11 +11,17 @@ export type Badge = {
   reward: number;
 };
 
+export const FIELD_GUIDE_MILESTONES: readonly { id: BadgeId; name: string; detail: string; reward: number; target: number }[] = [
+  { id: "field-guide", name: "Field guide", detail: "Spot four species around the circuit.", reward: 12, target: 4 },
+  { id: "web-scholar", name: "Web scholar", detail: "Log ten different species and their web answers.", reward: 24, target: 10 },
+  { id: "whole-yard", name: "Whole yard", detail: "Complete the field guide for every released species.", reward: 60, target: SPECIES_LIST.length },
+];
+
 export const BADGES: readonly Badge[] = [
   { id: "first-molt", name: "Fresh shell", detail: "Guide a spider through its first molt.", reward: 10 },
   { id: "drill-five", name: "Five honest drills", detail: "Put five training marks across your stable.", reward: 12 },
   { id: "yard-five", name: "Yard regular", detail: "Win five bouts on the stick.", reward: 16 },
-  { id: "field-guide", name: "Field guide", detail: "Spot four species around the circuit.", reward: 12 },
+  ...FIELD_GUIDE_MILESTONES,
   { id: "first-clutch", name: "Porch bloodline", detail: "Set a clutch in the yard.", reward: 18 },
   { id: "glass-shell", name: "Glass shell", detail: "Guide a spider through a perfect molt.", reward: 22 },
   { id: "rafter-one", name: "Hung in the rafters", detail: "Hang a veteran where the yard can see her.", reward: 20 },
@@ -40,7 +47,8 @@ export function newlyEarnedBadges(earned: string[], progress: BadgeProgress): Ba
     if (badge.id === "glass-shell") return progress.career.perfectMolts >= 1;
     if (badge.id === "rafter-one") return progress.spiders.some((spider) => spider.retired);
     if (badge.id === "world-title") return progress.career.worldTitles >= 1;
-    return progress.seen.length >= 4;
+    const fieldGuide = FIELD_GUIDE_MILESTONES.find((milestone) => milestone.id === badge.id);
+    return fieldGuide ? progress.seen.length >= fieldGuide.target : false;
   });
 }
 

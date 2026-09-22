@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { badgeReward, newlyEarnedBadges } from "./badges.ts";
+import { badgeReward, FIELD_GUIDE_MILESTONES, newlyEarnedBadges } from "./badges.ts";
+import { SPECIES_LIST } from "./content.ts";
 import { starterSpider } from "./spiders.ts";
 
 const spider = starterSpider();
@@ -29,4 +30,14 @@ test("a World Stick title unlocks once after carrying the circuit into a new yea
   });
   assert.deepEqual(badges.map((badge) => badge.id), ["world-title"]);
   assert.equal(badgeReward(badges), 50);
+});
+
+test("field-guide milestones keep rewarding discovery through the complete released catalog", () => {
+  const base = { spiders: [spider], career: { hunts: 0, bouts: 0, molts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0 }, wins: 0 };
+  assert.deepEqual(newlyEarnedBadges(["field-guide"], { ...base, seen: SPECIES_LIST.slice(0, 10).map((species) => species.id) }).map((badge) => badge.id), ["web-scholar"]);
+  assert.deepEqual(
+    newlyEarnedBadges(["field-guide", "web-scholar"], { ...base, seen: SPECIES_LIST.map((species) => species.id) }).map((badge) => badge.id),
+    ["whole-yard"],
+  );
+  assert.equal(FIELD_GUIDE_MILESTONES.at(-1)?.target, SPECIES_LIST.length);
 });

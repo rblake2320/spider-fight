@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ITEMS, ITEM_LIST, MOVES, RANKS, RIVALS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
 import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
-import { BADGES } from "@/game/badges";
+import { BADGES, FIELD_GUIDE_MILESTONES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
 import { circuitDay, listCircuitBoard, listDailyCircuitBoard, postCircuitScore, postDailyCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
 import { useGame, formatCash, rankName } from "@/game/store";
@@ -715,6 +715,7 @@ export function CareerView() {
   const day = useMemo(() => circuitDay(), []);
   const fieldGuide = SPECIES_LIST.filter(isShipped);
   const foundSpecies = fieldGuide.filter((species) => seen.includes(species.id)).length;
+  const nextFieldGuideMark = FIELD_GUIDE_MILESTONES.find((milestone) => !earnedBadges.includes(milestone.id));
   const trophies = heldRivalTrophies(inventory, spiders);
   const trophyRows = Object.entries(RIVAL_TROPHIES).map(([rivalId, itemId]) => ({ rival: RIVALS.find((rival) => rival.id === rivalId), item: ITEMS[itemId], held: trophies.includes(itemId) }));
 
@@ -1046,6 +1047,11 @@ export function CareerView() {
       <section>
         <p className="mb-2 text-xs uppercase tracking-widest text-dust">Almanac</p>
         <p className="mb-2 text-sm text-dust">{foundSpecies}/{fieldGuide.length} species logged · each reveals a new web answer.</p>
+        <p className="mb-3 text-xs text-moss">
+          {nextFieldGuideMark
+            ? `${nextFieldGuideMark.name}: ${Math.min(foundSpecies, nextFieldGuideMark.target)}/${nextFieldGuideMark.target} · +${nextFieldGuideMark.reward} circuit pts`
+            : "Whole yard logged · every released web answer is yours."}
+        </p>
         <div className="grid grid-cols-2 gap-2">
           {fieldGuide.map((sp) => {
             const known = seen.includes(sp.id);
