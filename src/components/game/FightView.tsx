@@ -195,6 +195,11 @@ export function FightSelect() {
             </div>
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
             {r.style ? <p className="mt-1 text-xs text-dust">Tends toward {MOVES[r.style].name.toLowerCase()}.</p> : null}
+            {r.style ? (
+              <p className="mt-1 text-xs text-moss">
+                First read: if {MOVES[r.style].name.toLowerCase()} shows, answer {countersFor(r.style).map((move) => MOVES[move].name).join(" or ")}.
+              </p>
+            ) : null}
             {webProfiles.length ? (
               <p className="mt-1 text-xs text-dust">
                 Possible webs: {webProfiles.map((profile) => `${profile.species} · ${profile.web} (${profile.move})`).join(" / ")}
