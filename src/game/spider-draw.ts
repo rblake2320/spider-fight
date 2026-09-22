@@ -11,6 +11,8 @@ export type SpiderDraw = {
   facing: 1 | -1;
   colors: MorphColors;
   pose: DrawPose;
+  prevPose?: DrawPose;
+  poseT?: number;
   t: number;
   plump: number;
   training: number;
@@ -22,6 +24,7 @@ export type SpiderDraw = {
   hatchlings?: number;
   /** Cooked hide picture. Swings and poses with the mill. */
   hideSrc?: string;
+  spin?: number;
 };
 
 function lerp(a: number, b: number, t: number): number {
@@ -38,67 +41,111 @@ function shade(hex: string, amt: number): string {
 
 type Leg = { lift: number; sweep: number; bend: number; z: number };
 
-function poseLegs(pose: DrawPose, facing: number, t: number): Leg[] {
+export function poseBlend(poseT: number, pose: DrawPose): number {
+  const dur = pose === "hurt" || pose === "ko" ? 0.1 : pose === "feint" ? 0.2 : pose === "intro" ? 0.28 : 0.14;
+  const t = Math.max(0, Math.min(1, poseT / dur));
+  return 1 - (1 - t) ** 3;
+}
+
+function mixLeg(a: Leg, b: Leg, t: number): Leg {
+  return {
+    lift: lerp(a.lift, b.lift, t),
+    sweep: lerp(a.sweep, b.sweep, t),
+    bend: lerp(a.bend, b.bend, t),
+    z: t < 0.5 ? a.z : b.z,
+  };
+}
+
+export function poseLegs(pose: DrawPose, t: number): Leg[] {
   const idle = (i: number): Leg => {
     const side = i < 4 ? -1 : 1;
     const pair = i % 4;
-    const sweep0 = [-0.95, -0.35, 0.45, 1.05][pair]!;
+    const sweep0 = [-1.05, -0.42, 0.48, 1.12][pair]!;
+    const gait = Math.sin(t * 3.4 + i * 0.95) * 0.055;
     return {
-      lift: 0.18 + pair * 0.04,
-      sweep: sweep0 * side,
-      bend: 0.72 + Math.sin(t * 2 + i) * 0.04,
+      lift: 0.22 + pair * 0.045 + gait,
+      sweep: sweep0 * side + Math.sin(t * 1.6 + i) * 0.03,
+      bend: 0.78 + Math.sin(t * 2.2 + i) * 0.05,
       z: pair === 0 || pair === 3 ? 1 : 0,
     };
   };
   const base = Array.from({ length: 8 }, (_, i) => idle(i));
-  const pulse = Math.sin(t * 6) * 0.08;
-  if (pose === "lunge" || pose === "intro") {
+  const pulse = Math.sin(t * 7) * 0.1;
+  if (pose === "intro") {
+    base.forEach((l, i) => {
+      const pair = i % 4;
+      l.lift += pair <= 1 ? 0.32 : 0.08;
+      l.sweep += pair <= 1 ? 0.4 : -0.12;
+      l.bend -= 0.08;
+    });
+  } else if (pose === "lunge") {
     base.forEach((l, i) => {
       const pair = i % 4;
       if (pair <= 1) {
-        l.sweep += facing * 0.55;
-        l.lift += 0.25;
-        l.bend -= 0.15;
+        l.sweep += 0.95;
+        l.lift += 0.42;
+        l.bend -= 0.32;
       } else {
-        l.sweep -= facing * 0.2;
+        l.sweep -= 0.48;
+        l.lift -= 0.04;
+        l.bend += 0.22;
       }
     });
   } else if (pose === "grapple") {
     base.forEach((l, i) => {
       const pair = i % 4;
-      l.lift += pair <= 1 ? 0.45 : 0.1;
-      l.sweep += facing * (pair <= 1 ? 0.7 : -0.15);
-      l.bend -= 0.2;
+      l.lift += pair <= 1 ? 0.62 : 0.18;
+      l.sweep += pair <= 1 ? 1.05 : -0.22;
+      l.bend -= 0.28;
     });
   } else if (pose === "feint") {
+    const snap = Math.sin(t * 16);
     base.forEach((l, i) => {
-      l.sweep -= facing * 0.25;
-      l.lift += Math.sin(t * 14 + i) * 0.12;
+      l.sweep += snap * 0.42 - 0.18;
+      l.lift += Math.abs(snap) * 0.18;
+      l.bend += snap * 0.12;
     });
   } else if (pose === "brace") {
     base.forEach((l) => {
-      l.lift -= 0.12;
-      l.bend += 0.25;
-      l.sweep *= 0.72;
+      l.lift -= 0.18;
+      l.bend += 0.38;
+      l.sweep *= 0.62;
     });
   } else if (pose === "yank") {
     base.forEach((l, i) => {
-      l.bend += 0.1 + pulse;
-      if (i % 4 >= 2) l.sweep += facing * 0.2;
+      l.bend += 0.16 + pulse;
+      if (i % 4 >= 2) l.sweep += 0.32;
+      l.lift += Math.abs(pulse) * 0.2;
     });
   } else if (pose === "drop") {
     base.forEach((l) => {
-      l.lift += 0.3;
-      l.bend += 0.15;
+      l.lift += 0.48;
+      l.bend += 0.22;
+      l.sweep *= 0.82;
     });
-  } else if (pose === "hurt" || pose === "ko") {
+  } else if (pose === "hurt") {
     base.forEach((l, i) => {
-      l.lift += 0.2;
-      l.sweep += (i < 4 ? -1 : 1) * 0.4;
-      l.bend += 0.2;
+      l.lift += 0.28;
+      l.sweep += (i < 4 ? -1 : 1) * 0.55;
+      l.bend += 0.28;
+    });
+  } else if (pose === "ko") {
+    base.forEach((l) => {
+      l.lift += 0.55;
+      l.bend += 0.45;
+      l.sweep *= 0.45;
     });
   }
   return base;
+}
+
+function posedLegs(pose: DrawPose, prev: DrawPose | undefined, poseT: number, t: number): Leg[] {
+  const next = poseLegs(pose, t);
+  if (!prev || prev === pose) return next;
+  const u = poseBlend(poseT, pose);
+  if (u >= 1) return next;
+  const from = poseLegs(prev, t);
+  return next.map((leg, i) => mixLeg(from[i]!, leg, u));
 }
 
 function drawLeg(
@@ -151,11 +198,17 @@ function drawLeg(
     ctx.lineWidth = s[4] * 0.35;
     ctx.stroke();
   });
-  // tarsus tip
+  // tarsus tip + claw
   ctx.beginPath();
-  ctx.arc(x3, y3, 0.8 * scale, 0, Math.PI * 2);
+  ctx.arc(x3, y3, 0.9 * scale, 0, Math.PI * 2);
   ctx.fillStyle = colors.legDark;
   ctx.fill();
+  ctx.strokeStyle = shade(colors.fang, 10);
+  ctx.lineWidth = 0.7 * scale;
+  ctx.beginPath();
+  ctx.moveTo(x3, y3);
+  ctx.lineTo(x3 + Math.cos(a3 + 0.5) * 3.2 * scale, y3 + Math.sin(a3 + 0.5) * 3.2 * scale);
+  ctx.stroke();
   if (look?.chrome) {
     ctx.fillStyle = "rgba(214, 196, 148, 0.9)";
     ctx.beginPath();
@@ -174,9 +227,10 @@ function drawBody(
   scale: number,
   facing: number,
   pose: DrawPose,
-  mark?: "hourglass",
-  training = 0,
-  look?: BayLook,
+  mark: "hourglass" | undefined,
+  training: number,
+  look: BayLook | undefined,
+  t: number,
 ): void {
   const edge = Math.min(1, training / 36);
   const bodyPlump = plump + (look?.plump ?? 0);
@@ -185,6 +239,39 @@ function drawBody(
   const cephW = 8.5 * scale * (1 + edge * 0.14);
   const cephH = 10 * scale * (1 + edge * 0.12);
   const fangMul = look?.fangs ?? 1;
+  let lean = 0;
+  let stretch = 1;
+  let drop = 0;
+  if (pose === "lunge" || pose === "intro") {
+    lean = -0.32;
+    stretch = 1.2;
+  } else if (pose === "grapple") {
+    lean = -0.16;
+    drop = 5 * scale;
+    stretch = 1.06;
+  } else if (pose === "feint") {
+    lean = Math.sin(t * 14) * 0.22;
+  } else if (pose === "brace") {
+    stretch = 0.84;
+    drop = 3.5 * scale;
+  } else if (pose === "yank") {
+    drop = Math.sin(t * 10) * 2.4 * scale;
+  } else if (pose === "drop") {
+    lean = 0.22;
+    drop = 9 * scale;
+    stretch = 0.92;
+  } else if (pose === "hurt") {
+    lean = 0.28;
+    stretch = 0.9;
+  } else if (pose === "ko") {
+    lean = 0.55;
+    drop = 10 * scale;
+    stretch = 0.78;
+  }
+  ctx.save();
+  ctx.translate(0, drop);
+  ctx.rotate(lean * facing);
+  ctx.scale(1 / Math.sqrt(stretch), stretch);
 
   // abdomen
   ctx.save();
@@ -343,6 +430,13 @@ function drawBody(
     ctx.fill();
   }
   ctx.restore();
+  ctx.restore();
+}
+
+export function silkTaut(angle: number, spin: number, pose: DrawPose): number {
+  const sag = Math.abs(angle) * 0.28 + Math.abs(spin) * 0.05;
+  const poseSag = pose === "drop" || pose === "ko" ? 0.28 : pose === "yank" ? 0.12 : 0;
+  return Math.max(0.28, 1 - sag - poseSag);
 }
 
 export function drawSilk(
@@ -358,16 +452,17 @@ export function drawSilk(
   sticky = 0,
 ): void {
   ctx.save();
-  ctx.beginPath();
+  const sag = (1 - taut) * 18;
   const mx = (x0 + x1) / 2;
-  const my = (y0 + y1) / 2 + (1 - taut) * 10;
+  const my = (y0 + y1) / 2 + sag;
+  ctx.beginPath();
   ctx.moveTo(x0, y0);
   ctx.quadraticCurveTo(mx, my, x1, y1);
-  ctx.strokeStyle = sticky ? "rgba(214, 168, 72, 0.7)" : "rgba(232,220,198,0.55)";
-  ctx.lineWidth = 1.15 + silkBoost * 0.55 + sticky * 0.7;
+  ctx.strokeStyle = sticky ? "rgba(214, 168, 72, 0.82)" : "rgba(236,226,204,0.7)";
+  ctx.lineWidth = 1.55 + silkBoost * 0.55 + sticky * 0.7;
   ctx.stroke();
-  ctx.strokeStyle = sticky ? "rgba(255, 210, 110, 0.35)" : "rgba(255,255,245,0.25)";
-  ctx.lineWidth = 0.5 + silkBoost * 0.2 + sticky * 0.25;
+  ctx.strokeStyle = sticky ? "rgba(255, 220, 130, 0.42)" : "rgba(255,255,245,0.38)";
+  ctx.lineWidth = 0.65 + silkBoost * 0.2 + sticky * 0.25;
   ctx.stroke();
   if (style === "cross" || style === "spoked") {
     ctx.beginPath();
@@ -414,32 +509,44 @@ export function drawSilk(
 }
 
 export function drawStick(ctx: CanvasRenderingContext2D, w: number, y: number): void {
-  const x0 = w * 0.06;
-  const x1 = w * 0.94;
-  const h = Math.max(10, w * 0.018);
-  const g = ctx.createLinearGradient(0, y - h, 0, y + h);
-  g.addColorStop(0, "#e8d7b0");
-  g.addColorStop(0.4, "#c4a878");
-  g.addColorStop(0.55, "#8a6a40");
-  g.addColorStop(1, "#5a4028");
+  const x0 = w * 0.05;
+  const x1 = w * 0.95;
+  const h = Math.max(12, w * 0.022);
+  ctx.save();
+  ctx.fillStyle = "rgba(12, 8, 4, 0.35)";
   ctx.beginPath();
-  ctx.roundRect(x0, y - h / 2, x1 - x0, h, 4);
+  ctx.ellipse(w * 0.5, y + h * 2.4, w * 0.42, h * 1.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const g = ctx.createLinearGradient(0, y - h, 0, y + h);
+  g.addColorStop(0, "#f0e0b8");
+  g.addColorStop(0.35, "#d4b07a");
+  g.addColorStop(0.55, "#9a7044");
+  g.addColorStop(1, "#4a3018");
+  ctx.beginPath();
+  ctx.roundRect(x0, y - h / 2, x1 - x0, h, 5);
   ctx.fillStyle = g;
   ctx.fill();
-  ctx.strokeStyle = "rgba(40,24,10,0.35)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(40,24,10,0.4)";
+  ctx.lineWidth = 1.2;
   ctx.stroke();
-  for (let x = x0 + 40; x < x1 - 20; x += 70) {
+  for (let x = x0 + 36; x < x1 - 20; x += 58) {
     ctx.beginPath();
-    ctx.ellipse(x, y, 4, h * 0.55, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(90,60,30,0.45)";
+    ctx.ellipse(x, y, 5, h * 0.62, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(90,60,30,0.5)";
+    ctx.lineWidth = 1.1;
     ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(x, y, 2.2, h * 0.28, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(40,24,10,0.18)";
+    ctx.fill();
   }
-  // end wrap
   ctx.fillStyle = "#efe6d4";
-  ctx.fillRect(x1 - 28, y - h * 0.85, 26, h * 1.7);
-  ctx.fillStyle = "rgba(40,24,10,0.2)";
+  ctx.fillRect(x0, y - h * 0.9, 22, h * 1.8);
+  ctx.fillRect(x1 - 28, y - h * 0.9, 26, h * 1.8);
+  ctx.fillStyle = "rgba(40,24,10,0.22)";
+  ctx.fillRect(x0, y - 2, 22, 3);
   ctx.fillRect(x1 - 28, y - 2, 26, 3);
+  ctx.restore();
 }
 
 const hideCache = new Map<string, HTMLImageElement | "load" | "fail">();
@@ -464,34 +571,56 @@ function drawHide(ctx: CanvasRenderingContext2D, img: HTMLImageElement, d: Spide
   let oy = 2 * s;
   let rot = 0;
   let squash = 1;
+  let stretch = 1;
   if (d.pose === "lunge" || d.pose === "intro") {
-    ox = 5 * s;
-    rot = -0.18;
+    ox = 8 * s;
+    rot = -0.28;
+    stretch = 1.18;
   } else if (d.pose === "grapple") {
-    oy = -2 * s;
-    rot = -0.08;
+    oy = -1 * s;
+    rot = -0.14;
+    ox = 4 * s;
   } else if (d.pose === "feint") {
-    ox = Math.sin(d.t * 14) * 3 * s;
+    ox = Math.sin(d.t * 16) * 5 * s;
+    rot = ox * 0.03;
   } else if (d.pose === "brace") {
-    oy = 3 * s;
-    squash = 0.9;
+    oy = 4 * s;
+    squash = 0.82;
   } else if (d.pose === "yank") {
-    oy = Math.sin(d.t * 8) * 2.2 * s;
+    oy = Math.sin(d.t * 10) * 3.2 * s;
   } else if (d.pose === "drop") {
-    oy = 7 * s;
-    rot = 0.22;
-  } else if (d.pose === "hurt" || d.pose === "ko") {
-    rot = 0.3;
-    oy = 5 * s;
+    oy = 11 * s;
+    rot = 0.32;
+    squash = 0.9;
+  } else if (d.pose === "hurt") {
+    rot = 0.38;
+    oy = 6 * s;
+    squash = 0.88;
+  } else if (d.pose === "ko") {
+    rot = 0.62;
+    oy = 12 * s;
+    squash = 0.78;
   }
-  const iw = 34 * s;
-  const ih = 40 * s * squash;
+  const spin = d.spin ?? 0;
+  rot += spin * 0.04;
+  const iw = 36 * s * stretch;
+  const ih = 42 * s * squash;
   ctx.save();
   ctx.translate(ox, oy);
   ctx.rotate(rot);
-  ctx.shadowColor = "rgba(20, 10, 4, 0.45)";
-  ctx.shadowBlur = 8 * s;
+  ctx.shadowColor = "rgba(20, 10, 4, 0.55)";
+  ctx.shadowBlur = 10 * s;
   ctx.drawImage(img, -iw, -ih * 0.55, iw * 2, ih * 1.55);
+  ctx.restore();
+}
+
+function contactShadow(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
+  const s = d.scale;
+  ctx.save();
+  ctx.fillStyle = "rgba(12, 8, 4, 0.28)";
+  ctx.beginPath();
+  ctx.ellipse(2 * s, 18 * s, 16 * s, 4.2 * s, 0, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -500,20 +629,34 @@ export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
   ctx.translate(d.x, d.y);
   ctx.rotate(d.angle);
   ctx.scale(d.facing, 1);
-  if (d.hurtFlash > 0) ctx.globalAlpha = 0.65 + Math.sin(d.t * 40) * 0.35;
+  if (d.hurtFlash > 0) {
+    ctx.shadowColor = "rgba(255, 210, 170, 0.85)";
+    ctx.shadowBlur = 18 * d.scale;
+    ctx.globalAlpha = 0.72 + Math.sin(d.t * 48) * 0.28;
+  }
 
-  const legs = poseLegs(d.pose, 1, d.t);
+  const legs = posedLegs(d.pose, d.prevPose, d.poseT ?? 1, d.t);
   const back = legs.filter((l) => l.z === 0);
   const front = legs.filter((l) => l.z === 1);
   const ox = 6 * d.scale;
   const oy = -2 * d.scale;
   const hide = primedHide(d.hideSrc);
+  contactShadow(ctx, d);
+  if ((d.pose === "lunge" || d.pose === "grapple") && Math.abs(d.spin ?? 0) > 1.2) {
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.translate(-8 * d.scale, 0);
+    ctx.rotate(-0.08);
+    if (hide) drawHide(ctx, hide, d);
+    else drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training, d.look, d.t);
+    ctx.restore();
+  }
   ctx.save();
   if (hide) ctx.globalAlpha *= 0.42;
   back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1, d.look));
   ctx.restore();
   if (hide) drawHide(ctx, hide, d);
-  else drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training, d.look);
+  else drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training, d.look, d.t);
   drawBrood(ctx, d);
   drawGear(ctx, d);
   ctx.save();
@@ -619,21 +762,21 @@ export type Particle = {
   vy: number;
   life: number;
   max: number;
-  kind: "silk" | "dust" | "ichor";
+  kind: "silk" | "dust" | "ichor" | "spark";
 };
 
 export function burst(x: number, y: number, kind: Particle["kind"], n = 10): Particle[] {
   const out: Particle[] = [];
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2;
-    const s = 20 + Math.random() * 80;
+    const speed = kind === "spark" ? 70 + Math.random() * 140 : 28 + Math.random() * 110;
     out.push({
       x,
       y,
-      vx: Math.cos(a) * s,
-      vy: Math.sin(a) * s - 20,
-      life: 0.35 + Math.random() * 0.4,
-      max: 0.6,
+      vx: Math.cos(a) * speed,
+      vy: Math.sin(a) * speed - (kind === "dust" ? 8 : 28),
+      life: (kind === "ichor" ? 0.5 : 0.32) + Math.random() * 0.45,
+      max: kind === "ichor" ? 0.9 : 0.7,
       kind,
     });
   }
@@ -645,21 +788,32 @@ export function drawParticles(ctx: CanvasRenderingContext2D, ps: Particle[]): vo
     const a = Math.max(0, p.life / p.max);
     ctx.globalAlpha = a;
     if (p.kind === "silk") {
-      ctx.strokeStyle = "rgba(240,230,210,0.9)";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(240,230,210,0.95)";
+      ctx.lineWidth = 1.35;
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x - p.vx * 0.04, p.y - p.vy * 0.04);
+      ctx.lineTo(p.x - p.vx * 0.05, p.y - p.vy * 0.05);
       ctx.stroke();
     } else if (p.kind === "ichor") {
       ctx.fillStyle = "#8a2a1c";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 2.1, 0, Math.PI * 2);
       ctx.fill();
-    } else {
-      ctx.fillStyle = "rgba(180,150,110,0.8)";
+      ctx.fillStyle = "rgba(160, 40, 28, 0.45)";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y + 3, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (p.kind === "spark") {
+      ctx.strokeStyle = "rgba(255, 220, 140, 0.95)";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 0.035, p.y - p.vy * 0.035);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = "rgba(180,150,110,0.85)";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
       ctx.fill();
     }
   }

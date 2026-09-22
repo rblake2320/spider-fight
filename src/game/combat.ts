@@ -20,7 +20,9 @@ export type Fighter = {
   angle: number;
   aVel: number;
   pose: MoveId | "idle" | "hurt" | "ko" | "intro";
+  prevPose: MoveId | "idle" | "hurt" | "ko" | "intro";
   poseT: number;
+  recoilIn: number;
   queued: MoveId | null;
   tell: MoveId | null;
   hurtFlash: number;
@@ -130,10 +132,12 @@ function makeFighter(s: Spider, attach: number, facing: 1 | -1, bonus: Partial<S
     attachX: attach,
     silk: kit.sacs ? 0.3 : 0.22,
     webCharge: kit.sacs ? 1 : 0,
-    angle: facing * 0.18,
-    aVel: 0,
+    angle: facing * 0.22,
+    aVel: facing * 0.4,
     pose: "intro",
+    prevPose: "intro",
     poseT: 0,
+    recoilIn: 0,
     queued: null,
     tell: null,
     hurtFlash: 0,
@@ -227,7 +231,7 @@ export function applyEnemyTell(f: StickFight, move: MoveId, fromJev = true): boo
   if (f.phase !== "telegraph") return false;
   if (f.tellReady && f.phaseT > TELL_LOCK) return false;
   f.enemy.tell = move;
-  f.enemy.pose = move;
+  setPose(f.enemy, move);
   f.lastText = MOVES[move].tell;
   f.tellReady = true;
   if (fromJev) {
@@ -261,12 +265,19 @@ export function bestCounterFor(move: MoveId): MoveId | null {
   return countersFor(move).sort((a, b) => MOVES[b].power - MOVES[a].power)[0] ?? null;
 }
 
+function setPose(fi: Fighter, pose: Fighter["pose"]): void {
+  if (fi.pose === pose) return;
+  fi.prevPose = fi.pose;
+  fi.pose = pose;
+  fi.poseT = 0;
+}
+
 function spend(f: Fighter, move: MoveId): void {
   f.stam = clamp(f.stam - MOVES[move].stamina, 0, 100);
 }
 
 function impulse(f: Fighter, toward: number, amt: number): void {
-  f.aVel += toward * amt;
+  f.aVel += toward * amt * 1.35;
 }
 
 export function queuePlayerMove(f: StickFight, move: MoveId): void {
@@ -297,6 +308,8 @@ export function stepFight(f: StickFight, dt: number): void {
   f.enemy.hurtFlash = Math.max(0, f.enemy.hurtFlash - cap);
   f.player.poseT += cap;
   f.enemy.poseT += cap;
+  tickRecoil(f.player, cap);
+  tickRecoil(f.enemy, cap);
   f.particles = f.particles
     .map((p) => ({ ...p, x: p.x + p.vx * cap, y: p.y + p.vy * cap, vy: p.vy + 80 * cap, life: p.life - cap }))
     .filter((p) => p.life > 0);
@@ -312,10 +325,10 @@ export function stepFight(f: StickFight, dt: number): void {
     if (f.tellReady || f.phaseT >= TELL_LOCK) {
       if (!f.enemy.tell) f.enemy.tell = pickAi(f);
       f.tellReady = true;
-      f.enemy.pose = f.enemy.tell;
+      setPose(f.enemy, f.enemy.tell);
       if (f.lastText === "Watch the legs.") f.lastText = MOVES[f.enemy.tell].tell;
     }
-    if (f.player.queued) f.player.pose = f.player.queued;
+    if (f.player.queued) setPose(f.player, f.player.queued);
     if (f.phaseT >= f.readWindow) resolveRound(f);
     return;
   }
@@ -325,8 +338,8 @@ export function stepFight(f: StickFight, dt: number): void {
         f.phase = "ko";
         f.phaseT = 0;
         const won = f.decisionWinner ? f.decisionWinner === "player" : f.player.hp > 0;
-        f.player.pose = won ? "idle" : "ko";
-        f.enemy.pose = won ? "ko" : "idle";
+        setPose(f.player, won ? "idle" : "ko");
+        setPose(f.enemy, won ? "ko" : "idle");
         f.lastText = callKo(won, f.player.name, f.enemy.name);
       } else if (f.round >= MAX_ROUNDS) {
         finishOnPoints(f);
@@ -350,8 +363,8 @@ export function finishOnPoints(f: StickFight): void {
   f.decisionWinner = won ? "player" : "enemy";
   f.phase = "ko";
   f.phaseT = 0;
-  f.player.pose = won ? "idle" : "hurt";
-  f.enemy.pose = won ? "hurt" : "idle";
+  setPose(f.player, won ? "idle" : "hurt");
+  setPose(f.enemy, won ? "hurt" : "idle");
   f.lastText = won ? `${f.player.name} takes the judges' decision.` : `${f.enemy.name} takes the judges' decision.`;
 }
 
@@ -374,8 +387,11 @@ function beginTell(f: StickFight): void {
     f.tellReady = false;
     f.lastText = "Watch the legs.";
   }
-  f.player.pose = "idle";
-  f.enemy.pose = f.tellReady && f.enemy.tell ? f.enemy.tell : "idle";
+  setPose(f.player, "idle");
+  f.player.recoilIn = 0;
+  if (f.tellReady && f.enemy.tell) setPose(f.enemy, f.enemy.tell);
+  else setPose(f.enemy, "idle");
+  f.enemy.recoilIn = 0;
   f.player.stam = clamp(f.player.stam + 7, 0, 100);
   f.enemy.stam = clamp(f.enemy.stam + 7, 0, 100);
   f.timing = 0.08;
@@ -390,8 +406,8 @@ function resolveRound(f: StickFight): void {
   const eMove: MoveId = f.enemy.tell ?? "lunge";
   f.lastPlayerMove = pMove;
   f.lastEnemyMove = eMove;
-  f.player.pose = pMove;
-  f.enemy.pose = eMove;
+  setPose(f.player, pMove);
+  setPose(f.enemy, eMove);
   spend(f.player, pMove);
   spend(f.enemy, eMove);
 
@@ -494,26 +510,42 @@ function applyWebSignature(fighter: Fighter, opponent: Fighter, move: MoveId): v
   }
 }
 
+function tickRecoil(fi: Fighter, dt: number): void {
+  if (fi.recoilIn <= 0 || fi.pose === "ko") return;
+  fi.recoilIn -= dt;
+  if (fi.recoilIn <= 0) setPose(fi, fi.hp <= 0 ? "ko" : "hurt");
+}
+
 function applyHit(f: StickFight, target: Fighter, raw: number, move: MoveId): void {
   const armor = target.stats.grit * 0.012;
   const dmg = Math.max(3, Math.round(raw * (1 - armor)));
   target.hp = Math.max(0, target.hp - dmg);
-  target.hurtFlash = 0.22;
-  target.pose = target.hp <= 0 ? "ko" : "hurt";
-  f.shake = 0.55;
-  f.hitstop = 0.06;
+  target.hurtFlash = 0.28;
+  const fatal = target.hp <= 0;
+  if (fatal) {
+    setPose(target, "ko");
+    target.recoilIn = 0;
+  } else {
+    target.recoilIn = 0.14;
+  }
+  f.shake = Math.max(f.shake, fatal ? 1 : 0.78);
+  f.hitstop = Math.max(f.hitstop, fatal ? 0.14 : 0.08);
   const bob = bobPos(target);
-  f.particles.push(...burst(bob.x, bob.y, move === "lunge" ? "ichor" : "silk", 9));
+  const count = fatal ? 22 : 16;
+  f.particles.push(...burst(bob.x, bob.y, move === "lunge" || move === "grapple" ? "ichor" : "silk", count));
+  f.particles.push(...burst(bob.x, bob.y, "dust", 10));
+  if (move === "lunge") f.particles.push(...burst(bob.x, bob.y, "spark", 8));
 }
 
 function pendulum(fi: Fighter, dt: number): void {
-  const g = 18;
-  const rest = fi.facing * 0.16;
-  const acc = -g * Math.sin(fi.angle - rest) - fi.aVel * 2.4;
+  const g = 20;
+  const rest = fi.facing * 0.14;
+  const acc = -g * Math.sin(fi.angle - rest) - fi.aVel * 1.65;
   fi.aVel += acc * dt;
   fi.angle += fi.aVel * dt;
-  fi.angle = clamp(fi.angle, -0.9, 0.9);
-  if (fi.pose === "ko") fi.silk = Math.min(0.42, fi.silk + dt * 0.08);
+  fi.angle = clamp(fi.angle, -1.05, 1.05);
+  if (fi.pose === "ko") fi.silk = Math.min(0.5, fi.silk + dt * 0.14);
+  if (fi.pose === "drop") fi.silk = Math.min(0.44, fi.silk + dt * 0.05);
 }
 
 export function bobPos(fi: Fighter): { x: number; y: number } {

@@ -443,7 +443,7 @@ export function FightArena() {
           Crew web +{f.teamBonus.grit ?? 0} grit · +{f.teamBonus.silk ?? 0} silk
         </p>
       ) : null}
-      <div className="relative min-h-[240px] flex-1">
+      <div className="relative min-h-72 flex-1">
         <FightCanvas fight={f} className="absolute inset-0 h-full w-full" reduceMotion={reduceMotion} />
         <p className="pointer-events-none absolute bottom-2 left-0 right-0 text-center font-display text-lg text-paper drop-shadow">
           {f.lastText}

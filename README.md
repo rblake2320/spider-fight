@@ -43,7 +43,7 @@ More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt resu
 - **Hide rack / millwright stall** — house mills come with steel bolted; license one and the house keeps 15%. Bring a picture of a mill you made, bolt kits in the bay, copy an SFMILL ticket so another yard can hang it and pay your purse. 3D files stay in the crate. Millwright shares are logged until the circuit has a till.
 - **Egg sacs** — a hen carries a sac, it hatches on her back, then the spiderlings go everywhere (one stays if you have a crate, the rest infest the hunt lights)
 - **Train / shop / team** — drills change the fighter, and cash buys wraps, fangs, silk, stims, bait
-- **Stick fights** — readable, timed counter rounds on a bamboo line (lunge, grapple, feint, brace, yank, drop)
+- **Stick fights** — timed counters on a bamboo line. Mills swing, strike, recoil, and drop with real weight; a correct read still wins the exchange
 - **Rival trophies** — first wins over key crews lift one-of-a-kind, equipable gear to collect and build around
 - **Practice Thread** — learn a real opponent's tells with no cash, gear, rank, record, or daily progress at risk
 - **Yard archive** — keep the last twelve complete tapes, revisit every exchange, and copy an older match card to share

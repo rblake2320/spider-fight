@@ -48,6 +48,28 @@ test("a selected move locks the player input and resolves as that move", () => {
   assert.equal(fight.roundLog[0]?.enemyMove, fight.lastEnemyMove);
 });
 
+test("a resolved strike holds the mill on the move, then the loser recoils", () => {
+  const fight = makeFight();
+  for (let i = 0; i < 40 && !fight.tellReady; i += 1) stepFight(fight, 0.05);
+  queuePlayerMove(fight, "lunge");
+  for (let i = 0; i < 50 && fight.phase !== "resolve"; i += 1) stepFight(fight, 0.05);
+  assert.equal(fight.phase, "resolve");
+  assert.equal(fight.player.pose, "lunge");
+  const victim = fight.roundLog[0]?.result === "hit" ? fight.player : fight.enemy;
+  const attacker = victim === fight.player ? fight.enemy : fight.player;
+  if (fight.roundLog[0]?.result === "lock") {
+    assert.ok(fight.player.recoilIn > 0 || fight.enemy.recoilIn > 0);
+  } else {
+    assert.ok(victim.recoilIn > 0 || victim.pose === "hurt" || victim.pose === "ko");
+    assert.ok(attacker.pose === fight.lastPlayerMove || attacker.pose === fight.lastEnemyMove || attacker.pose === "lunge" || attacker.pose === "hurt");
+  }
+  assert.ok(fight.shake > 0.5);
+  assert.ok(fight.hitstop > 0);
+  for (let i = 0; i < 8; i += 1) stepFight(fight, 0.05);
+  if (fight.roundLog[0]?.result === "edge") assert.equal(fight.enemy.pose, fight.enemy.hp <= 0 ? "ko" : "hurt");
+  if (fight.roundLog[0]?.result === "hit") assert.equal(fight.player.pose, fight.player.hp <= 0 ? "ko" : "hurt");
+});
+
 test("the reaction timer starts only once the tell is readable and runs down", () => {
   const fight = makeFight();
   assert.equal(readWindowPercent(fight), 0);
