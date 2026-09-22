@@ -448,7 +448,7 @@ export const useGame = create<Game>()(
         if (!inventory) return "That bait is gone";
         let spiders = g.spiders;
         let infestation = g.infestation;
-        let career = { ...g.career, hunts: g.career.hunts + 1 };
+        const career = { ...g.career, hunts: g.career.hunts + 1 };
         let seen = g.seen;
         const rider = spiders.find((s) => (s.hatchlings ?? 0) > 0);
         if (rider) {
