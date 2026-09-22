@@ -53,7 +53,7 @@ test("migrate keeps unknown species from crashing", () => {
     },
     1,
   );
-  assert.equal(next.version, 4);
+  assert.equal(next.version, 5);
   assert.equal(next.spiders[0]?.speciesId, "hentz");
   assert.equal(next.spiders[0]?.gear.wraps, undefined);
   assert.equal(next.inventory.cricket, 2);

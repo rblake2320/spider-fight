@@ -4,7 +4,7 @@ import type { CareerLog, SaveState, Spider, Stats, YardSeries } from "./types.ts
 import { makeDailyContract } from "./contracts.ts";
 import type { MoveId } from "./types.ts";
 
-const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0 };
+const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0 };
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -69,6 +69,8 @@ export function sanitizeSpider(raw: unknown): Spider | null {
     caughtAt: num(s.caughtAt, Date.now()),
     moltReady: num(s.moltReady),
     retired: s.retired === true,
+    bredFrom: str(s.bredFrom) || undefined,
+    line: str(s.line) || undefined,
   };
 }
 
@@ -149,6 +151,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       molts: num(careerRaw.molts),
       bouts: num(careerRaw.bouts),
       stripped: num(careerRaw.stripped),
+      clutches: num(careerRaw.clutches),
     },
     dailyContract: {
       ...generatedContract,

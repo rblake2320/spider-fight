@@ -1,7 +1,7 @@
 import { trainingTotal } from "./spiders";
 import type { CareerLog, Spider } from "./types";
 
-export type BadgeId = "first-molt" | "drill-five" | "yard-five" | "field-guide";
+export type BadgeId = "first-molt" | "drill-five" | "yard-five" | "field-guide" | "first-clutch";
 
 export type Badge = {
   id: BadgeId;
@@ -15,6 +15,7 @@ export const BADGES: readonly Badge[] = [
   { id: "drill-five", name: "Five honest drills", detail: "Put five training marks across your stable.", reward: 12 },
   { id: "yard-five", name: "Yard regular", detail: "Win five bouts on the stick.", reward: 16 },
   { id: "field-guide", name: "Field guide", detail: "Spot four species around the circuit.", reward: 12 },
+  { id: "first-clutch", name: "Porch bloodline", detail: "Set a clutch in the yard.", reward: 18 },
 ];
 
 type BadgeProgress = {
@@ -32,6 +33,7 @@ export function newlyEarnedBadges(earned: string[], progress: BadgeProgress): Ba
     if (badge.id === "first-molt") return progress.career.molts >= 1;
     if (badge.id === "drill-five") return training >= 5;
     if (badge.id === "yard-five") return progress.wins >= 5;
+    if (badge.id === "first-clutch") return progress.career.clutches >= 1;
     return progress.seen.length >= 4;
   });
 }

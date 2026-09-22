@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HABITATS, ITEM_LIST, ITEMS, SPECIES } from "@/game/content";
 import { isShipped, seasonName } from "@/game/catalog";
+import { tonightSky } from "@/game/sky";
 import { playCatch } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { portraitOf, STAGE_LABEL } from "@/game/spiders";
@@ -19,12 +20,14 @@ export function HuntSelect() {
   const setHuntBait = useGame((s) => s.setHuntBait);
   const bait = ITEM_LIST.filter((item) => item.kind === "bait" && isShipped(item) && item.rank <= rank);
   const [err, setErr] = useState<string | null>(null);
+  const sky = tonightSky();
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
       <header>
         <p className="text-xs uppercase tracking-widest text-dust">Hunt</p>
         <h2 className="font-display text-3xl font-semibold">Walk the web</h2>
         <p className="mt-1 text-sm text-dust">{huntsLeft} lights left tonight.</p>
+        <p className="mt-1 text-xs text-moss">{sky.name}. {sky.blurb}</p>
         <p className="mt-1 text-xs text-moss">{huntBait ? `${ITEMS[huntBait]?.name} set for this hunt.` : "No bait set."}</p>
       </header>
       <section className="rounded-xl bg-raised p-3">

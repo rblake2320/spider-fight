@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { bobPos, stepFight, type StickFight } from "@/game/combat";
 import { drawParticles, drawSilk, drawSpider, drawStick } from "@/game/spider-draw";
+import { tonightSky } from "@/game/sky";
 
 // A fight can be rendered by more than one canvas briefly during development
 // remounts. The simulation belongs to the shared fight, so exactly one canvas
@@ -72,10 +73,12 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         const dw = im.width * scale;
         const dh = im.height * scale;
         ctx.drawImage(im, (w - dw) / 2, (h - dh) / 2, dw, dh);
-        ctx.fillStyle = "rgba(12,8,6,0.12)";
+        ctx.fillStyle = tonightSky().tint;
         ctx.fillRect(0, 0, w, h);
       } else {
         ctx.fillStyle = "#3a2a1c";
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = tonightSky().tint;
         ctx.fillRect(0, 0, w, h);
       }
 

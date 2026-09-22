@@ -62,6 +62,8 @@ export type Spider = {
   caughtAt: number;
   moltReady: number;
   retired: boolean;
+  bredFrom?: string;
+  line?: string;
 };
 
 export type Species = {
@@ -167,6 +169,7 @@ export type FightOutcome = {
   jevReads?: number;
   headlineBonus?: number;
   seriesBonus?: number;
+  sky?: string;
   rounds: FightRound[];
 };
 
@@ -187,6 +190,7 @@ export type CareerLog = {
   molts: number;
   bouts: number;
   stripped: number;
+  clutches: number;
 };
 
 export type ContractKind = "hunt" | "train" | "win";

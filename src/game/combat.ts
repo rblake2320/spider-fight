@@ -1,4 +1,5 @@
-import { MOVES, RANKS, SPECIES, maxHp } from "./content";
+import { MOVES, RANKS, SPECIES, ZERO_STATS, maxHp } from "./content";
+import { callKo, callRound } from "./caller";
 import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
 import { addStats, colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
@@ -55,6 +56,7 @@ export type StickFight = {
   pendingJev: MoveId | null;
   roundLog: FightRound[];
   decisionWinner: "player" | "enemy" | null;
+  skyId: string | null;
 };
 
 const INTRO = 1.15;
@@ -105,10 +107,12 @@ export function createFight(
   rivalName: string,
   rivalStyle: MoveId | null = null,
   teamBonus: Partial<Stats> = {},
+  nightMods: Partial<Stats> = {},
+  skyId: string | null = null,
 ): StickFight {
   return {
-    player: makeFighter(player, 0.36, 1, teamBonus),
-    enemy: makeFighter(enemy, 0.64, -1),
+    player: makeFighter(player, 0.36, 1, addStats(addStats({ ...ZERO_STATS }, teamBonus), nightMods)),
+    enemy: makeFighter(enemy, 0.64, -1, nightMods),
     phase: "intro",
     phaseT: 0,
     round: 0,
@@ -134,6 +138,7 @@ export function createFight(
     pendingJev: null,
     roundLog: [],
     decisionWinner: null,
+    skyId,
   };
 }
 
@@ -250,7 +255,7 @@ export function stepFight(f: StickFight, dt: number): void {
         const won = f.decisionWinner ? f.decisionWinner === "player" : f.player.hp > 0;
         f.player.pose = won ? "idle" : "ko";
         f.enemy.pose = won ? "ko" : "idle";
-        f.lastText = won ? `${f.player.name} holds the stick.` : `${f.enemy.name} takes it.`;
+        f.lastText = callKo(won, f.player.name, f.enemy.name);
       } else if (f.round >= MAX_ROUNDS) {
         finishOnPoints(f);
       } else {
@@ -368,6 +373,19 @@ function resolveRound(f: StickFight): void {
   applyWebSignature(f.enemy, f.player, eMove);
   if (cmp >= 0) playerSurge = applyWebSurge(f, f.player, f.enemy, pMove);
   if (cmp <= 0) enemySurge = applyWebSurge(f, f.enemy, f.player, eMove);
+  const edgeMove = cmp >= 0 ? pMove : eMove;
+  f.lastText = callRound({
+    player: f.player.name,
+    enemy: f.enemy.name,
+    result: cmp > 0 ? "edge" : cmp < 0 ? "hit" : "lock",
+    move: edgeMove,
+    timing: f.timingHit,
+    signature: (cmp >= 0 ? f.player : f.enemy).web.move === edgeMove,
+    venom: false,
+    round: f.round,
+  });
+  if (playerSurge) f.lastText = `${f.player.name} spends the ${f.player.web.name}.`;
+  if (enemySurge && cmp < 0) f.lastText = `${f.enemy.name} spends the ${f.enemy.web.name}.`;
   f.roundLog.push({
     round: f.round,
     playerMove: pMove,

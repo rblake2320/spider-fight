@@ -6,6 +6,8 @@ import { BADGES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
 import { listCircuitBoard, postCircuitScore, type CircuitEntry } from "@/lib/circuit-board";
 import { useGame, formatCash, rankName } from "@/game/store";
+import { tonightSky } from "@/game/sky";
+import { canClutch, clutchCost } from "@/game/clutch";
 import { canFight, effective, molt, portraitOf, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
 import type { GearSlot, ItemKind, Stats } from "@/game/types";
 import { jevStatus } from "@/lib/jev";
@@ -28,13 +30,14 @@ export function Yard() {
   const lead = spiders[0];
   const next = RANKS[rank + 1];
   const firstNight = FIRST_NIGHT[tutorial];
+  const sky = tonightSky();
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-auto">
       <div className="relative h-52 shrink-0">
         <img src="/images/bg/garden.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-ink/20" />
         <div className="relative z-10 flex h-full flex-col justify-end p-4">
-          <p className="text-xs uppercase tracking-widest text-dust">{rankName(rank)} circuit</p>
+          <p className="text-xs uppercase tracking-widest text-dust">{rankName(rank)} circuit · {sky.name}</p>
           <h1 className="font-display text-4xl font-semibold leading-tight">{name}</h1>
           <p className="tabular text-sm text-paper/80">
             {formatCash(cash)} · {wins}–{losses}
@@ -65,6 +68,11 @@ export function Yard() {
         ) : (
           <p className="text-xs text-dust">World Stick. Hold it.</p>
         )}
+        <section className="rounded-xl bg-raised p-3">
+          <p className="text-xs uppercase tracking-widest text-dust">Tonight’s sky</p>
+          <p className="mt-1 font-display text-2xl">{sky.name}</p>
+          <p className="text-sm text-mute">{sky.blurb}</p>
+        </section>
         <div className="grid grid-cols-2 gap-2">
           <Action label="Hunt" onClick={() => setScreen("hunt")} />
           <Action label="Fight" onClick={() => setScreen("fight")} />
@@ -184,11 +192,18 @@ export function Stable() {
 export function SpiderDetail() {
   const id = useGame((s) => s.selectedId);
   const spider = useGame((s) => s.spiders.find((x) => x.id === id));
+  const spiders = useGame((s) => s.spiders);
+  const cap = useGame((s) => s.rosterCap);
+  const rank = useGame((s) => s.rank);
+  const cash = useGame((s) => s.cash);
+  const setClutch = useGame((s) => s.setClutch);
   const setScreen = useGame((s) => s.setScreen);
   const rename = useGame((s) => s.renameSpider);
   const unequip = useGame((s) => s.unequip);
   const setTeam = useGame((s) => s.setTeamSlot);
   const team = useGame((s) => s.activeTeam);
+  const [mateId, setMateId] = useState<string | null>(null);
+  const [clutchMsg, setClutchMsg] = useState<string | null>(null);
   if (!spider) {
     return (
       <div className="p-6">
@@ -221,6 +236,7 @@ export function SpiderDetail() {
         <p className="text-xs text-dust">
           {spider.origin} · {spider.traits.join(" · ")} · {spider.wins}–{spider.losses}
         </p>
+        {spider.bredFrom ? <p className="text-xs text-moss">Out of {spider.bredFrom}{spider.line ? ` · ${spider.line}` : ""}</p> : spider.line ? <p className="text-xs text-moss">{spider.line}</p> : null}
         {spider.injury ? <p className="text-sm text-rust">{spider.injury.label}</p> : null}
         {spec ? (
           <section className="rounded-xl border border-moss/40 bg-moss/10 p-3">
@@ -259,6 +275,43 @@ export function SpiderDetail() {
         >
           {team.includes(spider.id) ? "Remove from traveling team" : "Put on traveling team"}
         </Button>
+        {spiders.length > 1 ? (
+        <section className="rounded-xl border border-line bg-raised p-3">
+          <p className="text-xs uppercase tracking-widest text-dust">Set a clutch</p>
+          <p className="mt-1 text-xs text-mute">
+            Two adults, a hen on the line, ${clutchCost(rank)}. The nymph keeps a yard name.
+          </p>
+          <div className="mt-2 flex gap-2 overflow-x-auto">
+            {spiders
+              .filter((s) => s.id !== spider.id)
+              .map((s) => (
+                <button key={s.id} type="button" onClick={() => setMateId(s.id)} className="shrink-0">
+                  <img
+                    src={portraitOf(s)}
+                    alt=""
+                    className={cn("size-12 rounded-lg object-cover", mateId === s.id && "ring-2 ring-paper")}
+                  />
+                </button>
+              ))}
+          </div>
+          <Button
+            className="mt-3 w-full"
+            variant="outline"
+            disabled={!mateId || cash < clutchCost(rank)}
+            onClick={() => {
+              if (!mateId) return;
+              const mate = spiders.find((s) => s.id === mateId);
+              const blocked = mate ? canClutch(spider, mate, spiders.length, cap) : "Pick a mate";
+              setClutchMsg(blocked ?? setClutch(spider.id, mateId) ?? `Clutch set. ${clutchCost(rank)} gone.`);
+            }}
+          >
+            Set clutch · ${clutchCost(rank)}
+          </Button>
+          {clutchMsg ? <p className="mt-2 text-xs text-paper">{clutchMsg}</p> : null}
+        </section>
+        ) : (
+          <p className="text-xs text-dust">Catch a second adult before you set a clutch in the yard.</p>
+        )}
       </div>
     </div>
   );
@@ -604,8 +657,25 @@ export function CareerView() {
         <p className="mt-1 tabular text-sm text-paper">
           {career?.hunts ?? 0} hunts · {career?.bouts ?? 0} bouts · {career?.molts ?? 0} molts ·{" "}
           {career?.stripped ?? 0} wraps walked
+          {(career?.clutches ?? 0) > 0 ? ` · ${career.clutches} clutches` : ""}
         </p>
       </div>
+
+      {spiders.some((s) => s.line || s.bredFrom) ? (
+        <section className="rounded-xl border border-line bg-raised p-3">
+          <p className="text-xs uppercase tracking-widest text-dust">Bloodlines</p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {spiders
+              .filter((s) => s.line || s.bredFrom)
+              .map((s) => (
+                <li key={s.id} className="flex justify-between gap-2">
+                  <span className="truncate">{s.name}</span>
+                  <span className="truncate text-xs text-moss">{s.bredFrom ?? s.line}</span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="rounded-xl border border-line bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-dust">Web marks</p>

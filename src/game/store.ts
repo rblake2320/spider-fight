@@ -15,6 +15,8 @@ import {
   xpToNext,
 } from "./content";
 import { clamp, mulberry32, seedFrom, todayStamp, uid } from "./rng";
+import { mixHunt, tonightSky } from "./sky";
+import { canClutch, clutchCost, makeClutch } from "./clutch";
 import {
   applyXp,
   applyRivalGrit,
@@ -110,6 +112,7 @@ type Game = SaveState &
     prepareFight: (rivalId: string, playerId: string, wager: number) => string | null;
     startYardSeries: (playerId: string) => string | null;
     continueYardSeries: () => string | null;
+    setClutch: (aId: string, bId: string) => string | null;
     applyResult: (out: FightOutcome, finalSpider: Spider) => void;
     clearResult: () => void;
     collectDaily: () => void;
@@ -366,13 +369,15 @@ export const useGame = create<Game>()(
       startHunt: (habitatId) => {
         const hab = HABITATS.find((h) => h.id === habitatId);
         if (!hab) return "No such ground";
-        if (!isShipped(hab)) return "Night Circuit isn't open yet";
+        if (!isShipped(hab)) return "Not on this year's circuit";
         const g = get();
         if (g.rank < hab.rank) return "Rank locked";
         if (g.huntsLeft <= 0) return "That's all the light tonight";
         if (g.cash < hab.cost) return "Can't cover the trip";
         const lead = g.spiders.find((s) => s.id === g.selectedId) ?? g.spiders[0];
-        if (lead && lead.energy < hab.energy) return "Your lead spider is spent";
+        const sky = tonightSky();
+        const energyCost = hab.energy + sky.energy;
+        if (lead && lead.energy < energyCost) return "Your lead spider is spent";
         const inventory = g.huntBait ? takeInv(g.inventory, g.huntBait) : g.inventory;
         if (!inventory) return "That bait is gone";
         set({
@@ -388,7 +393,7 @@ export const useGame = create<Game>()(
           career: { ...g.career, hunts: g.career.hunts + 1 },
           dailyContract: advanceContract(g.dailyContract, "hunt"),
           spiders: lead
-            ? patchSpider(g.spiders, lead.id, (s) => ({ ...s, energy: s.energy - hab.energy }))
+            ? patchSpider(g.spiders, lead.id, (s) => ({ ...s, energy: s.energy - energyCost }))
             : g.spiders,
         });
         return null;
@@ -399,8 +404,9 @@ export const useGame = create<Game>()(
         const hab = HABITATS.find((h) => h.id === g.huntHabitat);
         if (!hab) return null;
         const rng = mulberry32(seedFrom(g.stableName + String(Date.now())));
-        const bait = applyBait(g.activeBait, hab.weights);
-        if (rng.next() > 0.28 + quality * 0.5 + bait.chanceBonus) return null;
+        const sky = tonightSky();
+        const bait = applyBait(g.activeBait, mixHunt(hab.weights, sky));
+        if (rng.next() > 0.28 + quality * 0.5 + bait.chanceBonus + sky.chance) return null;
         const caught = rollSpider(rng, { habitat: { ...hab, weights: bait.weights }, rank: g.rank });
         const seen = g.seen.includes(caught.speciesId) ? g.seen : [...g.seen, caught.speciesId];
         set({
@@ -498,6 +504,42 @@ export const useGame = create<Game>()(
         return null;
       },
 
+      setClutch: (aId, bId) => {
+        const g = get();
+        const a = g.spiders.find((s) => s.id === aId);
+        const b = g.spiders.find((s) => s.id === bId);
+        if (!a || !b) return "Pick two";
+        const reason = canClutch(a, b, g.spiders.length, g.rosterCap);
+        if (reason) return reason;
+        const cost = clutchCost(g.rank);
+        if (g.cash < cost) return "Not enough cash";
+        const baby = makeClutch(a, b, mulberry32(seedFrom(a.id + b.id + String(Date.now()))), g.stableName);
+        const spiders = [
+          ...patchSpider(
+            patchSpider(g.spiders, a.id, (s) => ({
+              ...s,
+              energy: s.energy - 28,
+              moltReady: clamp(s.moltReady + 6, 0, 100),
+            })),
+            b.id,
+            (s) => ({ ...s, energy: s.energy - 28, moltReady: clamp(s.moltReady + 6, 0, 100) }),
+          ),
+          baby,
+        ];
+        const career = { ...g.career, clutches: (g.career.clutches ?? 0) + 1 };
+        const seen = g.seen.includes(baby.speciesId) ? g.seen : [...g.seen, baby.speciesId];
+        set({
+          cash: g.cash - cost,
+          spiders,
+          seen,
+          selectedId: baby.id,
+          screen: "spider",
+          career,
+          ...badgeProgress(g, { spiders, career, wins: g.wins, seen }),
+        });
+        return null;
+      },
+
       applyResult: (out, finalSpider) => {
         const g = get();
         let cash = g.cash;
@@ -526,6 +568,12 @@ export const useGame = create<Game>()(
             cash += bonusCash;
             rankPoints += bonusPoints;
             out.seriesBonus = bonusCash;
+          }
+          const sky = tonightSky();
+          out.sky = sky.id;
+          if (sky.purse > 0) {
+            cash += sky.purse;
+            out.purse += sky.purse;
           }
           wins += 1;
           if (out.loot) inventory = addInv(inventory, out.loot);

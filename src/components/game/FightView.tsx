@@ -14,6 +14,7 @@ import type { StickSnapshot } from "@/lib/jev-types";
 import { cn } from "@/lib/utils";
 import { fightShareText } from "@/game/share";
 import { NIGHTLY_BONUS_CASH, NIGHTLY_BONUS_POINTS, nightlyRival } from "@/game/night-card";
+import { tonightSky } from "@/game/sky";
 import { rivalIntel } from "@/game/rival-intel";
 import { canCallWidow, WIDOW_UNLOCK_RANK } from "@/game/boss";
 import { todayStamp } from "@/game/rng";
@@ -212,6 +213,7 @@ export function FightArena() {
 
   if (fightMeta && player && !sim.current && !result) {
     const crew = RIVALS.find((r) => r.id === fightMeta.rivalId);
+    const sky = tonightSky();
     sim.current = createFight(
       player,
       fightMeta.enemy,
@@ -220,6 +222,8 @@ export function FightArena() {
       crew?.name ?? fightMeta.enemy.name,
       crew?.style ?? null,
       fightMeta.teamBonus,
+      sky.fight,
+      sky.id,
     );
     askedRound.current = 0;
     jevDead.current = false;
@@ -228,6 +232,7 @@ export function FightArena() {
   useEffect(() => {
     if (!fightMeta || !player) return;
     if (!sim.current) {
+      const sky = tonightSky();
       sim.current = createFight(
         player,
         fightMeta.enemy,
@@ -236,6 +241,8 @@ export function FightArena() {
         RIVALS.find((r) => r.id === fightMeta.rivalId)?.name ?? fightMeta.enemy.name,
         RIVALS.find((r) => r.id === fightMeta.rivalId)?.style ?? null,
         fightMeta.teamBonus,
+        sky.fight,
+        sky.id,
       );
     }
     const pullJev = (f: StickFight) => {
@@ -432,6 +439,7 @@ function ResultCard() {
         {result.won ? <li className="text-moss">Purse ${result.purse}</li> : null}
         {result.headlineBonus ? <li className="text-moss">Headliner bonus +${result.headlineBonus} · +{NIGHTLY_BONUS_POINTS} circuit</li> : null}
         {result.seriesBonus ? <li className="text-moss">Yard series bonus +${result.seriesBonus}</li> : null}
+        {result.sky ? <li className="text-dust">{tonightSky().name} on the stick</li> : null}
         <li>+{result.xp} xp</li>
         {result.stripped.map((id) => (
           <li key={id} className="text-rust">
