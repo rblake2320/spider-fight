@@ -1,84 +1,19 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  ITEMS,
-  ITEM_LIST,
-  MOVES,
-  RANKS,
-  RIVALS,
-  SLOT_LABEL,
-  SPECIES,
-  SPECIES_LIST,
-  xpToNext,
-} from "@/game/content";
-import {
-  BUILD,
-  careerSeasonId,
-  SEASONS,
-  SHIPPED_SEASON,
-  isShipped,
-  seasonName,
-} from "@/game/catalog";
+import { ITEMS, ITEM_LIST, MOVES, RANKS, RIVALS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
+import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES, FIELD_GUIDE_MILESTONES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
-import {
-  circuitDay,
-  circuitPosition,
-  listCircuitBoard,
-  listDailyCircuitBoard,
-  nextCircuitChase,
-  porchCircuitLadder,
-  postCircuitScore,
-  postDailyCircuitScore,
-  type CircuitEntry,
-  type CircuitPlacement,
-} from "@/lib/circuit-board";
+import { circuitDay, circuitPosition, listCircuitBoard, listDailyCircuitBoard, nextCircuitChase, porchCircuitLadder, postCircuitScore, postDailyCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
 import { canSetSac, sacCost } from "@/game/brood";
 import { CLASS_LABEL, sizeClassOfSpecies, sizeClassOfSpider } from "@/game/weight";
-import {
-  BAY_JOBS,
-  BAY_SLOTS,
-  bayBonusLine,
-  bayJobOf,
-  bayKitLine,
-  bayStats,
-  canFit,
-  canSplice,
-  graftsOf,
-  spliceCost,
-} from "@/game/bay";
-import {
-  canDrape,
-  canLicenseStall,
-  cookHide,
-  encodeHideTicket,
-  encodeMillwright,
-  HIDE_COST,
-  hideOf,
-  hideSrcOf,
-  HOUSE_CUT,
-  HOUSE_STALL,
-  millFromSpider,
-  millKitLine,
-  splitPurse,
-} from "@/game/hides";
-import {
-  canFight,
-  canMolt,
-  effective,
-  moltLine,
-  portraitOf,
-  recoveryRests,
-  spiderScore,
-  STAGE_LABEL,
-  STAT_LABEL,
-  trainingLook,
-  trainingTotal,
-} from "@/game/spiders";
+import { BAY_JOBS, BAY_SLOTS, bayBonusLine, bayJobOf, bayKitLine, bayStats, canFit, canSplice, graftsOf, spliceCost } from "@/game/bay";
+import { canDrape, canLicenseStall, cookHide, encodeHideTicket, encodeMillwright, HIDE_COST, hideOf, hideSrcOf, HOUSE_CUT, HOUSE_STALL, millFromSpider, millKitLine, splitPurse } from "@/game/hides";
+import { canFight, canMolt, effective, moltLine, portraitOf, recoveryRests, spiderScore, STAGE_LABEL, STAT_LABEL, trainingLook, trainingTotal } from "@/game/spiders";
 import { traitBlurb, traitTrainCost } from "@/game/traits";
 import { activeSpiders, canRelease, canRetire, rafterSpiders, releaseCash } from "@/game/rafters";
 import type { BaySlot, GearSlot, ItemKind, Stats } from "@/game/types";
@@ -88,12 +23,9 @@ import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
 import { DAILY_STREAK_CAP, dailyStreakBonus } from "@/game/daily-streak";
 import { archiveShareText } from "@/game/share";
 import { shareMatchCard } from "@/game/share-client";
-import { strongestTapePlay, trainingStatForMove } from "@/game/fight-playbook";
 import { SpiderBuildCanvas } from "./SpiderBuildCanvas";
 
-const CompetitionSignIn = lazy(() =>
-  import("./CompetitionSignIn").then((module) => ({ default: module.CompetitionSignIn })),
-);
+const CompetitionSignIn = lazy(() => import("./CompetitionSignIn").then((module) => ({ default: module.CompetitionSignIn })));
 
 export function Yard() {
   const name = useGame((s) => s.stableName);
@@ -125,16 +57,10 @@ export function Yard() {
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-auto">
       <div className="relative h-52 shrink-0">
-        <img
-          src="/images/bg/garden.jpg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <img src="/images/bg/garden.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-ink/20" />
         <div className="relative z-10 flex h-full flex-col justify-end p-4">
-          <p className="text-xs uppercase tracking-widest text-dust">
-            {rankName(rank)} circuit · {sky.name}
-          </p>
+          <p className="text-xs uppercase tracking-widest text-dust">{rankName(rank)} circuit · {sky.name}</p>
           <h1 className="font-display text-4xl font-semibold leading-tight">{name}</h1>
           <p className="tabular text-sm text-paper/80">
             {formatCash(cash)} · {wins}–{losses}
@@ -146,13 +72,10 @@ export function Yard() {
           <section className="rounded-xl border border-moss/50 bg-moss/10 p-3">
             <p className="text-xs uppercase tracking-widest text-moss">Yard brood</p>
             <p className="mt-1 text-sm">
-              {infestation.count} {SPECIES[infestation.speciesId]?.common ?? "spiderlings"} running
-              the lights
+              {infestation.count} {SPECIES[infestation.speciesId]?.common ?? "spiderlings"} running the lights
               {infestation.nights === 1 ? " · last night" : ` · ${infestation.nights} nights`}
             </p>
-            <p className="mt-1 text-xs text-dust">
-              Hunt anywhere and some of them show. Shake a hen to send more.
-            </p>
+            <p className="mt-1 text-xs text-dust">Hunt anywhere and some of them show. Shake a hen to send more.</p>
           </section>
         ) : null}
         {lead ? (
@@ -161,19 +84,13 @@ export function Yard() {
             onClick={() => useGame.getState().selectSpider(lead.id)}
             className="flex items-center gap-3 rounded-xl bg-raised p-3 text-left"
           >
-            <img
-              src={hideSrcOf(lead, hides) || portraitOf(lead)}
-              alt=""
-              className="size-20 rounded-lg object-cover"
-            />
+            <img src={hideSrcOf(lead, hides) || portraitOf(lead)} alt="" className="size-20 rounded-lg object-cover" />
             <div>
               <p className="font-display text-2xl">{lead.name}</p>
               <p className="text-xs text-dust">
                 {SPECIES[lead.speciesId]?.common} · {STAGE_LABEL[lead.stage]}
               </p>
-              <p className="text-xs text-mute">
-                {canFight(lead) ?? `${lead.wins} wins on the stick`}
-              </p>
+              <p className="text-xs text-mute">{canFight(lead) ?? `${lead.wins} wins on the stick`}</p>
               <p className="text-xs text-moss">{CLASS_LABEL[sizeClassOfSpider(lead)]} mill</p>
             </div>
           </button>
@@ -214,18 +131,11 @@ export function Yard() {
         </div>
         {firstNight ? (
           <section className="rounded-xl border border-moss/50 bg-raised p-3">
-            <p className="text-xs uppercase tracking-widest text-moss">
-              First night · {firstNight.step}/4
-            </p>
+            <p className="text-xs uppercase tracking-widest text-moss">First night · {firstNight.step}/4</p>
             <p className="mt-1 font-medium">{firstNight.title}</p>
             <p className="mt-1 text-xs text-dust">{firstNight.detail}</p>
             {firstNight.screen ? (
-              <Button
-                className="mt-3"
-                size="sm"
-                variant="outline"
-                onClick={() => setScreen(firstNight.screen!)}
-              >
+              <Button className="mt-3" size="sm" variant="outline" onClick={() => setScreen(firstNight.screen!)}>
                 {firstNight.action}
               </Button>
             ) : null}
@@ -244,12 +154,7 @@ export function Yard() {
               {contract.claimed ? " · collected" : ""}
             </p>
             {contract.claimed ? null : (
-              <Button
-                size="sm"
-                variant="rust"
-                disabled={contract.progress < contract.target}
-                onClick={() => claimContract()}
-              >
+              <Button size="sm" variant="rust" disabled={contract.progress < contract.target} onClick={() => claimContract()}>
                 Collect
               </Button>
             )}
@@ -258,9 +163,7 @@ export function Yard() {
         <section className="rounded-xl border border-moss/50 bg-raised p-3">
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-xs uppercase tracking-widest text-moss">Daily web challenge</p>
-            <p className="tabular text-xs text-moss">
-              ${webChallenge.reward} · +{webChallenge.points} pts
-            </p>
+            <p className="tabular text-xs text-moss">${webChallenge.reward} · +{webChallenge.points} pts</p>
           </div>
           <p className="mt-1 font-medium">
             {lead ? `${SPECIES[lead.speciesId]?.web.name} showcase` : "Land a web showcase"}
@@ -276,12 +179,7 @@ export function Yard() {
               {webChallenge.claimed ? " · collected" : ""}
             </p>
             {webChallenge.claimed ? null : (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={webChallenge.progress < webChallenge.target}
-                onClick={() => claimWebChallenge()}
-              >
+              <Button size="sm" variant="outline" disabled={webChallenge.progress < webChallenge.target} onClick={() => claimWebChallenge()}>
                 Collect web mark
               </Button>
             )}
@@ -290,41 +188,19 @@ export function Yard() {
         <section className="rounded-xl border border-paper/35 bg-panel p-3">
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-xs uppercase tracking-widest text-paper">Weekly Circuit</p>
-            <p className="tabular text-xs text-moss">
-              ${weeklyCircuit.reward} · +{weeklyCircuit.points} pts
-            </p>
+            <p className="tabular text-xs text-moss">${weeklyCircuit.reward} · +{weeklyCircuit.points} pts</p>
           </div>
           <p className="mt-1 font-medium">{weeklyCircuit.title}</p>
           <p className="mt-1 text-xs text-dust">{weeklyCircuit.detail}</p>
           <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-            <p className="rounded bg-raised px-1 py-2 text-paper">
-              <span className="block text-dust">Hunts</span>
-              {weeklyCircuit.hunts}/{weeklyCircuit.huntTarget}
-            </p>
-            <p className="rounded bg-raised px-1 py-2 text-paper">
-              <span className="block text-dust">Drills</span>
-              {weeklyCircuit.trains}/{weeklyCircuit.trainTarget}
-            </p>
-            <p className="rounded bg-raised px-1 py-2 text-paper">
-              <span className="block text-dust">Wins</span>
-              {weeklyCircuit.wins}/{weeklyCircuit.winTarget}
-            </p>
+            <p className="rounded bg-raised px-1 py-2 text-paper"><span className="block text-dust">Hunts</span>{weeklyCircuit.hunts}/{weeklyCircuit.huntTarget}</p>
+            <p className="rounded bg-raised px-1 py-2 text-paper"><span className="block text-dust">Drills</span>{weeklyCircuit.trains}/{weeklyCircuit.trainTarget}</p>
+            <p className="rounded bg-raised px-1 py-2 text-paper"><span className="block text-dust">Wins</span>{weeklyCircuit.wins}/{weeklyCircuit.winTarget}</p>
           </div>
           <div className="mt-3 flex items-center justify-between gap-3">
             <p className="text-xs text-dust">Week of {weeklyCircuit.week}</p>
-            {weeklyCircuit.claimed ? (
-              <p className="text-xs text-moss">Collected</p>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={
-                  weeklyCircuit.hunts < weeklyCircuit.huntTarget ||
-                  weeklyCircuit.trains < weeklyCircuit.trainTarget ||
-                  weeklyCircuit.wins < weeklyCircuit.winTarget
-                }
-                onClick={() => claimWeeklyCircuit()}
-              >
+            {weeklyCircuit.claimed ? <p className="text-xs text-moss">Collected</p> : (
+              <Button size="sm" variant="outline" disabled={weeklyCircuit.hunts < weeklyCircuit.huntTarget || weeklyCircuit.trains < weeklyCircuit.trainTarget || weeklyCircuit.wins < weeklyCircuit.winTarget} onClick={() => claimWeeklyCircuit()}>
                 Collect Circuit purse
               </Button>
             )}
@@ -333,26 +209,13 @@ export function Yard() {
         <Button variant="outline" onClick={collect} disabled={flags.daily === todayHint()}>
           {flags.daily === todayHint() ? "Morning purse collected" : "Collect morning purse"}
         </Button>
-        <p className="text-center text-xs text-moss">
-          Morning streak {streak}/{DAILY_STREAK_CAP} · next purse +${dailyStreakBonus(nextStreak)}
-        </p>
+        <p className="text-center text-xs text-moss">Morning streak {streak}/{DAILY_STREAK_CAP} · next purse +${dailyStreakBonus(nextStreak)}</p>
       </div>
     </div>
   );
 }
 
-const FIRST_NIGHT: Partial<
-  Record<
-    number,
-    {
-      step: number;
-      title: string;
-      detail: string;
-      action: string;
-      screen?: "hunt" | "train" | "fight";
-    }
-  >
-> = {
+const FIRST_NIGHT: Partial<Record<number, { step: number; title: string; detail: string; action: string; screen?: "hunt" | "train" | "fight" }>> = {
   1: {
     step: 1,
     title: "Walk the Night Porch",
@@ -383,11 +246,7 @@ function todayHint(): string {
 
 function Action({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="h-14 rounded-xl bg-panel font-display text-xl hover:bg-line"
-    >
+    <button type="button" onClick={onClick} className="h-14 rounded-xl bg-panel font-display text-xl hover:bg-line">
       {label}
     </button>
   );
@@ -408,23 +267,12 @@ export function Stable() {
         <h2 className="font-display text-3xl font-semibold">
           Roster {active.length}/{cap}
         </h2>
-        {hung.length ? (
-          <p className="text-xs text-moss">{hung.length} hung in the rafters</p>
-        ) : null}
+        {hung.length ? <p className="text-xs text-moss">{hung.length} hung in the rafters</p> : null}
       </header>
       <div className="grid grid-cols-2 gap-2">
         {active.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => select(s.id)}
-            className="overflow-hidden rounded-xl bg-raised text-left"
-          >
-            <img
-              src={hideSrcOf(s, hides) || portraitOf(s)}
-              alt=""
-              className="h-28 w-full object-cover"
-            />
+          <button key={s.id} type="button" onClick={() => select(s.id)} className="overflow-hidden rounded-xl bg-raised text-left">
+            <img src={hideSrcOf(s, hides) || portraitOf(s)} alt="" className="h-28 w-full object-cover" />
             <div className="p-2">
               <p className="truncate font-medium">{s.name}</p>
               <p className="truncate text-[11px] text-dust">
@@ -440,17 +288,8 @@ export function Stable() {
           <p className="mb-2 text-xs uppercase tracking-widest text-dust">Rafters</p>
           <div className="grid grid-cols-2 gap-2">
             {hung.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => select(s.id)}
-                className="overflow-hidden rounded-xl border border-line bg-panel text-left"
-              >
-                <img
-                  src={hideSrcOf(s, hides) || portraitOf(s)}
-                  alt=""
-                  className="h-20 w-full object-cover opacity-80"
-                />
+              <button key={s.id} type="button" onClick={() => select(s.id)} className="overflow-hidden rounded-xl border border-line bg-panel text-left">
+                <img src={hideSrcOf(s, hides) || portraitOf(s)} alt="" className="h-20 w-full object-cover opacity-80" />
                 <div className="p-2">
                   <p className="truncate font-medium">{s.name}</p>
                   <p className="truncate text-[11px] text-moss">{s.line ?? "Watching the yard"}</p>
@@ -460,9 +299,7 @@ export function Stable() {
           </div>
         </section>
       ) : null}
-      {spiders.length === 0 ? (
-        <p className="text-dust">The crates are empty. Hunt the porch.</p>
-      ) : null}
+      {spiders.length === 0 ? <p className="text-dust">The crates are empty. Hunt the porch.</p> : null}
     </div>
   );
 }
@@ -501,17 +338,9 @@ export function SpiderDetail() {
   return (
     <div className="flex h-full flex-col overflow-auto pb-24">
       <div className="relative h-64">
-        <img
-          src={hideSrcOf(spider, hides) || portraitOf(spider)}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <img src={hideSrcOf(spider, hides) || portraitOf(spider)} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/30" />
-        <button
-          type="button"
-          onClick={() => setScreen("stable")}
-          className="absolute left-3 top-3 rounded-md bg-ink/70 px-3 py-1 text-sm"
-        >
+        <button type="button" onClick={() => setScreen("stable")} className="absolute left-3 top-3 rounded-md bg-ink/70 px-3 py-1 text-sm">
           Back
         </button>
       </div>
@@ -527,11 +356,7 @@ export function SpiderDetail() {
           {spec ? ` · ${CLASS_LABEL[sizeClassOfSpecies(spec)]} mill` : ""}
         </p>
         <p className="text-sm text-mute">{spec?.blurb}</p>
-        {spider.retired ? (
-          <p className="text-sm text-moss">
-            Hung in the rafters. Breeding stock. She watches the yard.
-          </p>
-        ) : null}
+        {spider.retired ? <p className="text-sm text-moss">Hung in the rafters. Breeding stock. She watches the yard.</p> : null}
         <ul className="space-y-1">
           {spider.traits.map((trait) => (
             <li key={trait} className="text-xs">
@@ -544,27 +369,14 @@ export function SpiderDetail() {
           {spider.origin} · {spider.wins}–{spider.losses}
           {spider.lastMolt ? ` · last molt ${spider.lastMolt}` : ""}
         </p>
-        {spider.bredFrom ? (
-          <p className="text-xs text-moss">
-            Out of {spider.bredFrom}
-            {spider.line ? ` · ${spider.line}` : ""}
-          </p>
-        ) : spider.line ? (
-          <p className="text-xs text-moss">{spider.line}</p>
-        ) : null}
-        {hideOf(hides, spider.hideId) ? (
-          <p className="text-xs text-moss">Wearing {hideOf(hides, spider.hideId)?.name}</p>
-        ) : null}
+        {spider.bredFrom ? <p className="text-xs text-moss">Out of {spider.bredFrom}{spider.line ? ` · ${spider.line}` : ""}</p> : spider.line ? <p className="text-xs text-moss">{spider.line}</p> : null}
+        {hideOf(hides, spider.hideId) ? <p className="text-xs text-moss">Wearing {hideOf(hides, spider.hideId)?.name}</p> : null}
         {spider.injury ? <p className="text-sm text-rust">{spider.injury.label}</p> : null}
         {spec ? (
           <section className="rounded-xl border border-moss/40 bg-moss/10 p-3">
             <p className="text-xs uppercase tracking-widest text-moss">Web kit</p>
-            <p className="mt-1 font-medium">
-              {spec.web.name} · {spec.web.style} web
-            </p>
-            <p className="mt-1 text-xs text-dust">
-              Signature: {MOVES[spec.web.move].name} · {spec.web.ability}
-            </p>
+            <p className="mt-1 font-medium">{spec.web.name} · {spec.web.style} web</p>
+            <p className="mt-1 text-xs text-dust">Signature: {MOVES[spec.web.move].name} · {spec.web.ability}</p>
             <p className="mt-1 text-xs text-paper">At two web charge: {webSurgeHint(spec.web)}.</p>
           </section>
         ) : null}
@@ -576,9 +388,7 @@ export function SpiderDetail() {
           <p className="mt-1 font-medium">{build.title}</p>
           <p className="mt-1 text-xs text-dust">{build.detail}</p>
           <p className="mt-1 text-xs text-moss">{bayKitLine(spider)}</p>
-          <div className="mt-3">
-            <SpiderBuildCanvas spider={spider} />
-          </div>
+          <div className="mt-3"><SpiderBuildCanvas spider={spider} /></div>
         </section>
         <XpBar level={spider.level} xp={spider.xp} />
         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
@@ -590,12 +400,7 @@ export function SpiderDetail() {
           {(Object.keys(SLOT_LABEL) as GearSlot[]).map((slot) => {
             const gid = spider.gear[slot];
             return (
-              <button
-                key={slot}
-                type="button"
-                onClick={() => gid && unequip(spider.id, slot)}
-                className="rounded-lg border border-line bg-raised p-2 text-left"
-              >
+              <button key={slot} type="button" onClick={() => gid && unequip(spider.id, slot)} className="rounded-lg border border-line bg-raised p-2 text-left">
                 <p className="text-[10px] uppercase tracking-wide text-dust">{SLOT_LABEL[slot]}</p>
                 <p className="text-sm">{gid ? ITEMS[gid]?.name : "Empty"}</p>
               </button>
@@ -625,77 +430,53 @@ export function SpiderDetail() {
           </>
         )}
         {spiders.length > 1 ? (
-          <section className="rounded-xl border border-line bg-raised p-3">
-            <p className="text-xs uppercase tracking-widest text-dust">Set a clutch</p>
-            <p className="mt-1 text-xs text-mute">
-              Two adults, a hen on the line, ${clutchCost(rank)}. The nymph keeps a yard name.
-            </p>
-            <div className="mt-2 flex gap-2 overflow-x-auto">
-              {spiders
-                .filter((s) => s.id !== spider.id)
-                .map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setMateId(s.id)}
-                    className="shrink-0"
-                  >
-                    <img
-                      src={portraitOf(s)}
-                      alt=""
-                      className={cn(
-                        "size-12 rounded-lg object-cover",
-                        mateId === s.id && "ring-2 ring-paper",
-                      )}
-                    />
-                  </button>
-                ))}
-            </div>
-            <Button
-              className="mt-3 w-full"
-              variant="outline"
-              disabled={!mateId || cash < clutchCost(rank)}
-              onClick={() => {
-                if (!mateId) return;
-                const mate = spiders.find((s) => s.id === mateId);
-                const blocked = mate
-                  ? canClutch(spider, mate, activeSpiders(spiders).length, cap)
-                  : "Pick a mate";
-                setClutchMsg(
-                  blocked ??
-                    setClutch(spider.id, mateId) ??
-                    `Clutch set. ${clutchCost(rank)} gone.`,
-                );
-              }}
-            >
-              Set clutch · ${clutchCost(rank)}
-            </Button>
-            {clutchMsg ? <p className="mt-2 text-xs text-paper">{clutchMsg}</p> : null}
-          </section>
-        ) : (
-          <p className="text-xs text-dust">
-            Catch a second adult before you set a clutch in the yard.
+        <section className="rounded-xl border border-line bg-raised p-3">
+          <p className="text-xs uppercase tracking-widest text-dust">Set a clutch</p>
+          <p className="mt-1 text-xs text-mute">
+            Two adults, a hen on the line, ${clutchCost(rank)}. The nymph keeps a yard name.
           </p>
+          <div className="mt-2 flex gap-2 overflow-x-auto">
+            {spiders
+              .filter((s) => s.id !== spider.id)
+              .map((s) => (
+                <button key={s.id} type="button" onClick={() => setMateId(s.id)} className="shrink-0">
+                  <img
+                    src={portraitOf(s)}
+                    alt=""
+                    className={cn("size-12 rounded-lg object-cover", mateId === s.id && "ring-2 ring-paper")}
+                  />
+                </button>
+              ))}
+          </div>
+          <Button
+            className="mt-3 w-full"
+            variant="outline"
+            disabled={!mateId || cash < clutchCost(rank)}
+            onClick={() => {
+              if (!mateId) return;
+              const mate = spiders.find((s) => s.id === mateId);
+              const blocked = mate ? canClutch(spider, mate, activeSpiders(spiders).length, cap) : "Pick a mate";
+              setClutchMsg(blocked ?? setClutch(spider.id, mateId) ?? `Clutch set. ${clutchCost(rank)} gone.`);
+            }}
+          >
+            Set clutch · ${clutchCost(rank)}
+          </Button>
+          {clutchMsg ? <p className="mt-2 text-xs text-paper">{clutchMsg}</p> : null}
+        </section>
+        ) : (
+          <p className="text-xs text-dust">Catch a second adult before you set a clutch in the yard.</p>
         )}
         <section className="rounded-xl border border-moss/40 bg-raised p-3">
           <p className="text-xs uppercase tracking-widest text-moss">Egg sac</p>
           <p className="mt-1 text-xs text-mute">
-            A hen carries it. Two ranked fights and they hatch on her back — then they go
-            everywhere.
+            A hen carries it. Two ranked fights and they hatch on her back — then they go everywhere.
           </p>
           {spider.brood?.fightsLeft ? (
-            <p className="mt-2 text-sm text-paper">
-              Carrying · {spider.brood.fightsLeft} fight{spider.brood.fightsLeft === 1 ? "" : "s"}{" "}
-              left
-            </p>
+            <p className="mt-2 text-sm text-paper">Carrying · {spider.brood.fightsLeft} fight{spider.brood.fightsLeft === 1 ? "" : "s"} left</p>
           ) : (spider.hatchlings ?? 0) > 0 ? (
             <>
               <p className="mt-2 text-sm text-paper">{spider.hatchlings} riding her abdomen</p>
-              <Button
-                className="mt-3 w-full"
-                variant="outline"
-                onClick={() => setClutchMsg(shakeBrood(spider.id))}
-              >
+              <Button className="mt-3 w-full" variant="outline" onClick={() => setClutchMsg(shakeBrood(spider.id))}>
                 Shake them off
               </Button>
             </>
@@ -705,19 +486,11 @@ export function SpiderDetail() {
                 className="mt-3 w-full"
                 variant="outline"
                 disabled={Boolean(canSetSac(spider)) || cash < sacCost(rank)}
-                onClick={() =>
-                  setClutchMsg(
-                    canSetSac(spider) ??
-                      setSac(spider.id, mateId) ??
-                      `Sac set. ${sacCost(rank)} gone. They hatch on her.`,
-                  )
-                }
+                onClick={() => setClutchMsg(canSetSac(spider) ?? setSac(spider.id, mateId) ?? `Sac set. ${sacCost(rank)} gone. They hatch on her.`)}
               >
                 Set a sac · ${sacCost(rank)}
               </Button>
-              {canSetSac(spider) ? (
-                <p className="mt-2 text-xs text-dust">{canSetSac(spider)}</p>
-              ) : null}
+              {canSetSac(spider) ? <p className="mt-2 text-xs text-dust">{canSetSac(spider)}</p> : null}
             </>
           )}
         </section>
@@ -725,17 +498,14 @@ export function SpiderDetail() {
           <section className="rounded-xl border border-line bg-raised p-3">
             <p className="text-xs uppercase tracking-widest text-dust">Yard decisions</p>
             <p className="mt-1 text-xs text-mute">
-              Hang a veteran in the rafters and she still throws a clutch. Let one go and the wraps
-              come home.
+              Hang a veteran in the rafters and she still throws a clutch. Let one go and the wraps come home.
             </p>
             <div className="mt-3 flex gap-2">
               <Button
                 className="flex-1"
                 variant="outline"
                 disabled={Boolean(canRetire(spider, activeSpiders(spiders).length))}
-                onClick={() =>
-                  setYardMsg(retireSpider(spider.id) ?? `${spider.name} hangs in the rafters.`)
-                }
+                onClick={() => setYardMsg(retireSpider(spider.id) ?? `${spider.name} hangs in the rafters.`)}
               >
                 Hang in rafters
               </Button>
@@ -743,17 +513,13 @@ export function SpiderDetail() {
                 className="flex-1"
                 variant="ghost"
                 disabled={Boolean(canRelease(spider, activeSpiders(spiders).length))}
-                onClick={() =>
-                  setYardMsg(releaseSpider(spider.id) ?? `Let go. +$${releaseCash(spider)}`)
-                }
+                onClick={() => setYardMsg(releaseSpider(spider.id) ?? `Let go. +$${releaseCash(spider)}`)}
               >
                 Let go · ${releaseCash(spider)}
               </Button>
             </div>
             {canRetire(spider, activeSpiders(spiders).length) ? (
-              <p className="mt-2 text-xs text-dust">
-                {canRetire(spider, activeSpiders(spiders).length)}
-              </p>
+              <p className="mt-2 text-xs text-dust">{canRetire(spider, activeSpiders(spiders).length)}</p>
             ) : null}
             {yardMsg ? <p className="mt-2 text-xs text-paper">{yardMsg}</p> : null}
           </section>
@@ -761,9 +527,7 @@ export function SpiderDetail() {
         {spider.retired ? (
           <Button
             variant="ghost"
-            onClick={() =>
-              setYardMsg(releaseSpider(spider.id) ?? `Taken down. +$${releaseCash(spider)}`)
-            }
+            onClick={() => setYardMsg(releaseSpider(spider.id) ?? `Taken down. +$${releaseCash(spider)}`)}
           >
             Take down · ${releaseCash(spider)}
           </Button>
@@ -784,10 +548,7 @@ function XpBar({ level, xp }: { level: number; xp: number }) {
         </span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-line">
-        <div
-          className="h-full bg-stick"
-          style={{ width: `${Math.min(100, (xp / need) * 100)}%` }}
-        />
+        <div className="h-full bg-stick" style={{ width: `${Math.min(100, (xp / need) * 100)}%` }} />
       </div>
     </div>
   );
@@ -825,23 +586,12 @@ export function TrainView() {
         <p className="text-sm text-dust">
           Energy {s.energy} · molt {s.moltReady}/100 · {formatCash(cash)}
         </p>
-        {recoveryRests(s) ? (
-          <p className="mt-1 text-xs text-rust">
-            {s.injury?.label} · {recoveryRests(s)} rest{recoveryRests(s) === 1 ? "" : "s"} to clear
-          </p>
-        ) : null}
+        {recoveryRests(s) ? <p className="mt-1 text-xs text-rust">{s.injury?.label} · {recoveryRests(s)} rest{recoveryRests(s) === 1 ? "" : "s"} to clear</p> : null}
       </header>
       <div className="flex gap-2 overflow-x-auto">
         {live.map((sp) => (
           <button key={sp.id} type="button" onClick={() => select(sp.id)} className="shrink-0">
-            <img
-              src={portraitOf(sp)}
-              alt=""
-              className={cn(
-                "size-14 rounded-lg object-cover",
-                sp.id === s.id && "ring-2 ring-paper",
-              )}
-            />
+            <img src={portraitOf(sp)} alt="" className={cn("size-14 rounded-lg object-cover", sp.id === s.id && "ring-2 ring-paper")} />
           </button>
         ))}
       </div>
@@ -883,13 +633,10 @@ export function TrainView() {
         </Button>
       </div>
       <p className="text-sm text-mute">
-        A loss strips gear and peels training. Drills put it back. A molt can come out glass-clean —
-        or split.
+        A loss strips gear and peels training. Drills put it back. A molt can come out glass-clean — or split.
       </p>
       {msg ? <p className="text-sm text-paper">{msg}</p> : null}
-      {canMolt(s) === "Not ready to molt" ? (
-        <p className="text-xs text-dust">Feed and fight until the molt bar fills.</p>
-      ) : null}
+      {canMolt(s) === "Not ready to molt" ? <p className="text-xs text-dust">Feed and fight until the molt bar fills.</p> : null}
     </div>
   );
 }
@@ -922,29 +669,19 @@ export function BayView() {
         <p className="text-xs uppercase tracking-widest text-dust">The bay</p>
         <h2 className="font-display text-3xl font-semibold">Chassis work</h2>
         <p className="text-sm text-dust">
-          Gear walks off a loss. Steel stays bolted — bonnet eyes, sticky press, web sacs — until
-          the stick cracks it. {formatCash(cash)}
+          Gear walks off a loss. Steel stays bolted — bonnet eyes, sticky press, web sacs — until the stick cracks it. {formatCash(cash)}
         </p>
       </header>
       <div className="flex gap-2 overflow-x-auto">
         {live.map((sp) => (
           <button key={sp.id} type="button" onClick={() => select(sp.id)} className="shrink-0">
-            <img
-              src={portraitOf(sp)}
-              alt=""
-              className={cn(
-                "size-14 rounded-lg object-cover",
-                sp.id === host.id && "ring-2 ring-paper",
-              )}
-            />
+            <img src={portraitOf(sp)} alt="" className={cn("size-14 rounded-lg object-cover", sp.id === host.id && "ring-2 ring-paper")} />
           </button>
         ))}
       </div>
       <p className="font-display text-2xl">{host.name}</p>
       <p className="text-xs text-moss">{bayKitLine(host)}</p>
-      <p className="text-xs text-dust">
-        Chassis effect: {chassisLine} · +{boltedScore} yard score
-      </p>
+      <p className="text-xs text-dust">Chassis effect: {chassisLine} · +{boltedScore} yard score</p>
       <SpiderBuildCanvas spider={host} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {BAY_SLOTS.map((entry) => {
@@ -954,10 +691,7 @@ export function BayView() {
               key={entry.id}
               type="button"
               onClick={() => setSlot(entry.id)}
-              className={cn(
-                "rounded-xl border p-3 text-left",
-                slot === entry.id ? "border-paper bg-panel" : "border-line bg-raised",
-              )}
+              className={cn("rounded-xl border p-3 text-left", slot === entry.id ? "border-paper bg-panel" : "border-line bg-raised")}
             >
               <p className="text-[10px] uppercase tracking-wide text-dust">{entry.label}</p>
               <p className="text-sm">{current?.name ?? "Stock"}</p>
@@ -979,9 +713,7 @@ export function BayView() {
               <p className="mt-1 text-xs text-mute">{job.blurb}</p>
               <p className="mt-1 text-xs text-moss">{bayBonusLine(job.bonus)}</p>
               <p className="mt-1 text-[11px] text-dust">
-                {current
-                  ? "Running this kit"
-                  : (blocked ?? `${job.energy} energy · ${RANKS[job.rank]?.name ?? "Alley"}`)}
+                {current ? "Running this kit" : blocked ?? `${job.energy} energy · ${RANKS[job.rank]?.name ?? "Alley"}`}
               </p>
               <Button
                 className="mt-2"
@@ -999,26 +731,17 @@ export function BayView() {
       <section className="rounded-xl border border-rust/40 bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-rust">DNA splice</p>
         <p className="mt-1 text-xs text-mute">
-          District and up. Copy a donor trait onto the mill. Hung rafters still count as stock. $
-          {splicePrice}.
+          District and up. Copy a donor trait onto the mill. Hung rafters still count as stock. ${splicePrice}.
         </p>
         {donors.length ? (
           <>
             <div className="mt-2 flex gap-2 overflow-x-auto">
               {donors.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setDonorId(s.id)}
-                  className="shrink-0"
-                >
+                <button key={s.id} type="button" onClick={() => setDonorId(s.id)} className="shrink-0">
                   <img
                     src={portraitOf(s)}
                     alt=""
-                    className={cn(
-                      "size-12 rounded-lg object-cover",
-                      donorId === s.id && "ring-2 ring-paper",
-                    )}
+                    className={cn("size-12 rounded-lg object-cover", donorId === s.id && "ring-2 ring-paper")}
                   />
                 </button>
               ))}
@@ -1029,10 +752,7 @@ export function BayView() {
               disabled={!donor || Boolean(canSplice(host, donor, cash, rank))}
               onClick={() => {
                 if (!donorId) return;
-                setMsg(
-                  spliceDna(host.id, donorId) ??
-                    `Spliced ${donor?.name ?? "stock"} into ${host.name}.`,
-                );
+                setMsg(spliceDna(host.id, donorId) ?? `Spliced ${donor?.name ?? "stock"} into ${host.name}.`);
               }}
             >
               Splice · ${splicePrice}
@@ -1046,11 +766,7 @@ export function BayView() {
         )}
       </section>
       {msg ? <p className="text-sm text-paper">{msg}</p> : null}
-      <button
-        type="button"
-        onClick={() => useGame.getState().setScreen("hides")}
-        className="min-h-11 text-sm text-moss"
-      >
+      <button type="button" onClick={() => useGame.getState().setScreen("hides")} className="min-h-11 text-sm text-moss">
         Millwright stall — house mills and hides you made
       </button>
     </div>
@@ -1098,14 +814,9 @@ export function HideView() {
         <p className="text-xs uppercase tracking-widest text-dust">The millwright stall</p>
         <h2 className="font-display text-3xl font-semibold">License a mill</h2>
         <p className="text-sm text-dust">
-          BattleBots for mills, not a VRChat upload. House mills come with steel bolted. Sculpt your
-          own in Blender, Unreal, or Sketchfab, export a picture from the front, bolt kits in the
-          bay, and copy a millwright ticket. Other yards pay the license. The house keeps{" "}
-          {Math.round(HOUSE_CUT * 100)}%.
+          BattleBots for mills, not a VRChat upload. House mills come with steel bolted. Sculpt your own in Blender, Unreal, or Sketchfab, export a picture from the front, bolt kits in the bay, and copy a millwright ticket. Other yards pay the license. The house keeps {Math.round(HOUSE_CUT * 100)}%.
         </p>
-        <p className="mt-1 tabular text-sm text-dust">
-          {formatCash(cash)} · drape ${HIDE_COST}
-        </p>
+        <p className="mt-1 tabular text-sm text-dust">{formatCash(cash)} · drape ${HIDE_COST}</p>
       </header>
       {host ? (
         <>
@@ -1115,18 +826,13 @@ export function HideView() {
                 <img
                   src={hideSrcOf(sp, hides) || portraitOf(sp)}
                   alt=""
-                  className={cn(
-                    "size-14 rounded-lg object-cover",
-                    sp.id === host.id && "ring-2 ring-paper",
-                  )}
+                  className={cn("size-14 rounded-lg object-cover", sp.id === host.id && "ring-2 ring-paper")}
                 />
               </button>
             ))}
           </div>
           <p className="font-display text-2xl">{host.name}</p>
-          <p className="text-xs text-moss">
-            {worn ? `Wearing ${worn.name}` : "Stock mill. No hide draped."}
-          </p>
+          <p className="text-xs text-moss">{worn ? `Wearing ${worn.name}` : "Stock mill. No hide draped."}</p>
           <SpiderBuildCanvas spider={host} />
         </>
       ) : (
@@ -1135,9 +841,7 @@ export function HideView() {
       <section className="rounded-xl border border-line bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-dust">House mills</p>
         <p className="mt-1 text-xs text-mute">
-          The circuit hangs mills with steel already bolted. License one and the house keeps{" "}
-          {Math.round(HOUSE_CUT * 100)}%. Yards cannot settle a millwright's share until the circuit
-          has a till; that share is logged.
+          The circuit hangs mills with steel already bolted. License one and the house keeps {Math.round(HOUSE_CUT * 100)}%. Yards cannot settle a millwright's share until the circuit has a till; that share is logged.
         </p>
         <div className="mt-2 flex flex-col gap-2">
           {HOUSE_STALL.map((mill) => {
@@ -1169,11 +873,7 @@ export function HideView() {
                           setMsg(err);
                           return;
                         }
-                        setMsg(
-                          host
-                            ? `Licensed ${mill.name}. Steel bolted.`
-                            : `${mill.name} is on the rack.`,
-                        );
+                        setMsg(host ? `Licensed ${mill.name}. Steel bolted.` : `${mill.name} is on the rack.`);
                       }}
                     >
                       License
@@ -1198,15 +898,11 @@ export function HideView() {
           }}
         />
       </label>
-      <p className="text-xs text-mute">
-        PNG or JPEG of your model. GLB, FBX, VRChat .vrca, and Blend files stay in the crate.
-      </p>
+      <p className="text-xs text-mute">PNG or JPEG of your model. GLB, FBX, VRChat .vrca, and Blend files stay in the crate.</p>
       <section className="rounded-xl border border-line bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-dust">Millwright ticket</p>
         <p className="mt-1 text-xs text-mute">
-          Paste SFMILL to buy another yard's mill — hide plus steel. House takes{" "}
-          {Math.round(HOUSE_CUT * 100)}% of the license. Yards cannot settle the millwright's share
-          until the circuit has a till; that share is logged.
+          Paste SFMILL to buy another yard's mill — hide plus steel. House takes {Math.round(HOUSE_CUT * 100)}% of the license. Yards cannot settle the millwright's share until the circuit has a till; that share is logged.
         </p>
         <textarea
           value={ticket}
@@ -1233,8 +929,7 @@ export function HideView() {
         <section className="rounded-xl border border-rust/40 bg-raised p-3">
           <p className="text-xs uppercase tracking-widest text-rust">Publish this mill</p>
           <p className="mt-1 text-xs text-mute">
-            Pack {worn.name} plus {millKitLine(graftsOf(host))} into a ticket. License ${price} ·
-            house ${splitPurse(price).house} · millwright ${splitPurse(price).maker}.
+            Pack {worn.name} plus {millKitLine(graftsOf(host))} into a ticket. License ${price} · house ${splitPurse(price).house} · millwright ${splitPurse(price).maker}.
           </p>
           <label className="mt-2 flex items-center gap-2 text-sm">
             <span className="text-dust">License $</span>
@@ -1260,10 +955,7 @@ export function HideView() {
                 return;
               }
               void clip.writeText(code).then(
-                () =>
-                  setMsg(
-                    `Millwright ticket copied. License $${mill.price}. House ${Math.round(HOUSE_CUT * 100)}%.`,
-                  ),
+                () => setMsg(`Millwright ticket copied. License $${mill.price}. House ${Math.round(HOUSE_CUT * 100)}%.`),
                 () => setMsg(code),
               );
             }}
@@ -1273,11 +965,7 @@ export function HideView() {
         </section>
       ) : null}
       <div className="flex flex-col gap-2">
-        {hides.length === 0 ? (
-          <p className="text-sm text-dust">
-            The rack is empty. Bring a picture of a mill you made.
-          </p>
-        ) : null}
+        {hides.length === 0 ? <p className="text-sm text-dust">The rack is empty. Bring a picture of a mill you made.</p> : null}
         {hides.map((hide) => {
           const blocked = host ? canDrape(host, hide, cash, rank) : "Catch someone first";
           const current = host?.hideId === hide.id;
@@ -1289,7 +977,7 @@ export function HideView() {
                   <p className="font-medium">{hide.name}</p>
                   <p className="text-xs text-dust">
                     {hide.maker ? `Millwright ${hide.maker} · ` : ""}
-                    {current ? "On this mill" : (blocked ?? `$${HIDE_COST} to drape`)}
+                    {current ? "On this mill" : blocked ?? `$${HIDE_COST} to drape`}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button
@@ -1298,19 +986,13 @@ export function HideView() {
                       disabled={!host || Boolean(blocked)}
                       onClick={() => {
                         if (!host) return;
-                        setMsg(
-                          drapeHide(host.id, hide.id) ?? `Draped ${hide.name} on ${host.name}.`,
-                        );
+                        setMsg(drapeHide(host.id, hide.id) ?? `Draped ${hide.name} on ${host.name}.`);
                       }}
                     >
                       Drape
                     </Button>
                     {current ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => host && setMsg(strip(host.id) ?? "Hide pulled.")}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => host && setMsg(strip(host.id) ?? "Hide pulled.")}>
                         Strip
                       </Button>
                     ) : null}
@@ -1332,11 +1014,7 @@ export function HideView() {
                     >
                       Copy ticket
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setMsg(releaseHide(hide.id) ?? "Hide let go.")}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => setMsg(releaseHide(hide.id) ?? "Hide let go.")}>
                       Let go
                     </Button>
                   </div>
@@ -1365,9 +1043,7 @@ export function ShopView() {
   const [msg, setMsg] = useState<string | null>(null);
   const kinds: Array<ItemKind | "gear"> = ["gear", "feed", "tonic", "bait", "upgrade"];
   const list = useMemo(() => {
-    const live = ITEM_LIST.filter(
-      (item) => isShipped(item) && (!item.rewardOnly || (inv[item.id] ?? 0) > 0),
-    );
+    const live = ITEM_LIST.filter((item) => isShipped(item) && (!item.rewardOnly || (inv[item.id] ?? 0) > 0));
     if (tab === "gear") return live.filter((i) => i.slot);
     return live.filter((i) => i.kind === tab);
   }, [tab, inv]);
@@ -1377,18 +1053,10 @@ export function ShopView() {
         <p className="text-xs uppercase tracking-widest text-dust">Shop</p>
         <h2 className="font-display text-3xl font-semibold">The crate</h2>
         <p className="tabular text-sm text-dust">{formatCash(cash)}</p>
-        <button
-          type="button"
-          onClick={() => useGame.getState().setScreen("bay")}
-          className="mt-2 min-h-11 text-sm text-moss"
-        >
+        <button type="button" onClick={() => useGame.getState().setScreen("bay")} className="mt-2 min-h-11 text-sm text-moss">
           Open the bay — steel eyes, sticky silk, web sacs
         </button>
-        <button
-          type="button"
-          onClick={() => useGame.getState().setScreen("hides")}
-          className="min-h-11 text-sm text-moss"
-        >
+        <button type="button" onClick={() => useGame.getState().setScreen("hides")} className="min-h-11 text-sm text-moss">
           Millwright stall — house mills and hides you made
         </button>
       </header>
@@ -1398,10 +1066,7 @@ export function ShopView() {
             key={k}
             type="button"
             onClick={() => setTab(k)}
-            className={cn(
-              "h-9 shrink-0 rounded-full px-3 text-sm capitalize",
-              tab === k ? "bg-paper text-ink" : "bg-raised text-dust",
-            )}
+            className={cn("h-9 shrink-0 rounded-full px-3 text-sm capitalize", tab === k ? "bg-paper text-ink" : "bg-raised text-dust")}
           >
             {k}
           </button>
@@ -1415,60 +1080,33 @@ export function ShopView() {
             <div key={item.id} className="rounded-xl border border-line bg-raised p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="font-medium">{item.name}</p>
-                <p className="tabular text-sm text-dust">
-                  {item.rewardOnly ? "Trophy" : `$${item.price}`}
-                </p>
+                <p className="tabular text-sm text-dust">{item.rewardOnly ? "Trophy" : `$${item.price}`}</p>
               </div>
               <p className="mt-1 text-xs text-mute">{item.blurb}</p>
-              <p className="mt-1 text-[11px] text-dust">
-                {have ? `In crate ${have}` : locked ? `Needs ${RANKS[item.rank]?.name}` : "\u00a0"}
-              </p>
+              <p className="mt-1 text-[11px] text-dust">{have ? `In crate ${have}` : locked ? `Needs ${RANKS[item.rank]?.name}` : "\u00a0"}</p>
               <div className="mt-2 flex gap-2">
                 {!item.rewardOnly ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={locked}
-                    onClick={() => setMsg(buy(item.id) ?? `Bought ${item.name}`)}
-                  >
+                  <Button size="sm" variant="outline" disabled={locked} onClick={() => setMsg(buy(item.id) ?? `Bought ${item.name}`)}>
                     Buy
                   </Button>
                 ) : null}
                 {item.slot && have > 0 && selectedId ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setMsg(equip(selectedId, item.id))}
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => setMsg(equip(selectedId, item.id))}>
                     Equip
                   </Button>
                 ) : null}
                 {item.kind === "feed" && have > 0 && selectedId ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setMsg(feed(selectedId, item.id))}
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => setMsg(feed(selectedId, item.id))}>
                     Feed
                   </Button>
                 ) : null}
                 {item.kind === "tonic" && have > 0 && selectedId ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setMsg(tonic(selectedId, item.id))}
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => setMsg(tonic(selectedId, item.id))}>
                     Use
                   </Button>
                 ) : null}
                 {item.kind === "bait" && have > 0 ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      setMsg(setHuntBait(item.id) ?? `${item.name} set for the next hunt`)
-                    }
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => setMsg(setHuntBait(item.id) ?? `${item.name} set for the next hunt`)}>
                     Set bait
                   </Button>
                 ) : null}
@@ -1477,9 +1115,7 @@ export function ShopView() {
           );
         })}
         {ITEM_LIST.some((i) => !isShipped(i)) ? (
-          <p className="text-xs text-mute">
-            More gear sits in {seasonName(2)} — Circuit lists the pack.
-          </p>
+          <p className="text-xs text-mute">More gear sits in {seasonName(2)} — Circuit lists the pack.</p>
         ) : null}
       </div>
       {msg ? <p className="mt-3 text-sm text-paper">{msg}</p> : null}
@@ -1497,10 +1133,7 @@ export function TeamView() {
       <header>
         <p className="text-xs uppercase tracking-widest text-dust">Traveling team</p>
         <h2 className="font-display text-3xl font-semibold">Three on the stick</h2>
-        <p className="text-sm text-dust">
-          Bench spiders lend the lead +1 grit each and +1 silk per web style. Hung veterans in the
-          rafters lend grit. Same bloodline lends power.
-        </p>
+        <p className="text-sm text-dust">Bench spiders lend the lead +1 grit each and +1 silk per web style. Hung veterans in the rafters lend grit. Same bloodline lends power.</p>
       </header>
       <div className="grid grid-cols-3 gap-2">
         {slots.map((i) => {
@@ -1509,11 +1142,7 @@ export function TeamView() {
             <div key={i} className="rounded-xl bg-raised p-2 text-center">
               {sp ? (
                 <>
-                  <img
-                    src={portraitOf(sp)}
-                    alt=""
-                    className="mx-auto size-16 rounded-lg object-cover"
-                  />
+                  <img src={portraitOf(sp)} alt="" className="mx-auto size-16 rounded-lg object-cover" />
                   <p className="mt-1 truncate text-xs">{sp.name}</p>
                 </>
               ) : (
@@ -1559,7 +1188,6 @@ export function CareerView() {
   const earnedBadges = useGame((s) => s.earnedBadges);
   const paper = useGame((s) => s.paper);
   const fightArchive = useGame((s) => s.fightArchive);
-  const train = useGame((s) => s.train);
   const rollYear = useGame((s) => s.rollYear);
   const [msg, setMsg] = useState<string | null>(null);
   const [circuitBoard, setCircuitBoard] = useState<CircuitEntry[]>([]);
@@ -1571,22 +1199,15 @@ export function CareerView() {
   const [dailyBoardError, setDailyBoardError] = useState<string | null>(null);
   const [dailyPlacement, setDailyPlacement] = useState<CircuitPlacement | null>(null);
   const [archiveShared, setArchiveShared] = useState<string | null>(null);
-  const [archiveDrill, setArchiveDrill] = useState<{ key: string; message: string } | null>(null);
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
   const current = SEASONS.find((s) => s.id === careerSeasonId(season)) ?? SEASONS[0]!;
   const day = useMemo(() => circuitDay(), []);
   const fieldGuide = SPECIES_LIST.filter(isShipped);
   const foundSpecies = fieldGuide.filter((species) => seen.includes(species.id)).length;
-  const nextFieldGuideMark = FIELD_GUIDE_MILESTONES.find(
-    (milestone) => !earnedBadges.includes(milestone.id),
-  );
+  const nextFieldGuideMark = FIELD_GUIDE_MILESTONES.find((milestone) => !earnedBadges.includes(milestone.id));
   const trophies = heldRivalTrophies(inventory, spiders);
-  const trophyRows = Object.entries(RIVAL_TROPHIES).map(([rivalId, itemId]) => ({
-    rival: RIVALS.find((rival) => rival.id === rivalId),
-    item: ITEMS[itemId],
-    held: trophies.includes(itemId),
-  }));
+  const trophyRows = Object.entries(RIVAL_TROPHIES).map(([rivalId, itemId]) => ({ rival: RIVALS.find((rival) => rival.id === rivalId), item: ITEMS[itemId], held: trophies.includes(itemId) }));
   const seasonChase = nextCircuitChase(circuitBoard, points, wins, stableName);
   const dailyChase = nextCircuitChase(dailyCircuitBoard, points, wins, stableName);
   const porchLadder = useMemo(() => porchCircuitLadder(season, day), [season, day]);
@@ -1637,10 +1258,7 @@ export function CareerView() {
     setBoardState("loading");
     setBoardError(null);
     void postCircuitScore({ data: { stableName, score: points, wins, rank, season } })
-      .then(async (placement) => ({
-        placement,
-        entries: await listCircuitBoard({ data: { season } }),
-      }))
+      .then(async (placement) => ({ placement, entries: await listCircuitBoard({ data: { season } }) }))
       .then(({ placement, entries }) => {
         setCircuitBoard(entries);
         setBoardPlacement(placement);
@@ -1649,11 +1267,7 @@ export function CareerView() {
       })
       .catch((error: unknown) => {
         setBoardState("error");
-        setBoardError(
-          error instanceof Error && error.message === "Unauthorized"
-            ? "Sign in to post a score."
-            : "Could not post this score. Try again.",
-        );
+        setBoardError(error instanceof Error && error.message === "Unauthorized" ? "Sign in to post a score." : "Could not post this score. Try again.");
       });
   };
 
@@ -1661,10 +1275,7 @@ export function CareerView() {
     setDailyBoardState("loading");
     setDailyBoardError(null);
     void postDailyCircuitScore({ data: { stableName, score: points, wins, rank, season, day } })
-      .then(async (placement) => ({
-        placement,
-        entries: await listDailyCircuitBoard({ data: { season, day } }),
-      }))
+      .then(async (placement) => ({ placement, entries: await listDailyCircuitBoard({ data: { season, day } }) }))
       .then(({ placement, entries }) => {
         setDailyCircuitBoard(entries);
         setDailyPlacement(placement);
@@ -1673,11 +1284,7 @@ export function CareerView() {
       })
       .catch((error: unknown) => {
         setDailyBoardState("error");
-        setDailyBoardError(
-          error instanceof Error && error.message === "Unauthorized"
-            ? "Sign in to post a score."
-            : "Could not post this score. Try again.",
-        );
+        setDailyBoardError(error instanceof Error && error.message === "Unauthorized" ? "Sign in to post a score." : "Could not post this score. Try again.");
       });
   };
 
@@ -1687,8 +1294,7 @@ export function CareerView() {
         <p className="text-xs uppercase tracking-widest text-dust">Circuit</p>
         <h2 className="font-display text-3xl font-semibold">{rankName(rank)}</h2>
         <p className="text-sm text-dust">
-          Year {season} · {current.name} · {wins}–{losses} on the stick
-          {winStreak ? ` · ${winStreak} straight` : ""}
+          Year {season} · {current.name} · {wins}–{losses} on the stick{winStreak ? ` · ${winStreak} straight` : ""}
         </p>
         <p className="text-xs text-moss">
           Circuit score {points}
@@ -1696,9 +1302,7 @@ export function CareerView() {
         </p>
       </header>
 
-      <Suspense fallback={null}>
-        <CompetitionSignIn />
-      </Suspense>
+      <Suspense fallback={null}><CompetitionSignIn /></Suspense>
 
       <section className="rounded-xl border border-line bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-dust">Yard leaderboard</p>
@@ -1718,49 +1322,27 @@ export function CareerView() {
       <section className="rounded-xl border border-moss/50 bg-raised p-3">
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-xs uppercase tracking-widest text-moss">Year {season} circuit board</p>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={boardState === "loading" || isSessionPending || !user}
-            onClick={postScore}
-          >
+          <Button size="sm" variant="outline" disabled={boardState === "loading" || isSessionPending || !user} onClick={postScore}>
             Post score
           </Button>
         </div>
-        <p className="mt-1 text-xs text-mute">
-          Post this stable's circuit score for other yards to chase.
-        </p>
-        {boardPlacement ? (
-          <p className="mt-2 text-xs text-moss">
-            Your latest post: #{boardPlacement.position} of {boardPlacement.total} active yards.
-          </p>
-        ) : null}
+        <p className="mt-1 text-xs text-mute">Post this stable's circuit score for other yards to chase.</p>
+        {boardPlacement ? <p className="mt-2 text-xs text-moss">Your latest post: #{boardPlacement.position} of {boardPlacement.total} active yards.</p> : null}
         {boardState === "error" ? <p className="mt-2 text-xs text-rust">{boardError}</p> : null}
-        {boardState === "loading" ? (
-          <p className="mt-2 text-xs text-dust">Reading the board…</p>
-        ) : null}
-        {boardState === "ready" && circuitBoard.length === 0 ? (
-          <p className="mt-2 text-xs text-dust">Be the first yard on the line.</p>
-        ) : null}
+        {boardState === "loading" ? <p className="mt-2 text-xs text-dust">Reading the board…</p> : null}
+        {boardState === "ready" && circuitBoard.length === 0 ? <p className="mt-2 text-xs text-dust">Be the first yard on the line.</p> : null}
         {boardState === "ready" && circuitBoard.length ? (
           <p className="mt-2 text-xs text-moss">
-            {seasonChase
-              ? `Chase ${seasonChase.entry.stableName}: +${seasonChase.pointsNeeded} Circuit point${seasonChase.pointsNeeded === 1 ? "" : "s"} passes their ${seasonChase.entry.score}.`
-              : "Your current score owns the top posted mark."}
+            {seasonChase ? `Chase ${seasonChase.entry.stableName}: +${seasonChase.pointsNeeded} Circuit point${seasonChase.pointsNeeded === 1 ? "" : "s"} passes their ${seasonChase.entry.score}.` : "Your current score owns the top posted mark."}
           </p>
         ) : null}
         {circuitBoard.length ? (
           <ol className="mt-2 space-y-2">
             {circuitBoard.map((entry, index) => (
-              <li
-                key={`${entry.stableName}-${entry.updatedAt}`}
-                className="flex items-center gap-2 text-sm"
-              >
+              <li key={`${entry.stableName}-${entry.updatedAt}`} className="flex items-center gap-2 text-sm">
                 <span className="w-5 text-dust">{index + 1}</span>
                 <span className="min-w-0 flex-1 truncate">{entry.stableName}</span>
-                <span className="text-xs text-dust">
-                  {rankName(entry.rank)} · {entry.wins}W
-                </span>
+                <span className="text-xs text-dust">{rankName(entry.rank)} · {entry.wins}W</span>
                 <span className="tabular text-moss">{entry.score} pts</span>
               </li>
             ))}
@@ -1770,15 +1352,9 @@ export function CareerView() {
 
       <section className="rounded-xl border border-paper/25 bg-panel p-3">
         <p className="text-xs uppercase tracking-widest text-paper">Porch ladder</p>
-        <p className="mt-1 text-xs text-mute">
-          Daily local projections. Beat a nearby yard, then carry that score onto the shared
-          Circuit.
-        </p>
+        <p className="mt-1 text-xs text-mute">Daily local projections. Beat a nearby yard, then carry that score onto the shared Circuit.</p>
         <p className="mt-2 text-xs text-moss">
-          Your porch position: #{porchPosition} of {porchLadder.length + 1} ·{" "}
-          {porchChase
-            ? `next yard: ${porchChase.entry.stableName} · +${porchChase.pointsNeeded} Circuit point${porchChase.pointsNeeded === 1 ? "" : "s"} to pass.`
-            : "you own tonight’s whole porch ladder."}
+          Your porch position: #{porchPosition} of {porchLadder.length + 1} · {porchChase ? `next yard: ${porchChase.entry.stableName} · +${porchChase.pointsNeeded} Circuit point${porchChase.pointsNeeded === 1 ? "" : "s"} to pass.` : "you own tonight’s whole porch ladder."}
         </p>
         <ol className="mt-2 space-y-1">
           {porchLadder.slice(0, 3).map((entry, index) => (
@@ -1799,9 +1375,7 @@ export function CareerView() {
           {career?.stripped ?? 0} wraps walked
           {(career?.clutches ?? 0) > 0 ? ` · ${career.clutches} clutches` : ""}
           {(career?.perfectMolts ?? 0) > 0 ? ` · ${career.perfectMolts} glass shells` : ""}
-          {(career?.worldTitles ?? 0) > 0
-            ? ` · ${career.worldTitles} World title${career.worldTitles === 1 ? "" : "s"}`
-            : ""}
+          {(career?.worldTitles ?? 0) > 0 ? ` · ${career.worldTitles} World title${career.worldTitles === 1 ? "" : "s"}` : ""}
           {(career?.bayJobs ?? 0) > 0 ? ` · ${career.bayJobs} bay jobs` : ""}
           {(career?.splices ?? 0) > 0 ? ` · ${career.splices} splices` : ""}
           {(career?.hides ?? 0) > 0 ? ` · ${career.hides} hides` : ""}
@@ -1812,14 +1386,11 @@ export function CareerView() {
 
       <section className="rounded-xl border border-moss/50 bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-moss">Trophy case</p>
-        <p className="mt-1 text-xs text-dust">
-          {trophies.length}/{trophyRows.length} key crews beaten. Trophies can be equipped from the
-          crate.
-        </p>
+        <p className="mt-1 text-xs text-dust">{trophies.length}/{trophyRows.length} key crews beaten. Trophies can be equipped from the crate.</p>
         <ul className="mt-2 space-y-1 text-sm">
           {trophyRows.map(({ rival, item, held }) => (
             <li key={item?.id} className={held ? "text-paper" : "text-dust"}>
-              {held ? "●" : "○"} {held ? item?.name : (rival?.name ?? "Unknown crew")}
+              {held ? "●" : "○"} {held ? item?.name : rival?.name ?? "Unknown crew"}
             </li>
           ))}
         </ul>
@@ -1828,51 +1399,27 @@ export function CareerView() {
       <section className="rounded-xl border border-rust/50 bg-raised p-3">
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-xs uppercase tracking-widest text-rust">Daily circuit · {day}</p>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={dailyBoardState === "loading" || isSessionPending || !user}
-            onClick={postDailyScore}
-          >
+          <Button size="sm" variant="outline" disabled={dailyBoardState === "loading" || isSessionPending || !user} onClick={postDailyScore}>
             Enter today
           </Button>
         </div>
-        <p className="mt-1 text-xs text-mute">
-          Fresh board at midnight UTC. Your current Circuit score is your entry.
-        </p>
-        {dailyPlacement ? (
-          <p className="mt-2 text-xs text-moss">
-            Today’s placement: #{dailyPlacement.position} of {dailyPlacement.total} active yards.
-          </p>
-        ) : null}
-        {dailyBoardState === "error" ? (
-          <p className="mt-2 text-xs text-rust">{dailyBoardError}</p>
-        ) : null}
-        {dailyBoardState === "loading" ? (
-          <p className="mt-2 text-xs text-dust">Reading today’s board…</p>
-        ) : null}
-        {dailyBoardState === "ready" && dailyCircuitBoard.length === 0 ? (
-          <p className="mt-2 text-xs text-dust">Set the first mark today.</p>
-        ) : null}
+        <p className="mt-1 text-xs text-mute">Fresh board at midnight UTC. Your current Circuit score is your entry.</p>
+        {dailyPlacement ? <p className="mt-2 text-xs text-moss">Today’s placement: #{dailyPlacement.position} of {dailyPlacement.total} active yards.</p> : null}
+        {dailyBoardState === "error" ? <p className="mt-2 text-xs text-rust">{dailyBoardError}</p> : null}
+        {dailyBoardState === "loading" ? <p className="mt-2 text-xs text-dust">Reading today’s board…</p> : null}
+        {dailyBoardState === "ready" && dailyCircuitBoard.length === 0 ? <p className="mt-2 text-xs text-dust">Set the first mark today.</p> : null}
         {dailyBoardState === "ready" && dailyCircuitBoard.length ? (
           <p className="mt-2 text-xs text-moss">
-            {dailyChase
-              ? `Today’s chase: ${dailyChase.entry.stableName} is +${dailyChase.pointsNeeded} Circuit point${dailyChase.pointsNeeded === 1 ? "" : "s"} away.`
-              : "You hold today’s top posted mark."}
+            {dailyChase ? `Today’s chase: ${dailyChase.entry.stableName} is +${dailyChase.pointsNeeded} Circuit point${dailyChase.pointsNeeded === 1 ? "" : "s"} away.` : "You hold today’s top posted mark."}
           </p>
         ) : null}
         {dailyCircuitBoard.length ? (
           <ol className="mt-2 space-y-2">
             {dailyCircuitBoard.map((entry, index) => (
-              <li
-                key={`${entry.stableName}-${entry.updatedAt}`}
-                className="flex items-center gap-2 text-sm"
-              >
+              <li key={`${entry.stableName}-${entry.updatedAt}`} className="flex items-center gap-2 text-sm">
                 <span className="w-5 text-dust">{index + 1}</span>
                 <span className="min-w-0 flex-1 truncate">{entry.stableName}</span>
-                <span className="text-xs text-dust">
-                  {rankName(entry.rank)} · {entry.wins}W
-                </span>
+                <span className="text-xs text-dust">{rankName(entry.rank)} · {entry.wins}W</span>
                 <span className="tabular text-moss">{entry.score} pts</span>
               </li>
             ))}
@@ -1896,93 +1443,31 @@ export function CareerView() {
       {fightArchive.length ? (
         <section className="rounded-xl border border-line bg-raised p-3">
           <p className="text-xs uppercase tracking-widest text-dust">Yard archive</p>
-          <p className="mt-1 text-xs text-mute">
-            Your last {fightArchive.length} complete tapes. Read what worked, then share a finished
-            card.
-          </p>
+          <p className="mt-1 text-xs text-mute">Your last {fightArchive.length} complete tapes. Read what worked, then share a finished card.</p>
           <ol className="mt-2 space-y-3">
-            {fightArchive.slice(0, 6).map((tape, index) => {
-              const archiveKey = `${tape.date}-${tape.fighter}-${tape.rivalId}-${index}`;
-              const tapePlay = strongestTapePlay(tape.rounds);
-              const tapeDrill = tapePlay ? trainingStatForMove(tapePlay.playerMove) : null;
-              const fighter = spiders.find(
-                (spider) => spider.name === tape.fighter && !spider.retired,
-              );
-              const drillCost =
-                fighter && tapeDrill
-                  ? traitTrainCost(fighter.traits, 10 + fighter.trained[tapeDrill] * 6)
-                  : null;
-              return (
-                <li
-                  key={archiveKey}
-                  className="border-t border-line pt-2 first:border-0 first:pt-0"
+            {fightArchive.slice(0, 6).map((tape, index) => (
+              <li key={`${tape.date}-${tape.fighter}-${tape.rivalId}-${index}`} className="border-t border-line pt-2 first:border-0 first:pt-0">
+                <p className={tape.won ? "text-sm text-paper" : "text-sm text-dust"}>
+                  {tape.fighter} {tape.won ? "held" : "dropped"} vs {tape.enemyName}
+                  {tape.practice ? " · practice" : tape.points === undefined ? "" : ` · ${tape.points > 0 ? "+" : ""}${tape.points} pts`}
+                </p>
+                <p className="mt-1 text-xs text-dust">
+                  {tape.rounds.map((round) => `R${round.round} ${MOVES[round.playerMove].name}/${MOVES[round.enemyMove].name} ${round.result}`).join(" · ") || "No exchanges recorded"}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => {
+                    void shareMatchCard(archiveShareText(stableName, tape)).then((status) => {
+                      setArchiveShared(status === "shared" ? "Match card shared." : status === "copied" ? "Match card copied." : status === "cancelled" ? "Share cancelled." : "Could not share match card.");
+                    });
+                  }}
                 >
-                  <p className={tape.won ? "text-sm text-paper" : "text-sm text-dust"}>
-                    {tape.fighter} {tape.won ? "held" : "dropped"} vs {tape.enemyName}
-                    {tape.practice
-                      ? " · practice"
-                      : tape.points === undefined
-                        ? ""
-                        : ` · ${tape.points > 0 ? "+" : ""}${tape.points} pts`}
-                  </p>
-                  <p className="mt-1 text-xs text-dust">
-                    {tape.rounds
-                      .map(
-                        (round) =>
-                          `R${round.round} ${MOVES[round.playerMove].name}/${MOVES[round.enemyMove].name} ${round.result}`,
-                      )
-                      .join(" · ") || "No exchanges recorded"}
-                  </p>
-                  {tapePlay ? (
-                    <p className="mt-2 text-xs text-moss">
-                      Best read: when {MOVES[tapePlay.enemyMove].name} showed,{" "}
-                      {MOVES[tapePlay.playerMove].name} earned {tapePlay.edges} edge
-                      {tapePlay.edges === 1 ? "" : "s"}.
-                    </p>
-                  ) : null}
-                  {fighter && tapeDrill ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-2"
-                      onClick={() => {
-                        const outcome = train(fighter.id, tapeDrill);
-                        setArchiveDrill({
-                          key: archiveKey,
-                          message:
-                            outcome ?? `Drilled ${STAT_LABEL[tapeDrill]} for ${fighter.name}.`,
-                        });
-                      }}
-                    >
-                      Drill {STAT_LABEL[tapeDrill]} · ${drillCost} / 16 energy
-                    </Button>
-                  ) : null}
-                  {archiveDrill?.key === archiveKey ? (
-                    <p className="mt-2 text-xs text-moss">{archiveDrill.message}</p>
-                  ) : null}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2"
-                    onClick={() => {
-                      void shareMatchCard(archiveShareText(stableName, tape)).then((status) => {
-                        setArchiveShared(
-                          status === "shared"
-                            ? "Match card shared."
-                            : status === "copied"
-                              ? "Match card copied."
-                              : status === "cancelled"
-                                ? "Share cancelled."
-                                : "Could not share match card.",
-                        );
-                      });
-                    }}
-                  >
-                    Share match card
-                  </Button>
-                </li>
-              );
-            })}
+                  Share match card
+                </Button>
+              </li>
+            ))}
           </ol>
           {archiveShared ? <p className="mt-2 text-xs text-dust">{archiveShared}</p> : null}
         </section>
@@ -1995,9 +1480,7 @@ export function CareerView() {
             {rafterSpiders(spiders).map((s) => (
               <li key={s.id} className="flex justify-between gap-2">
                 <span className="truncate">{s.name}</span>
-                <span className="truncate text-xs text-moss">
-                  {s.line ?? STAGE_LABEL[s.stage]} · {s.wins}W
-                </span>
+                <span className="truncate text-xs text-moss">{s.line ?? STAGE_LABEL[s.stage]} · {s.wins}W</span>
               </li>
             ))}
           </ul>
@@ -2029,10 +1512,7 @@ export function CareerView() {
             return (
               <li key={badge.id} className={cn("rounded-lg bg-panel p-2", !earned && "opacity-55")}>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium">
-                    {earned ? "✓ " : "○ "}
-                    {badge.name}
-                  </span>
+                  <span className="text-sm font-medium">{earned ? "✓ " : "○ "}{badge.name}</span>
                   <span className="tabular text-xs text-moss">+{badge.reward} pts</span>
                 </div>
                 <p className="mt-0.5 text-xs text-dust">{badge.detail}</p>
@@ -2094,9 +1574,7 @@ export function CareerView() {
 
       <section>
         <p className="mb-2 text-xs uppercase tracking-widest text-dust">Almanac</p>
-        <p className="mb-2 text-sm text-dust">
-          {foundSpecies}/{fieldGuide.length} species logged · each reveals a new web answer.
-        </p>
+        <p className="mb-2 text-sm text-dust">{foundSpecies}/{fieldGuide.length} species logged · each reveals a new web answer.</p>
         <p className="mb-3 text-xs text-moss">
           {nextFieldGuideMark
             ? `${nextFieldGuideMark.name}: ${Math.min(foundSpecies, nextFieldGuideMark.target)}/${nextFieldGuideMark.target} · +${nextFieldGuideMark.reward} circuit pts`
@@ -2108,29 +1586,16 @@ export function CareerView() {
             return (
               <div
                 key={sp.id}
-                className={cn(
-                  "rounded-xl border border-line bg-raised p-2",
-                  !known && "opacity-60",
-                )}
+                className={cn("rounded-xl border border-line bg-raised p-2", !known && "opacity-60")}
               >
                 {known ? (
-                  <img
-                    src={Object.values(sp.portraits)[0]}
-                    alt=""
-                    className="mb-2 h-16 w-full rounded object-cover"
-                  />
+                  <img src={Object.values(sp.portraits)[0]} alt="" className="mb-2 h-16 w-full rounded object-cover" />
                 ) : (
                   <div className="mb-2 h-16 rounded bg-ink" />
                 )}
                 <p className="truncate text-sm font-medium">{known ? sp.common : "???"}</p>
-                <p className="truncate text-xs text-moss">
-                  {known ? `${sp.web.name} · ${MOVES[sp.web.move].name}` : "Unlogged"}
-                </p>
-                {known ? (
-                  <p className="mt-1 text-[11px] text-dust">
-                    {CLASS_LABEL[sizeClassOfSpecies(sp)]} mill · {sp.web.ability}
-                  </p>
-                ) : null}
+                <p className="truncate text-xs text-moss">{known ? `${sp.web.name} · ${MOVES[sp.web.move].name}` : "Unlogged"}</p>
+                {known ? <p className="mt-1 text-[11px] text-dust">{CLASS_LABEL[sizeClassOfSpecies(sp)]} mill · {sp.web.ability}</p> : null}
               </div>
             );
           })}
@@ -2147,14 +1612,13 @@ export function CareerView() {
           Roll the next year
         </Button>
       ) : (
-        <p className="text-sm text-mute">
-          Hold World Stick to roll a new year. Packs drop when the circuit opens them.
-        </p>
+        <p className="text-sm text-mute">Hold World Stick to roll a new year. Packs drop when the circuit opens them.</p>
       )}
       {msg ? <p className="text-sm text-paper">{msg}</p> : null}
     </div>
   );
 }
+
 
 export function SettingsView() {
   const settings = useGame((s) => s.settings);
@@ -2187,8 +1651,7 @@ export function SettingsView() {
               : "Stick mind is dark. You can still call the Black Widow; she falls back to yard instinct until the line comes up."}
         </p>
         <p className="mt-2 text-xs text-mute">
-          Build {BUILD} · {seasonName(SHIPPED_SEASON)} shipped. Later packs sit in Circuit until
-          they open.
+          Build {BUILD} · {seasonName(SHIPPED_SEASON)} shipped. Later packs sit in Circuit until they open.
         </p>
       </div>
       <label className="text-sm text-dust">
@@ -2201,23 +1664,8 @@ export function SettingsView() {
       </label>
       {(["sfx", "music", "reduceMotion", "timingAssist", "readHints"] as const).map((k) => (
         <label key={k} className="flex items-center justify-between rounded-xl bg-raised px-3 py-3">
-          <span className="capitalize">
-            {k === "sfx"
-              ? "Sound"
-              : k === "music"
-                ? "Yard hum"
-                : k === "reduceMotion"
-                  ? "Less motion"
-                  : k === "timingAssist"
-                    ? "Focus timing · 2.5s reads"
-                    : "Read guide · show counters"}
-          </span>
-          <input
-            type="checkbox"
-            checked={settings[k]}
-            onChange={(e) => setSetting(k, e.target.checked)}
-            className="size-5 accent-rust"
-          />
+          <span className="capitalize">{k === "sfx" ? "Sound" : k === "music" ? "Yard hum" : k === "reduceMotion" ? "Less motion" : k === "timingAssist" ? "Focus timing · 2.5s reads" : "Read guide · show counters"}</span>
+          <input type="checkbox" checked={settings[k]} onChange={(e) => setSetting(k, e.target.checked)} className="size-5 accent-rust" />
         </label>
       ))}
       <Button variant="outline" onClick={() => setScreen("train")}>
