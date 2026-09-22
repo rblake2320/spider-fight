@@ -130,7 +130,7 @@ export const useGame = create<Game>()(
 
       hydrate: () => {
         const s = get();
-        if (s.dayStamp !== todayStamp()) {
+        if (s.dayStamp !== todayStamp() || s.dailyContract.date !== todayStamp()) {
           set({
             huntsLeft: HUNTS_PER_DAY,
             dayStamp: todayStamp(),
