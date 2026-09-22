@@ -47,6 +47,8 @@ export function FightSelect() {
   const rivalRecords = useGame((s) => s.rivalRecords);
   const setScreen = useGame((s) => s.setScreen);
   const startYardSeries = useGame((s) => s.startYardSeries);
+  const continueYardSeries = useGame((s) => s.continueYardSeries);
+  const yardSeries = useGame((s) => s.yardSeries);
   const seriesCalled = useGame((s) => s.flags.yardSeries === s.dayStamp);
   const [wager, setWager] = useState(10);
   const [err, setErr] = useState<string | null>(null);
@@ -83,8 +85,13 @@ export function FightSelect() {
             <p className="text-xs uppercase tracking-widest text-paper">Yard series</p>
             <p className="mt-1 text-xs text-dust">Three crews. No entry wager. Win all three for +$50 and +30 circuit points.</p>
           </div>
-          <Button size="sm" variant="outline" disabled={!player || seriesCalled} onClick={() => player && setErr(startYardSeries(player.id))}>
-            {seriesCalled ? "Called" : "Run card"}
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!player || seriesCalled}
+            onClick={() => setErr(yardSeries ? continueYardSeries() : player ? startYardSeries(player.id) : "Pick a fighter")}
+          >
+            {seriesCalled ? "Called" : yardSeries ? `Resume ${yardSeries.stage + 1}/3` : "Run card"}
           </Button>
         </div>
       </section>

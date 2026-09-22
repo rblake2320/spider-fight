@@ -470,6 +470,9 @@ export const useGame = create<Game>()(
       startYardSeries: (playerId) => {
         const g = get();
         if (g.flags.yardSeries === g.dayStamp) return "That yard series is called for today";
+        if (g.yardSeries?.date === g.dayStamp && g.yardSeries.stage < g.yardSeries.rivals.length) {
+          return "A yard series is already waiting";
+        }
         const player = g.spiders.find((spider) => spider.id === playerId);
         if (!player) return "Pick a fighter";
         const reason = canFight(player);

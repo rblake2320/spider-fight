@@ -65,3 +65,17 @@ test("migrate keeps unknown species from crashing", () => {
   assert.deepEqual(next.earnedBadges, []);
   speciesOf("nope");
 });
+
+test("migrate retains a valid suspended yard series and rejects a foreign one", () => {
+  const valid = migrateSave(
+    {
+      spiders: [{ id: "x", name: "Runner", speciesId: "hentz" }],
+      yardSeries: { date: "2026-09-22", playerId: "x", rivals: ["tom", "june", "kudzu"], stage: 1 },
+    },
+    4,
+  );
+  assert.deepEqual(valid.yardSeries, { date: "2026-09-22", playerId: "x", rivals: ["tom", "june", "kudzu"], stage: 1 });
+
+  const foreign = migrateSave({ spiders: [{ id: "x", name: "Runner", speciesId: "hentz" }], yardSeries: { playerId: "x", rivals: ["tom"], stage: 0 } }, 4);
+  assert.equal(foreign.yardSeries, null);
+});
