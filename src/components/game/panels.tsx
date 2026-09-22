@@ -4,7 +4,7 @@ import { ITEMS, ITEM_LIST, MOVES, RANKS, RIVALS, SLOT_LABEL, SPECIES, SPECIES_LI
 import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES, FIELD_GUIDE_MILESTONES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
-import { circuitDay, listCircuitBoard, listDailyCircuitBoard, nextCircuitChase, postCircuitScore, postDailyCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
+import { circuitDay, listCircuitBoard, listDailyCircuitBoard, nextCircuitChase, porchCircuitLadder, postCircuitScore, postDailyCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
@@ -894,6 +894,8 @@ export function CareerView() {
   const trophyRows = Object.entries(RIVAL_TROPHIES).map(([rivalId, itemId]) => ({ rival: RIVALS.find((rival) => rival.id === rivalId), item: ITEMS[itemId], held: trophies.includes(itemId) }));
   const seasonChase = nextCircuitChase(circuitBoard, points, wins, stableName);
   const dailyChase = nextCircuitChase(dailyCircuitBoard, points, wins, stableName);
+  const porchLadder = useMemo(() => porchCircuitLadder(season, day), [season, day]);
+  const porchChase = nextCircuitChase(porchLadder, points, wins, stableName);
 
   useEffect(() => {
     let alive = true;
@@ -1029,6 +1031,24 @@ export function CareerView() {
             ))}
           </ol>
         ) : null}
+      </section>
+
+      <section className="rounded-xl border border-paper/25 bg-panel p-3">
+        <p className="text-xs uppercase tracking-widest text-paper">Porch ladder</p>
+        <p className="mt-1 text-xs text-mute">Daily local projections. Beat a nearby yard, then carry that score onto the shared Circuit.</p>
+        <p className="mt-2 text-xs text-moss">
+          {porchChase ? `Next yard: ${porchChase.entry.stableName} · +${porchChase.pointsNeeded} Circuit point${porchChase.pointsNeeded === 1 ? "" : "s"} to pass.` : "You own tonight’s whole porch ladder."}
+        </p>
+        <ol className="mt-2 space-y-1">
+          {porchLadder.slice(0, 3).map((entry, index) => (
+            <li key={entry.stableName} className="flex items-center gap-2 text-xs text-dust">
+              <span className="w-4">{index + 1}</span>
+              <span className="min-w-0 flex-1 truncate">{entry.stableName}</span>
+              <span>{entry.wins}W</span>
+              <span className="tabular text-paper">{entry.score} pts</span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <div className="rounded-xl bg-raised p-3">

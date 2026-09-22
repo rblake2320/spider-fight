@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
-import { nextCircuitChase, type CircuitEntry } from "./circuit-board.ts";
+import { nextCircuitChase, porchCircuitLadder, type CircuitEntry } from "./circuit-board.ts";
 
 test("the circuit board offers the nearest other yard to chase", () => {
   const board: CircuitEntry[] = [
@@ -20,6 +20,14 @@ test("the circuit board offers the nearest other yard to chase", () => {
     pointsNeeded: 1,
   });
   assert.equal(nextCircuitChase(board, 32, 0, "Porch Crew"), null);
+});
+
+test("the offline Porch Ladder is stable for a circuit day and offers distinct yards", () => {
+  const first = porchCircuitLadder(2, "2026-09-22");
+  assert.deepEqual(first, porchCircuitLadder(2, "2026-09-22"));
+  assert.equal(first.length, 6);
+  assert.equal(new Set(first.map((entry) => entry.stableName)).size, first.length);
+  assert.ok(first.every((entry, index) => index === 0 || first[index - 1]!.score >= entry.score));
 });
 
 test("the circuit board keeps one score per yard for each year", async () => {

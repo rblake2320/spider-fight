@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { mulberry32, seedFrom } from "@/game/rng";
 import { authMiddleware } from "./auth/middleware";
 
 export type CircuitEntry = {
@@ -28,6 +29,20 @@ type DailyCircuitSubmission = CircuitSubmission & DailyCircuit;
 /** Shared daily cards reset at midnight UTC, so every yard sees the same race. */
 export function circuitDay(now = new Date()): string {
   return now.toISOString().slice(0, 10);
+}
+
+const PORCH_LADDER_NAMES = ["Fence Line", "Porch Saints", "Culvert Kids", "Backstep Silk", "Moth Crew", "Rafter Rats"];
+
+/** A daily, offline rival ladder keeps every new yard chasing a real score before the shared board fills. */
+export function porchCircuitLadder(season: number, day = circuitDay()): CircuitEntry[] {
+  const rng = mulberry32(seedFrom(`porch-ladder:${day}:${season}`));
+  return PORCH_LADDER_NAMES.map((stableName, index) => ({
+    stableName,
+    score: 12 + season * 7 + index * 6 + rng.int(0, 16),
+    wins: 1 + rng.int(0, Math.max(1, season + 2)),
+    rank: Math.min(7, Math.floor((season - 1) / 2)),
+    updatedAt: day,
+  })).sort((a, b) => b.score - a.score || b.wins - a.wins || a.stableName.localeCompare(b.stableName));
 }
 
 /** Gives a player one reachable yard to pass instead of an inert list of scores. */
