@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { HABITATS, ITEM_LIST, ITEMS, SPECIES } from "@/game/content";
+import { HABITATS, ITEM_LIST, ITEMS, RANKS, SPECIES } from "@/game/content";
 import { isShipped, seasonName } from "@/game/catalog";
 import { tonightSky } from "@/game/sky";
 import { playCatch } from "@/game/audio";
@@ -76,7 +76,7 @@ export function HuntSelect() {
                   {coming
                     ? `${seasonName(h.season ?? 2)} — not open yet`
                     : locked
-                      ? "Rank locked"
+                      ? `Needs ${RANKS[h.rank]?.name ?? `rank ${h.rank}`}`
                       : h.cost
                         ? `$${h.cost} trip`
                         : "Free walk"}{" "}
