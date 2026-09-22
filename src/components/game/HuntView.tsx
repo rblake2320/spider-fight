@@ -221,10 +221,11 @@ export function HuntPlay() {
         <p className="text-xs uppercase tracking-widest text-dust">{hab.name}</p>
         {activeBait ? <p className="mt-1 text-xs text-moss">{ITEMS[activeBait]?.name} is on the line.</p> : null}
         <h2 className="font-display text-2xl">{phase === "miss" ? "Gone" : "In the silk"}</h2>
-        <p className="text-sm text-paper/80">{msg}</p>
+        <p className="text-sm text-paper/80" aria-live="polite">{msg}</p>
         <div className="flex flex-1 items-center justify-center">
           <button
             type="button"
+            aria-label={phase === "window" ? "Catch spider when the rust bead swells" : phase === "miss" ? "Leave hunt" : "Wait for the catch window"}
             className={cn(
               "relative size-40 rounded-full border-2 border-paper/50 bg-ink/30",
               phase === "window" && "border-rust",
@@ -252,7 +253,7 @@ export function HuntPlay() {
             />
           </button>
         </div>
-        <p className="mb-8 text-center text-xs text-dust">
+        <p className="mb-8 text-center text-xs text-dust" aria-live="polite">
           {phase === "window" ? "Tap when the rust bead swells" : phase === "miss" ? "Tap to leave" : "Wait for the twitch"}
         </p>
       </div>
