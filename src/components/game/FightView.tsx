@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
+import { SpiderBuildCanvas } from "./SpiderBuildCanvas";
 import { applyEnemyTell, arenaOpponentName, bestCounterFor, countersFor, createFight, moveForKey, openingReadWindow, queuePlayerMove, READ_WINDOW_SECONDS, readWindowPercent, readWindowSeconds, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
@@ -546,6 +547,7 @@ function ResultCard() {
   const [shared, setShared] = useState<string | null>(null);
   const [rematchError, setRematchError] = useState<string | null>(null);
   const [drillMessage, setDrillMessage] = useState<string | null>(null);
+  const [drilledFromTape, setDrilledFromTape] = useState(false);
   const [circuitPost, setCircuitPost] = useState<"idle" | "posting" | "posted" | "error">("idle");
   const [circuitPlacement, setCircuitPlacement] = useState<CircuitPlacement | null>(null);
   const fighter = spiders.find((spider) => spider.id === selectedId && !spider.retired) ?? spiders.find((spider) => !spider.retired);
@@ -675,14 +677,24 @@ function ResultCard() {
               size="sm"
               variant="outline"
               onClick={() => {
-                const error = train(fighter.id, tapeDrill);
-                setDrillMessage(error ?? `Drilled ${STAT_LABEL[tapeDrill]}. ${fighter.name}'s stick build just changed.`);
+                const outcome = train(fighter.id, tapeDrill);
+                const drilled = !outcome || outcome.startsWith("Drilled ");
+                setDrilledFromTape(drilled);
+                setDrillMessage(outcome ?? `Drilled ${STAT_LABEL[tapeDrill]}. ${fighter.name}'s stick build just changed.`);
               }}
             >
               Drill {STAT_LABEL[tapeDrill]} from this tape · ${tapeDrillCost} / 16 energy
             </Button>
           ) : null}
           {drillMessage ? <p className="mt-2 text-center text-xs text-moss">{drillMessage}</p> : null}
+          {drilledFromTape && fighter && tapeDrill ? (
+            <div className="mt-3 rounded-lg border border-rust/40 bg-panel p-2">
+              <p className="text-center text-xs text-moss">
+                {fighter.name}'s {STAT_LABEL[tapeDrill]} training: +{fighter.trained[tapeDrill]}
+              </p>
+              <div className="mt-2"><SpiderBuildCanvas spider={fighter} /></div>
+            </div>
+          ) : null}
         </section>
       ) : null}
       {read ? (
