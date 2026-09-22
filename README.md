@@ -40,7 +40,7 @@ More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt resu
 - **Pit Circuit** — recluses, huntsmen, trapdoors, Texas brown tarantulas, and goliath bird-eaters, each with their own mill
 - **Weight cards** — Thread, Stick, Floor, Pit. Ranked calls match inside one class and its neighbors so a bird-eater never farms a jumper
 - **Steel bay** — bonnet eye, optic sting, chrome tarsi, sticky press, web sacs. They start even; the mill is how she becomes hers
-- **Hide rack** — bring a picture of a mill you made (Blender, Unreal, Sketchfab). It hangs on the stick and the fight makes it lunge. Copy a ticket so another yard can hang it too. 3D files stay in the crate.
+- **Hide rack / millwright stall** — house mills come with steel bolted; license one and the house keeps 15%. Bring a picture of a mill you made, bolt kits in the bay, copy an SFMILL ticket so another yard can hang it and pay your purse. 3D files stay in the crate. Millwright shares are logged until the circuit has a till.
 - **Egg sacs** — a hen carries a sac, it hatches on her back, then the spiderlings go everywhere (one stays if you have a crate, the rest infest the hunt lights)
 - **Train / shop / team** — drills change the fighter, and cash buys wraps, fangs, silk, stims, bait
 - **Stick fights** — readable, timed counter rounds on a bamboo line (lunge, grapple, feint, brace, yank, drop)

@@ -12,7 +12,7 @@ import { canClutch, clutchCost } from "@/game/clutch";
 import { canSetSac, sacCost } from "@/game/brood";
 import { CLASS_LABEL, sizeClassOfSpecies, sizeClassOfSpider } from "@/game/weight";
 import { BAY_JOBS, BAY_SLOTS, bayBonusLine, bayJobOf, bayKitLine, bayStats, canFit, canSplice, graftsOf, spliceCost } from "@/game/bay";
-import { canDrape, cookHide, encodeHideTicket, HIDE_COST, hideOf, hideSrcOf } from "@/game/hides";
+import { canDrape, canLicenseStall, cookHide, encodeHideTicket, encodeMillwright, HIDE_COST, hideOf, hideSrcOf, HOUSE_CUT, HOUSE_STALL, millFromSpider, millKitLine, splitPurse } from "@/game/hides";
 import { canFight, canMolt, effective, moltLine, portraitOf, recoveryRests, spiderScore, STAGE_LABEL, STAT_LABEL, trainingLook, trainingTotal } from "@/game/spiders";
 import { traitBlurb, traitTrainCost } from "@/game/traits";
 import { activeSpiders, canRelease, canRetire, rafterSpiders, releaseCash } from "@/game/rafters";
@@ -767,7 +767,7 @@ export function BayView() {
       </section>
       {msg ? <p className="text-sm text-paper">{msg}</p> : null}
       <button type="button" onClick={() => useGame.getState().setScreen("hides")} className="min-h-11 text-sm text-moss">
-        Hide rack — hang a mill you made
+        Millwright stall — house mills and hides you made
       </button>
     </div>
   );
@@ -782,14 +782,17 @@ export function HideView() {
   const hides = useGame((s) => s.hides);
   const addHide = useGame((s) => s.addHide);
   const importHide = useGame((s) => s.importHide);
+  const licenseStall = useGame((s) => s.licenseStall);
   const drapeHide = useGame((s) => s.drapeHide);
   const strip = useGame((s) => s.stripHide);
   const releaseHide = useGame((s) => s.releaseHide);
+  const stableName = useGame((s) => s.stableName);
   const live = activeSpiders(spiders);
   const host = live.find((s) => s.id === selectedId) ?? live[0];
   const [ticket, setTicket] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [price, setPrice] = useState(40);
   const worn = hideOf(hides, host?.hideId);
 
   const bringFile = (file: File | undefined) => {
@@ -808,10 +811,10 @@ export function HideView() {
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
       <header>
-        <p className="text-xs uppercase tracking-widest text-dust">The rack</p>
-        <h2 className="font-display text-3xl font-semibold">Bring a hide</h2>
+        <p className="text-xs uppercase tracking-widest text-dust">The millwright stall</p>
+        <h2 className="font-display text-3xl font-semibold">License a mill</h2>
         <p className="text-sm text-dust">
-          Sculpt in Blender, Unreal, Sketchfab — then export a picture from the front. This yard cannot swallow a 3D file. The picture hangs on the stick and the fight makes it lunge, brace, and drop.
+          BattleBots for mills, not a VRChat upload. House mills come with steel bolted. Sculpt your own in Blender, Unreal, or Sketchfab, export a picture from the front, bolt kits in the bay, and copy a millwright ticket. Other yards pay the license. The house keeps {Math.round(HOUSE_CUT * 100)}%.
         </p>
         <p className="mt-1 tabular text-sm text-dust">{formatCash(cash)} · drape ${HIDE_COST}</p>
       </header>
@@ -835,6 +838,53 @@ export function HideView() {
       ) : (
         <p className="text-sm text-dust">Catch someone first, then drape a hide on them.</p>
       )}
+      <section className="rounded-xl border border-line bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-dust">House mills</p>
+        <p className="mt-1 text-xs text-mute">
+          The circuit hangs mills with steel already bolted. License one and the house keeps {Math.round(HOUSE_CUT * 100)}%. Yards cannot settle a millwright's share until the circuit has a till; that share is logged.
+        </p>
+        <div className="mt-2 flex flex-col gap-2">
+          {HOUSE_STALL.map((mill) => {
+            const blocked = canLicenseStall(mill, cash, rank, hides, stableName);
+            const split = splitPurse(mill.price);
+            return (
+              <div key={mill.id} className="rounded-lg border border-line bg-panel p-3">
+                <div className="flex gap-3">
+                  <img src={mill.src} alt="" className="size-16 rounded-lg object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-medium">{mill.name}</p>
+                      <p className="tabular text-sm text-dust">${mill.price}</p>
+                    </div>
+                    <p className="text-xs text-moss">{millKitLine(mill.kits)}</p>
+                    <p className="mt-1 text-xs text-mute">{mill.blurb}</p>
+                    <p className="mt-1 text-xs text-dust">
+                      House ${split.house} · millwright ${split.maker}
+                      {blocked ? ` · ${blocked}` : ""}
+                    </p>
+                    <Button
+                      className="mt-2"
+                      size="sm"
+                      variant="outline"
+                      disabled={Boolean(blocked)}
+                      onClick={() => {
+                        const err = licenseStall(mill.id);
+                        if (err) {
+                          setMsg(err);
+                          return;
+                        }
+                        setMsg(host ? `Licensed ${mill.name}. Steel bolted.` : `${mill.name} is on the rack.`);
+                      }}
+                    >
+                      License
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
       <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-line bg-raised text-sm">
         {busy ? "Cooking the hide…" : "Bring a picture"}
         <input
@@ -848,15 +898,17 @@ export function HideView() {
           }}
         />
       </label>
-      <p className="text-xs text-mute">PNG or JPEG of your model. GLB, FBX, and Blend files stay in the crate.</p>
+      <p className="text-xs text-mute">PNG or JPEG of your model. GLB, FBX, VRChat .vrca, and Blend files stay in the crate.</p>
       <section className="rounded-xl border border-line bg-raised p-3">
-        <p className="text-xs uppercase tracking-widest text-dust">Hide ticket</p>
-        <p className="mt-1 text-xs text-mute">Another yard made a mill. Paste their ticket and hang it here.</p>
+        <p className="text-xs uppercase tracking-widest text-dust">Millwright ticket</p>
+        <p className="mt-1 text-xs text-mute">
+          Paste SFMILL to buy another yard's mill — hide plus steel. House takes {Math.round(HOUSE_CUT * 100)}% of the license. Yards cannot settle the millwright's share until the circuit has a till; that share is logged.
+        </p>
         <textarea
           value={ticket}
           onChange={(ev) => setTicket(ev.target.value)}
           rows={3}
-          placeholder="SFHIDE.1.…"
+          placeholder="SFMILL.1.… or SFHIDE.1.…"
           className="mt-2 w-full rounded-lg border border-line bg-panel p-2 text-xs text-paper"
         />
         <Button
@@ -866,13 +918,52 @@ export function HideView() {
           disabled={!ticket.trim()}
           onClick={() => {
             const result = importHide(ticket);
-            setMsg(result ?? "Hide hung on the rack.");
+            setMsg(result ?? "Mill hung on the rack.");
             if (!result) setTicket("");
           }}
         >
           Hang ticket
         </Button>
       </section>
+      {host && worn ? (
+        <section className="rounded-xl border border-rust/40 bg-raised p-3">
+          <p className="text-xs uppercase tracking-widest text-rust">Publish this mill</p>
+          <p className="mt-1 text-xs text-mute">
+            Pack {worn.name} plus {millKitLine(graftsOf(host))} into a ticket. License ${price} · house ${splitPurse(price).house} · millwright ${splitPurse(price).maker}.
+          </p>
+          <label className="mt-2 flex items-center gap-2 text-sm">
+            <span className="text-dust">License $</span>
+            <input
+              type="number"
+              min={0}
+              max={400}
+              value={price}
+              onChange={(ev) => setPrice(Math.max(0, Math.min(400, Number(ev.target.value) || 0)))}
+              className="h-11 w-24 rounded-lg border border-line bg-panel px-2 tabular text-paper"
+            />
+          </label>
+          <Button
+            className="mt-2"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const mill = millFromSpider(worn, host, stableName, price);
+              const code = encodeMillwright(mill);
+              const clip = navigator.clipboard;
+              if (!clip) {
+                setMsg(code);
+                return;
+              }
+              void clip.writeText(code).then(
+                () => setMsg(`Millwright ticket copied. License $${mill.price}. House ${Math.round(HOUSE_CUT * 100)}%.`),
+                () => setMsg(code),
+              );
+            }}
+          >
+            Copy millwright ticket
+          </Button>
+        </section>
+      ) : null}
       <div className="flex flex-col gap-2">
         {hides.length === 0 ? <p className="text-sm text-dust">The rack is empty. Bring a picture of a mill you made.</p> : null}
         {hides.map((hide) => {
@@ -884,7 +975,10 @@ export function HideView() {
                 <img src={hide.src} alt="" className="size-16 rounded-lg object-contain bg-panel" />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{hide.name}</p>
-                  <p className="text-xs text-dust">{current ? "On this mill" : blocked ?? `$${HIDE_COST} to drape`}</p>
+                  <p className="text-xs text-dust">
+                    {hide.maker ? `Millwright ${hide.maker} · ` : ""}
+                    {current ? "On this mill" : blocked ?? `$${HIDE_COST} to drape`}
+                  </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button
                       size="sm"
@@ -963,7 +1057,7 @@ export function ShopView() {
           Open the bay — steel eyes, sticky silk, web sacs
         </button>
         <button type="button" onClick={() => useGame.getState().setScreen("hides")} className="min-h-11 text-sm text-moss">
-          Hide rack — hang a mill you made
+          Millwright stall — house mills and hides you made
         </button>
       </header>
       <div className="mb-3 flex gap-1 overflow-x-auto">
@@ -1285,6 +1379,8 @@ export function CareerView() {
           {(career?.bayJobs ?? 0) > 0 ? ` · ${career.bayJobs} bay jobs` : ""}
           {(career?.splices ?? 0) > 0 ? ` · ${career.splices} splices` : ""}
           {(career?.hides ?? 0) > 0 ? ` · ${career.hides} hides` : ""}
+          {(career?.millwrights ?? 0) > 0 ? ` · ${career.millwrights} millwright licenses` : ""}
+          {(career?.houseCut ?? 0) > 0 ? ` · house cut $${career.houseCut}` : ""}
         </p>
       </div>
 

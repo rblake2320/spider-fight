@@ -53,7 +53,7 @@ import { recordRivalMoves } from "./rival-intel";
 import { canCallWidow } from "./boss";
 import { traitHuntChance, traitTrainCost } from "./traits";
 import { applyJob, bayJobOf, canFit, canSplice, splice, spliceCost } from "./bay";
-import { canDrape, decodeHideTicket, drape, HIDE_COST, makeHide, stripHide } from "./hides";
+import { applyMillKits, canDrape, canLicenseStall, decodeAnyTicket, drape, HIDE_COST, makeHide, millwrightFee, splitPurse, stallMillOf, stripHide } from "./hides";
 import { activeSpiders, canRelease, canRetire, releaseCash, retire } from "./rafters";
 import { pushPaper, writeClip } from "./paper";
 import { dailyStreakBonus, nextDailyStreak } from "./daily-streak";
@@ -149,8 +149,10 @@ type Game = SaveState &
     releaseSpider: (id: string) => string | null;
     fitBay: (spiderId: string, jobId: string) => string | null;
     spliceDna: (hostId: string, donorId: string) => string | null;
-    addHide: (name: string, src: string) => string | null;
+    addHide: (name: string, src: string, maker?: string) => string | null;
     importHide: (ticket: string) => string | null;
+    licenseMill: (mill: import("./hides").Millwright) => string | null;
+    licenseStall: (id: string) => string | null;
     drapeHide: (spiderId: string, hideId: string) => string | null;
     stripHide: (spiderId: string) => string | null;
     releaseHide: (hideId: string) => string | null;
@@ -748,9 +750,9 @@ export const useGame = create<Game>()(
         return result.fever ? "Graft fever. She'll sit a night." : null;
       },
 
-      addHide: (name, src) => {
+      addHide: (name, src, maker) => {
         const g = get();
-        const made = makeHide(name, src, g.hides);
+        const made = makeHide(name, src, g.hides, maker ?? g.stableName);
         if ("error" in made) return made.error;
         const hides = [...g.hides, made.hide];
         const career = { ...g.career, hides: (g.career.hides ?? 0) + 1 };
@@ -762,10 +764,52 @@ export const useGame = create<Game>()(
         return null;
       },
 
+      licenseMill: (mill) => {
+        const g = get();
+        const fee = millwrightFee(mill, g.stableName);
+        if (fee > g.cash) return `Need $${fee}`;
+        const made = makeHide(mill.name, mill.src, g.hides, mill.maker || g.stableName);
+        if ("error" in made) return made.error;
+        const split = splitPurse(fee);
+        let spiders = g.spiders;
+        const host = spiders.find((s) => s.id === g.selectedId && !s.retired) ?? spiders.find((s) => !s.retired);
+        if (host && (Object.keys(mill.kits).length || fee > 0)) {
+          let next = host;
+          if (Object.keys(mill.kits).length) next = applyMillKits(next, mill.kits);
+          if (fee > 0) next = drape(next, made.hide);
+          spiders = patchSpider(spiders, host.id, () => next);
+        }
+        const licensed = fee > 0;
+        const career = {
+          ...g.career,
+          hides: (g.career.hides ?? 0) + 1,
+          millwrights: (g.career.millwrights ?? 0) + (licensed ? 1 : 0),
+          houseCut: (g.career.houseCut ?? 0) + split.house,
+          millPaid: (g.career.millPaid ?? 0) + split.maker,
+        };
+        set({
+          cash: g.cash - fee,
+          hides: [...g.hides, made.hide],
+          spiders,
+          career,
+          ...badgeProgress(g, { spiders, career, wins: g.wins, seen: g.seen }),
+        });
+        return null;
+      },
+
       importHide: (ticket) => {
-        const decoded = decodeHideTicket(ticket);
-        if ("error" in decoded) return decoded.error;
-        return get().addHide(decoded.name, decoded.src);
+        const mill = decodeAnyTicket(ticket);
+        if ("error" in mill) return mill.error;
+        return get().licenseMill(mill);
+      },
+
+      licenseStall: (id) => {
+        const mill = stallMillOf(id);
+        if (!mill) return "No such mill on the stall.";
+        const g = get();
+        const blocked = canLicenseStall(mill, g.cash, g.rank, g.hides, g.stableName);
+        if (blocked) return blocked;
+        return get().licenseMill(mill);
       },
 
       drapeHide: (spiderId, hideId) => {

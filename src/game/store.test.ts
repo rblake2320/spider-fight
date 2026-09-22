@@ -4,6 +4,7 @@ import { EMPTY_CAREER } from "./migrate.ts";
 import { rollSpider } from "./spiders.ts";
 import { mulberry32 } from "./rng.ts";
 import { makeWeeklyCircuit } from "./weekly-circuit.ts";
+import { encodeMillwright, stallMillOf } from "./hides.ts";
 import type { FightOutcome } from "./types.ts";
 
 const data = new Map<string, string>();
@@ -205,6 +206,64 @@ test("a hide ticket hangs on the rack and drapes onto a mill for cash", () => {
     assert.equal(draped.spiders[0]?.hideId, hideId);
     assert.equal(draped.cash, 24);
     assert.equal(useGame.getState().drapeHide(spider.id, hideId), "Already wearing that hide");
+  } finally {
+    useGame.setState(before, true);
+  }
+});
+
+test("a millwright license pays the house cut and bolts the listed steel", () => {
+  const before = useGame.getState();
+  try {
+    const spider = rollSpider(mulberry32(92), { speciesId: "hentz", stage: "adult" });
+    const src =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+    const ticket = encodeMillwright({
+      name: "Pit mill",
+      src,
+      maker: "Other Yard",
+      kits: { eye: "bonnet-eye" },
+      price: 40,
+    });
+    useGame.setState({
+      spiders: [spider], selectedId: spider.id, cash: 80, rank: 0, rankPoints: 0, stableName: "Porch Crew",
+      career: { ...EMPTY_CAREER }, seen: ["hentz"], earnedBadges: [], hides: [],
+    });
+    assert.equal(useGame.getState().importHide(ticket), null);
+    const after = useGame.getState();
+    assert.equal(after.cash, 40);
+    assert.equal(after.career.houseCut, 6);
+    assert.equal(after.career.millPaid, 34);
+    assert.equal(after.career.millwrights, 1);
+    assert.ok(after.earnedBadges.includes("millwright-one"));
+    assert.equal(after.spiders[0]?.grafts?.eye, "bonnet-eye");
+    assert.equal(after.hides[0]?.maker, "Other Yard");
+  } finally {
+    useGame.setState(before, true);
+  }
+});
+
+test("a house mill license hangs the stall hide, bolts steel, and pays the house cut", () => {
+  const before = useGame.getState();
+  try {
+    const spider = rollSpider(mulberry32(93), { speciesId: "hentz", stage: "adult" });
+    const mill = stallMillOf("tape-mill");
+    assert.ok(mill);
+    useGame.setState({
+      spiders: [spider], selectedId: spider.id, cash: 48, rank: 0, rankPoints: 0, stableName: "Porch Crew",
+      career: { ...EMPTY_CAREER }, seen: ["hentz"], earnedBadges: [], hides: [],
+    });
+    assert.equal(useGame.getState().licenseStall("optic-mill"), "Need State Circuit");
+    assert.equal(useGame.getState().licenseStall("tape-mill"), null);
+    const after = useGame.getState();
+    assert.equal(after.cash, 12);
+    assert.equal(after.career.houseCut, 5);
+    assert.equal(after.career.millPaid, 31);
+    assert.equal(after.career.millwrights, 1);
+    assert.ok(after.earnedBadges.includes("millwright-one"));
+    assert.equal(after.spiders[0]?.grafts?.legs, "joint-tape");
+    assert.equal(after.spiders[0]?.hideId, after.hides[0]?.id);
+    assert.equal(after.hides[0]?.maker, "The Circuit");
+    assert.equal(useGame.getState().licenseStall("tape-mill"), "Already on the rack.");
   } finally {
     useGame.setState(before, true);
   }

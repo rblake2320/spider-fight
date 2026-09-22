@@ -7,7 +7,7 @@ import { makeDailyContract, makeDailyWebChallenge } from "./contracts.ts";
 import { makeWeeklyCircuit } from "./weekly-circuit.ts";
 import type { MoveId } from "./types.ts";
 
-const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0, bayJobs: 0, splices: 0, hatches: 0, hides: 0 };
+const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0, bayJobs: 0, splices: 0, hatches: 0, hides: 0, millwrights: 0, houseCut: 0, millPaid: 0 };
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -197,6 +197,7 @@ function sanitizeHides(raw: unknown): Hide[] {
       name: str(hide.name, "Yard hide").slice(0, 18),
       src,
       madeAt: num(hide.madeAt),
+      ...(str(hide.maker) ? { maker: str(hide.maker).slice(0, 22) } : {}),
     });
   }
   return out;
@@ -286,6 +287,9 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       splices: Math.max(0, num(careerRaw.splices)),
       hatches: Math.max(0, num(careerRaw.hatches)),
       hides: Math.max(0, num(careerRaw.hides)),
+      millwrights: Math.max(0, num(careerRaw.millwrights)),
+      houseCut: Math.max(0, num(careerRaw.houseCut)),
+      millPaid: Math.max(0, num(careerRaw.millPaid)),
     },
     dailyContract: {
       ...generatedContract,

@@ -1,15 +1,92 @@
 import { uid } from "./rng";
-import type { Hide, Spider } from "./types";
+import { BAY_BY_ID, graftsOf } from "./bay";
+import { RANKS } from "./content";
+import type { BaySlot, Hide, Spider } from "./types";
 
 /** Rack cap. Pictures live in the save; six keeps local storage honest. */
 export const MAX_HIDES = 6;
 export const HIDE_COST = 24;
 export const HIDE_RANK = 0;
 export const HIDE_TICKET_PREFIX = "SFHIDE.1.";
+export const MILL_TICKET_PREFIX = "SFMILL.1.";
+/** House rake on a millwright license. Same idea as a circuit taking a cut of a purse. */
+export const HOUSE_CUT = 0.15;
+export const HOUSE_MAKER = "The Circuit";
 const MAX_SRC = 140_000;
-const MODEL_RE = /\.(glb|gltf|obj|fbx|blend|stl|usdz|vrm|3ds|dae|max|usd|abc)$/i;
+const MODEL_RE = /\.(glb|gltf|obj|fbx|blend|stl|usdz|vrm|vrca|unitypackage|3ds|dae|max|usd|abc)$/i;
+const STALL_SRC_RE = /^\/images\/spiders\/[a-z0-9._-]+\.(png|jpe?g|webp)$/i;
+const BAY_SLOTS: BaySlot[] = ["legs", "fangs", "gut", "gland", "eye"];
+
+export type Millwright = {
+  name: string;
+  src: string;
+  maker: string;
+  kits: Partial<Record<BaySlot, string>>;
+  price: number;
+};
+
+/** A mill the house hangs on the stall — hide plus steel, license priced, house cut baked in. */
+export type StallMill = Millwright & {
+  id: string;
+  blurb: string;
+  rank: number;
+};
+
+export const HOUSE_STALL: StallMill[] = [
+  {
+    id: "tape-mill",
+    name: "Tape mill",
+    src: "/images/spiders/hentz-f.jpg",
+    maker: HOUSE_MAKER,
+    kits: { legs: "joint-tape" },
+    price: 36,
+    blurb: "Porch hide with tape at the femurs. First mill on the stall.",
+    rank: 0,
+  },
+  {
+    id: "bonnet-mill",
+    name: "Bonnet mill",
+    src: "/images/spiders/huntsman.jpg",
+    maker: HOUSE_MAKER,
+    kits: { eye: "bonnet-eye" },
+    price: 72,
+    blurb: "Huntsman hide. Bonnet glass so she reads a tick sooner.",
+    rank: 1,
+  },
+  {
+    id: "press-mill",
+    name: "Press mill",
+    src: "/images/spiders/recluse.jpg",
+    maker: HOUSE_MAKER,
+    kits: { gland: "sticky-press", fangs: "whet-fangs" },
+    price: 168,
+    blurb: "Recluse hide, sticky press, honed mill. Yank holds.",
+    rank: 2,
+  },
+  {
+    id: "clay-pit",
+    name: "Clay pit mill",
+    src: "/images/spiders/tarantula.jpg",
+    maker: HOUSE_MAKER,
+    kits: { gut: "brick-gut", legs: "bulk-femurs" },
+    price: 196,
+    blurb: "Tarantula hide packed for the pit. She soaks a lock.",
+    rank: 3,
+  },
+  {
+    id: "optic-mill",
+    name: "Optic mill",
+    src: "/images/spiders/birdeater.jpg",
+    maker: HOUSE_MAKER,
+    kits: { eye: "optic-sting", legs: "chrome-tarsi" },
+    price: 280,
+    blurb: "Bird-eater hide. The bonnet that shoots. Endgame cash.",
+    rank: 4,
+  },
+];
 
 export function isHideSrc(src: string): boolean {
+  if (STALL_SRC_RE.test(src) && src.length < 80) return true;
   return /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/]+=*$/.test(src) && src.length <= MAX_SRC;
 }
 
@@ -53,12 +130,46 @@ export function stripHide(spider: Spider): Spider {
   return next;
 }
 
-export function makeHide(name: string, src: string, existing: Hide[]): { hide: Hide } | { error: string } {
+export function sanitizeKits(raw: unknown): Partial<Record<BaySlot, string>> {
+  const record = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  const out: Partial<Record<BaySlot, string>> = {};
+  for (const slot of BAY_SLOTS) {
+    const id = record[slot];
+    if (typeof id === "string" && BAY_BY_ID[id]?.slot === slot) out[slot] = id;
+  }
+  return out;
+}
+
+export function applyMillKits(spider: Spider, kits: Partial<Record<BaySlot, string>>): Spider {
+  const next = { ...graftsOf(spider) };
+  const clean = sanitizeKits(kits);
+  for (const slot of BAY_SLOTS) {
+    const id = clean[slot];
+    if (id) next[slot] = id;
+  }
+  return { ...spider, grafts: next };
+}
+
+export function millKitLine(kits: Partial<Record<BaySlot, string>>): string {
+  const names = BAY_SLOTS.map((slot) => (kits[slot] ? BAY_BY_ID[kits[slot]!]?.name : undefined)).filter(
+    (name): name is string => Boolean(name),
+  );
+  return names.length ? names.join(" · ") : "stock mill";
+}
+
+export function splitPurse(price: number): { house: number; maker: number } {
+  const purse = Math.max(0, Math.floor(price));
+  const house = Math.min(purse, Math.floor(purse * HOUSE_CUT));
+  return { house, maker: purse - house };
+}
+
+export function makeHide(name: string, src: string, existing: Hide[], maker?: string): { hide: Hide } | { error: string } {
   if (!isHideSrc(src)) return { error: "That ticket is not a picture this yard can hang." };
   if (existing.length >= MAX_HIDES) return { error: "Rack is full. Let one hide go." };
   if (existing.some((hide) => hide.src === src)) return { error: "Already on the rack." };
   const trimmed = name.trim().slice(0, 18) || "Yard hide";
-  return { hide: { id: uid(), name: trimmed, src, madeAt: Date.now() } };
+  const mill = maker?.trim().slice(0, 22);
+  return { hide: { id: uid(), name: trimmed, src, madeAt: Date.now(), ...(mill ? { maker: mill } : {}) } };
 }
 
 function b64encode(value: string): string {
@@ -95,6 +206,86 @@ export function decodeHideTicket(raw: string): { name: string; src: string } | {
   } catch {
     return { error: "Ticket tore on the way over." };
   }
+}
+
+export function encodeMillwright(mill: Millwright): string {
+  const kits = sanitizeKits(mill.kits);
+  return MILL_TICKET_PREFIX + b64encode(
+    JSON.stringify({
+      n: mill.name.slice(0, 18),
+      s: mill.src,
+      m: mill.maker.trim().slice(0, 22),
+      k: kits,
+      p: Math.max(0, Math.min(400, Math.floor(mill.price))),
+    }),
+  );
+}
+
+export function millFromSpider(hide: Hide, spider: Spider, maker: string, price: number): Millwright {
+  return {
+    name: hide.name,
+    src: hide.src,
+    maker: (hide.maker || maker).slice(0, 22),
+    kits: graftsOf(spider),
+    price: Math.max(0, Math.min(400, Math.floor(price))),
+  };
+}
+
+export function decodeAnyTicket(raw: string): Millwright | { error: string } {
+  const ticket = raw.trim().replace(/\s+/g, "");
+  if (!ticket) return { error: "Paste a millwright ticket." };
+  if (ticket.startsWith(HIDE_TICKET_PREFIX)) {
+    const hide = decodeHideTicket(ticket);
+    if ("error" in hide) return hide;
+    return { name: hide.name, src: hide.src, maker: "", kits: {}, price: 0 };
+  }
+  if (!ticket.startsWith(MILL_TICKET_PREFIX)) {
+    return { error: "That ticket should start with SFMILL or SFHIDE." };
+  }
+  try {
+    const parsed: unknown = JSON.parse(b64decode(ticket.slice(MILL_TICKET_PREFIX.length)));
+    const record = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+    const name = typeof record.n === "string" ? record.n : "Yard hide";
+    const src = typeof record.s === "string" ? record.s : "";
+    const maker = typeof record.m === "string" ? record.m.slice(0, 22) : "";
+    const price = typeof record.p === "number" && Number.isFinite(record.p) ? Math.max(0, Math.min(400, Math.floor(record.p))) : 0;
+    if (!isHideSrc(src)) return { error: "Ticket picture would not hang." };
+    return { name, src, maker, kits: sanitizeKits(record.k), price };
+  } catch {
+    return { error: "Ticket tore on the way over." };
+  }
+}
+
+export function millwrightFee(mill: Millwright, stableName: string): number {
+  if (mill.price <= 0) return 0;
+  if (mill.maker === HOUSE_MAKER) return mill.price;
+  if (mill.maker && mill.maker === stableName) return 0;
+  return mill.price;
+}
+
+export function millLicenseLine(mill: Millwright, stableName: string): string | null {
+  const fee = millwrightFee(mill, stableName);
+  if (fee <= 0) return null;
+  return `Need $${fee}`;
+}
+
+export function stallMillOf(id: string): StallMill | undefined {
+  return HOUSE_STALL.find((mill) => mill.id === id);
+}
+
+export function canLicenseStall(
+  mill: StallMill,
+  cash: number,
+  rank: number,
+  hides: Hide[],
+  stableName: string,
+): string | null {
+  if (hides.some((hide) => hide.src === mill.src)) return "Already on the rack.";
+  if (hides.length >= MAX_HIDES) return "Rack is full. Let one hide go.";
+  if (rank < mill.rank) return `Need ${RANKS[mill.rank]?.name ?? "higher rank"}`;
+  const fee = millwrightFee(mill, stableName);
+  if (fee > cash) return `Need $${fee}`;
+  return null;
 }
 
 type Bitmap = CanvasImageSource & { width: number; height: number; close?: () => void };

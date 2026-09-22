@@ -99,6 +99,8 @@ export type Hide = {
   /** Cooked PNG data URL. Small enough to persist with the yard. */
   src: string;
   madeAt: number;
+  /** Millwright who sculpted it. Stamped on tickets. */
+  maker?: string;
 };
 
 export type Species = {
@@ -251,6 +253,9 @@ export type CareerLog = {
   splices: number;
   hatches: number;
   hides: number;
+  millwrights: number;
+  houseCut: number;
+  millPaid: number;
 };
 
 export type PaperClip = {
