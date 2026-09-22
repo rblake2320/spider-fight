@@ -26,6 +26,7 @@ import { nextStreakReward } from "@/game/streak";
 import { rivalWebProfiles } from "@/game/rival-scout";
 import { practiceSummary } from "@/game/practice-summary";
 import { strongestTapePlay, trainingStatForMove } from "@/game/fight-playbook";
+import { traitTrainCost } from "@/game/traits";
 import { CLASS_BLURB, CLASS_LABEL, meetingLine, sizeClassOfSpider } from "@/game/weight";
 import { postCircuitScore, type CircuitPlacement } from "@/lib/circuit-board";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -551,6 +552,7 @@ function ResultCard() {
   const practice = result.practice ? practiceSummary(result) : null;
   const tapePlay = strongestTapePlay(result.rounds);
   const tapeDrill = tapePlay ? trainingStatForMove(tapePlay.playerMove) : null;
+  const tapeDrillCost = fighter && tapeDrill ? traitTrainCost(fighter.traits, 10 + fighter.trained[tapeDrill] * 6) : null;
 
   const postWinToCircuit = () => {
     if (!user) {
@@ -677,7 +679,7 @@ function ResultCard() {
                 setDrillMessage(error ?? `Drilled ${STAT_LABEL[tapeDrill]}. ${fighter.name}'s stick build just changed.`);
               }}
             >
-              Drill {STAT_LABEL[tapeDrill]} from this tape
+              Drill {STAT_LABEL[tapeDrill]} from this tape · ${tapeDrillCost} / 16 energy
             </Button>
           ) : null}
           {drillMessage ? <p className="mt-2 text-center text-xs text-moss">{drillMessage}</p> : null}
