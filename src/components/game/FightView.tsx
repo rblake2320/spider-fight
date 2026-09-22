@@ -46,6 +46,8 @@ export function FightSelect() {
   const prepare = useGame((s) => s.prepareFight);
   const rivalRecords = useGame((s) => s.rivalRecords);
   const setScreen = useGame((s) => s.setScreen);
+  const startYardSeries = useGame((s) => s.startYardSeries);
+  const seriesCalled = useGame((s) => s.flags.yardSeries === s.dayStamp);
   const [wager, setWager] = useState(10);
   const [err, setErr] = useState<string | null>(null);
   const [mind, setMind] = useState<"checking" | "live" | "dark">("checking");
@@ -74,6 +76,17 @@ export function FightSelect() {
         <p className="text-xs uppercase tracking-widest text-moss">Tonight's headliner</p>
         <p className="mt-1 font-medium">{headline.name}</p>
         <p className="mt-1 text-xs text-dust">Win this call for +${NIGHTLY_BONUS_CASH} and +{NIGHTLY_BONUS_POINTS} circuit points.</p>
+      </section>
+      <section className="rounded-xl border border-paper/25 bg-panel p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-paper">Yard series</p>
+            <p className="mt-1 text-xs text-dust">Three crews. No entry wager. Win all three for +$50 and +30 circuit points.</p>
+          </div>
+          <Button size="sm" variant="outline" disabled={!player || seriesCalled} onClick={() => player && setErr(startYardSeries(player.id))}>
+            {seriesCalled ? "Called" : "Run card"}
+          </Button>
+        </div>
       </section>
       {player ? (
         <button
@@ -263,7 +276,7 @@ export function FightArena() {
     <div className="flex h-full min-h-0 flex-1 flex-col bg-ink">
       <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
         <Hp name={f.player.name} hp={f.player.hp} max={f.player.max} side="left" />
-        <p className="shrink-0 text-dust">Rd {f.round}</p>
+        <p className="shrink-0 text-dust">{fightMeta.seriesStage !== null ? `Series ${fightMeta.seriesStage + 1}/3 · ` : ""}Rd {f.round}</p>
         <Hp name={f.enemy.name} hp={f.enemy.hp} max={f.enemy.max} side="right" />
       </div>
       {RIVALS.find((r) => r.id === f.rivalId)?.mind ? (
@@ -360,6 +373,8 @@ function ResultCard() {
   const result = useGame((s) => s.result)!;
   const stableName = useGame((s) => s.stableName);
   const clear = useGame((s) => s.clearResult);
+  const continueYardSeries = useGame((s) => s.continueYardSeries);
+  const yardSeries = useGame((s) => s.yardSeries);
   const [read, setRead] = useState<{ label: string; lesson: string } | null>(null);
   const [shared, setShared] = useState<string | null>(null);
 
@@ -397,6 +412,7 @@ function ResultCard() {
         <li>Wager {result.won ? "returned in purse" : "gone"} · ${result.wager}</li>
         {result.won ? <li className="text-moss">Purse ${result.purse}</li> : null}
         {result.headlineBonus ? <li className="text-moss">Headliner bonus +${result.headlineBonus} · +{NIGHTLY_BONUS_POINTS} circuit</li> : null}
+        {result.seriesBonus ? <li className="text-moss">Yard series bonus +${result.seriesBonus}</li> : null}
         <li>+{result.xp} xp</li>
         {result.stripped.map((id) => (
           <li key={id} className="text-rust">
@@ -472,6 +488,11 @@ function ResultCard() {
       <Button variant="primary" onClick={clear}>
         Back to the yard
       </Button>
+      {result.won && yardSeries ? (
+        <Button variant="outline" onClick={() => { const error = continueYardSeries(); if (error) clear(); }}>
+          Continue yard series · {yardSeries.stage + 1}/3
+        </Button>
+      ) : null}
     </div>
   );
 }

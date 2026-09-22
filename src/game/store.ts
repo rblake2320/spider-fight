@@ -34,6 +34,7 @@ import { firstWinTrophy } from "./rewards";
 import { applyBait } from "./bait";
 import { badgeReward, newlyEarnedBadges } from "./badges";
 import { nightlyReward, nightlyRival } from "./night-card";
+import { SERIES_BONUS_CASH, SERIES_BONUS_POINTS, yardSeriesLineup } from "./series";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -59,6 +60,7 @@ const emptySave = (): SaveState => ({
   dailyContract: makeDailyContract(todayStamp(), 0),
   rivalRecords: {},
   earnedBadges: [],
+  yardSeries: null,
 });
 
 type Session = {
@@ -75,6 +77,7 @@ type Session = {
     enemy: Spider;
     teamBonus: Partial<Stats>;
     headline: boolean;
+    seriesStage: number | null;
   } | null;
   result: FightOutcome | null;
 };
@@ -103,6 +106,8 @@ type Game = SaveState &
     releaseCatch: () => void;
     leaveHunt: () => void;
     prepareFight: (rivalId: string, playerId: string, wager: number) => string | null;
+    startYardSeries: (playerId: string) => string | null;
+    continueYardSeries: () => string | null;
     applyResult: (out: FightOutcome, finalSpider: Spider) => void;
     clearResult: () => void;
     collectDaily: () => void;
@@ -160,6 +165,7 @@ export const useGame = create<Game>()(
             huntsLeft: HUNTS_PER_DAY,
             dayStamp: todayStamp(),
             dailyContract: makeDailyContract(todayStamp(), s.rank),
+            yardSeries: s.yardSeries?.date === todayStamp() ? s.yardSeries : null,
           });
         }
         if (!s.career) set({ career: { ...EMPTY_CAREER } });
@@ -451,12 +457,38 @@ export const useGame = create<Game>()(
             enemy,
             teamBonus: teamSupport(player, g.spiders, g.activeTeam),
             headline: nightlyRival(g.dayStamp, g.rank).id === rivalId,
+            seriesStage: null,
           },
           result: null,
           screen: "fight",
           cash: g.cash - wager,
           tutorial: g.tutorial === 4 ? 5 : g.tutorial,
         });
+        return null;
+      },
+
+      startYardSeries: (playerId) => {
+        const g = get();
+        if (g.flags.yardSeries === g.dayStamp) return "That yard series is called for today";
+        const player = g.spiders.find((spider) => spider.id === playerId);
+        if (!player) return "Pick a fighter";
+        const reason = canFight(player);
+        if (reason) return reason;
+        const lineup = yardSeriesLineup(g.dayStamp, g.rank);
+        set({ yardSeries: { date: g.dayStamp, playerId, rivals: lineup.map((rival) => rival.id), stage: 0 } });
+        return get().continueYardSeries();
+      },
+
+      continueYardSeries: () => {
+        const g = get();
+        const run = g.yardSeries;
+        if (!run || run.date !== g.dayStamp || run.stage >= run.rivals.length) return "No yard series is waiting";
+        const rivalId = run.rivals[run.stage];
+        if (!rivalId) return "No crew on this card";
+        const message = get().prepareFight(rivalId, run.playerId, 0);
+        if (message) return message;
+        const fight = get().fight;
+        if (fight) set({ fight: { ...fight, seriesStage: run.stage } });
         return null;
       },
 
@@ -469,6 +501,8 @@ export const useGame = create<Game>()(
         let losses = g.losses;
         let inventory = { ...g.inventory };
         const headlineReward = nightlyReward(g.fight?.headline === true);
+        const seriesStage = g.fight?.seriesStage;
+        const isSeries = seriesStage !== null && seriesStage !== undefined && g.yardSeries?.date === g.dayStamp;
         const priorRival = g.rivalRecords[out.rivalId] ?? { wins: 0, losses: 0, streak: 0 };
         const rivalRecord = out.won
           ? { ...priorRival, wins: priorRival.wins + 1, streak: priorRival.streak + 1 }
@@ -479,6 +513,13 @@ export const useGame = create<Game>()(
           out.purse = prize;
           rankPoints += 12 + Math.round(out.wager / 8) + headlineReward.points;
           if (headlineReward.cash) out.headlineBonus = headlineReward.cash;
+          if (isSeries) {
+            const bonusCash = SERIES_BONUS_CASH[seriesStage] ?? 0;
+            const bonusPoints = SERIES_BONUS_POINTS[seriesStage] ?? 0;
+            cash += bonusCash;
+            rankPoints += bonusPoints;
+            out.seriesBonus = bonusCash;
+          }
           wins += 1;
           if (out.loot) inventory = addInv(inventory, out.loot);
           const trophy = firstWinTrophy(out.rivalId, inventory, g.spiders);
@@ -503,6 +544,10 @@ export const useGame = create<Game>()(
           { ...g, rank, rankPoints },
           { spiders, career, wins, seen: g.seen },
         );
+        const nextSeries = isSeries && out.won && g.yardSeries
+          ? { ...g.yardSeries, stage: g.yardSeries.stage + 1 }
+          : null;
+        const seriesFinished = isSeries && (!out.won || !nextSeries || nextSeries.stage >= nextSeries.rivals.length);
         set({
           cash,
           rank: badges.rank,
@@ -517,6 +562,8 @@ export const useGame = create<Game>()(
           dailyContract: out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
           earnedBadges: badges.earnedBadges,
+          yardSeries: seriesFinished ? null : nextSeries,
+          flags: seriesFinished ? { ...g.flags, yardSeries: g.dayStamp } : g.flags,
           tutorial: g.tutorial === 5 ? 6 : g.tutorial,
         });
       },
@@ -609,6 +656,7 @@ export const useGame = create<Game>()(
         dailyContract: s.dailyContract,
         rivalRecords: s.rivalRecords,
         earnedBadges: s.earnedBadges,
+        yardSeries: s.yardSeries,
       }),
     },
   ),

@@ -166,6 +166,7 @@ export type FightOutcome = {
   rivalId: string;
   jevReads?: number;
   headlineBonus?: number;
+  seriesBonus?: number;
   rounds: FightRound[];
 };
 
@@ -207,6 +208,13 @@ export type RivalRecord = {
   streak: number;
 };
 
+export type YardSeries = {
+  date: string;
+  playerId: string;
+  rivals: string[];
+  stage: number;
+};
+
 export type SaveState = {
   version: number;
   season: number;
@@ -231,4 +239,5 @@ export type SaveState = {
   dailyContract: DailyContract;
   rivalRecords: Record<string, RivalRecord>;
   earnedBadges: string[];
+  yardSeries: YardSeries | null;
 };
