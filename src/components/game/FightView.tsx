@@ -41,6 +41,7 @@ export function FightSelect() {
   const cash = useGame((s) => s.cash);
   const selectedId = useGame((s) => s.selectedId);
   const prepare = useGame((s) => s.prepareFight);
+  const rivalRecords = useGame((s) => s.rivalRecords);
   const setScreen = useGame((s) => s.setScreen);
   const [wager, setWager] = useState(10);
   const [err, setErr] = useState<string | null>(null);
@@ -128,6 +129,17 @@ export function FightSelect() {
               </span>
             </div>
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
+            {(() => {
+              const record = rivalRecords[r.id];
+              return record ? (
+                <p className="mt-1 text-xs text-moss">
+                  Yard card: {record.wins}–{record.losses}
+                  {record.streak > 1 ? ` · ${record.streak} straight` : ""}
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-dust">No calls on this crew yet.</p>
+              );
+            })()}
             {r.mind ? (
               <p className="mt-1 text-xs text-dust">
                 Always on the line. Scales with your rank. The Widow hangs on the far silk. Stick mind throws for her.

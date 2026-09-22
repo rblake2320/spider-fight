@@ -41,6 +41,7 @@ test("migrate keeps unknown species from crashing", () => {
       spiders: [{ id: "x", name: "Ghost", speciesId: "nope", gear: { wraps: "not-an-item" } }],
       inventory: { cricket: 2, "culvert-silk": 9, bogus: 1 },
       seen: ["hentz", "ghost"],
+      rivalRecords: { tom: { wins: 2, losses: 1, streak: 2 }, ghost: { wins: 99, losses: 0, streak: 99 } },
     },
     1,
   );
@@ -51,5 +52,7 @@ test("migrate keeps unknown species from crashing", () => {
   assert.equal(next.inventory["culvert-silk"], undefined);
   assert.ok(next.career);
   assert.equal(next.dailyContract.progress, 0);
+  assert.deepEqual(next.rivalRecords.tom, { wins: 2, losses: 1, streak: 2 });
+  assert.equal(next.rivalRecords.ghost, undefined);
   speciesOf("nope");
 });

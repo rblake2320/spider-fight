@@ -185,6 +185,12 @@ export type DailyContract = {
   claimed: boolean;
 };
 
+export type RivalRecord = {
+  wins: number;
+  losses: number;
+  streak: number;
+};
+
 export type SaveState = {
   version: number;
   season: number;
@@ -207,4 +213,5 @@ export type SaveState = {
   flags: Record<string, string | boolean>;
   career: CareerLog;
   dailyContract: DailyContract;
+  rivalRecords: Record<string, RivalRecord>;
 };

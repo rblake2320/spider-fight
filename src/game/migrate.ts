@@ -1,4 +1,4 @@
-import { ITEMS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
+import { ITEMS, RIVALS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
 import { isShipped } from "./catalog.ts";
 import type { CareerLog, SaveState, Spider, Stats } from "./types.ts";
 import { makeDailyContract } from "./contracts.ts";
@@ -89,6 +89,15 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
     .filter((id): id is string => typeof id === "string" && !!SPECIES[id]);
   const careerRaw = asRecord(p.career);
   const dailyRaw = asRecord(p.dailyContract);
+  const rawRivalRecords = asRecord(p.rivalRecords);
+  const rivalRecords = Object.fromEntries(
+    Object.entries(rawRivalRecords)
+      .filter(([id]) => RIVALS.some((r) => r.id === id))
+      .map(([id, raw]) => {
+        const record = asRecord(raw);
+        return [id, { wins: Math.max(0, num(record.wins)), losses: Math.max(0, num(record.losses)), streak: Math.max(0, num(record.streak)) }];
+      }),
+  );
   const date = str(dailyRaw.date, str(p.dayStamp));
   const generatedContract = makeDailyContract(date || "1970-1-1", Math.max(0, num(p.rank)));
   const save = {
@@ -131,6 +140,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       progress: Math.max(0, Math.min(generatedContract.target, num(dailyRaw.progress))),
       claimed: dailyRaw.claimed === true,
     },
+    rivalRecords,
   } satisfies SaveState;
   void fromVersion;
   return save;

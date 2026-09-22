@@ -51,6 +51,7 @@ const emptySave = (): SaveState => ({
   flags: {},
   career: { ...EMPTY_CAREER },
   dailyContract: makeDailyContract(todayStamp(), 0),
+  rivalRecords: {},
 });
 
 type Session = {
@@ -422,6 +423,10 @@ export const useGame = create<Game>()(
         let wins = g.wins;
         let losses = g.losses;
         let inventory = { ...g.inventory };
+        const priorRival = g.rivalRecords[out.rivalId] ?? { wins: 0, losses: 0, streak: 0 };
+        const rivalRecord = out.won
+          ? { ...priorRival, wins: priorRival.wins + 1, streak: priorRival.streak + 1 }
+          : { ...priorRival, losses: priorRival.losses + 1, streak: 0 };
         if (out.won) {
           const prize = (RANKS[g.rank]?.purse ?? 18) + out.wager;
           cash += prize;
@@ -453,6 +458,7 @@ export const useGame = create<Game>()(
             stripped: g.career.stripped + out.stripped.length,
           },
           dailyContract: out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
+          rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
         });
       },
 
@@ -530,6 +536,7 @@ export const useGame = create<Game>()(
         flags: s.flags,
         career: s.career,
         dailyContract: s.dailyContract,
+        rivalRecords: s.rivalRecords,
       }),
     },
   ),
