@@ -64,10 +64,21 @@ export type StickFight = {
 const INTRO = 1.15;
 // Players choose only after the tell is exposed. Keep the visible read long
 // enough for a real reaction while preserving the pressure of timed rounds.
-const TELL = 1.7;
+export const READ_WINDOW_SECONDS = 1.7;
 const RESOLVE = 0.9;
 const TELL_LOCK = 0.28;
 export const MAX_ROUNDS = 12;
+
+/** Portion of the visible read window still available to make a move. */
+export function readWindowPercent(fight: Pick<StickFight, "phase" | "phaseT" | "tellReady">): number {
+  if (fight.phase !== "telegraph" || !fight.tellReady) return 0;
+  return clamp(((READ_WINDOW_SECONDS - fight.phaseT) / READ_WINDOW_SECONDS) * 100, 0, 100);
+}
+
+/** Exact seconds left in the player-facing reaction window. */
+export function readWindowSeconds(fight: Pick<StickFight, "phase" | "phaseT" | "tellReady">): number {
+  return (readWindowPercent(fight) / 100) * READ_WINDOW_SECONDS;
+}
 
 export function webSurgeHint(style: WebStyle): string {
   if (style === "cross") return "restore shell and stamina";
@@ -252,7 +263,7 @@ export function stepFight(f: StickFight, dt: number): void {
       if (f.lastText === "Watch the legs.") f.lastText = MOVES[f.enemy.tell].tell;
     }
     if (f.player.queued) f.player.pose = f.player.queued;
-    if (f.phaseT >= TELL) resolveRound(f);
+    if (f.phaseT >= READ_WINDOW_SECONDS) resolveRound(f);
     return;
   }
   if (f.phase === "resolve") {

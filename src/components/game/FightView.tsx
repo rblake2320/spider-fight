@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, countersFor, createFight, queuePlayerMove, webSurgeHint, type StickFight } from "@/game/combat";
+import { applyEnemyTell, countersFor, createFight, queuePlayerMove, readWindowPercent, readWindowSeconds, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -313,6 +313,8 @@ export function FightArena() {
   // actual tell is visible, then keep the round genuinely timed from there.
   const locked = f.phase !== "telegraph" || !f.tellReady || f.playerLocked;
   const readMoves = f.phase === "telegraph" && f.tellReady && f.enemy.tell ? countersFor(f.enemy.tell) : [];
+  const readWindow = readWindowPercent(f);
+  const readSeconds = Math.ceil(readWindowSeconds(f) * 10) / 10;
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-ink">
@@ -365,6 +367,22 @@ export function FightArena() {
         </button>
       </div>
       <div className="px-3 pt-2">
+        <div className="mb-2" aria-live="polite">
+          <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-widest text-dust">
+            <span>Read window</span>
+            <span className={cn(readWindow > 0 && readWindow < 35 && "text-rust")}>{readWindow > 0 ? `${readSeconds.toFixed(1)}s` : "Watch"}</span>
+          </div>
+          <div
+            className="h-1.5 overflow-hidden rounded-full bg-line"
+            role="progressbar"
+            aria-label="Read window remaining"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(readWindow)}
+          >
+            <div className={cn("h-full bg-moss transition-[width,background-color] duration-75", readWindow > 0 && readWindow < 35 && "bg-rust")} style={{ width: `${readWindow}%` }} />
+          </div>
+        </div>
         <div className="h-1 overflow-hidden rounded-full bg-line">
           <div
             className="h-full bg-paper"

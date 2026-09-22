@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, countersFor, createFight, MAX_ROUNDS, queuePlayerMove, stepFight } from "./combat";
+import { applyEnemyTell, countersFor, createFight, MAX_ROUNDS, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
@@ -46,6 +46,19 @@ test("a selected move locks the player input and resolves as that move", () => {
   assert.equal(fight.roundLog.length, 1);
   assert.equal(fight.roundLog[0]?.playerMove, "grapple");
   assert.equal(fight.roundLog[0]?.enemyMove, fight.lastEnemyMove);
+});
+
+test("the reaction timer starts only once the tell is readable and runs down", () => {
+  const fight = makeFight();
+  assert.equal(readWindowPercent(fight), 0);
+  for (let i = 0; i < 24; i += 1) stepFight(fight, 0.05);
+  assert.equal(readWindowPercent(fight), 0);
+  for (let i = 0; i < 6; i += 1) stepFight(fight, 0.05);
+  const opening = readWindowPercent(fight);
+  assert.ok(opening > 70 && opening < 100);
+  assert.ok(readWindowSeconds(fight) > 1.2 && readWindowSeconds(fight) < 1.7);
+  for (let i = 0; i < 10; i += 1) stepFight(fight, 0.05);
+  assert.ok(readWindowPercent(fight) < opening);
 });
 
 test("the live read guide only recommends moves that win the exchange", () => {
