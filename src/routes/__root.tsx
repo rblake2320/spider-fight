@@ -1,6 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { PwaRegistration } from "@/components/pwa-registration";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "Spider Fight";
@@ -32,6 +33,7 @@ export const Route = createRootRoute({
       </head>
       <body className="bg-ink text-paper antialiased">
         <PreviewHostBridge />
+        <PwaRegistration />
         <AuthProvider>
           <Outlet />
         </AuthProvider>
