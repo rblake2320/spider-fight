@@ -382,7 +382,10 @@ export function FightArena() {
         <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-dust">Reads the stick</p>
       ) : null}
       <p className="px-3 pb-1 text-center text-[10px] text-dust">
-        {f.player.web.name} · {f.player.web.ability}
+        Your web · {f.player.web.name} · {f.player.web.ability}
+      </p>
+      <p className="px-3 pb-1 text-center text-[10px] text-rust">
+        Opponent · {SPECIES[f.enemy.spider.speciesId]?.common ?? f.enemy.spider.speciesId} · {f.enemy.web.name} · {f.enemy.web.ability}
       </p>
       <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-moss">
         Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web.style)}
