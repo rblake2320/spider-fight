@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ITEMS, ITEM_LIST, RANKS, SLOT_LABEL, SPECIES, xpToNext } from "@/game/content";
 import { useGame, formatCash, rankName } from "@/game/store";
-import { canFight, effective, molt, portraitOf, STAGE_LABEL, STAT_LABEL } from "@/game/spiders";
+import { canFight, effective, molt, portraitOf, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
 import type { GearSlot, ItemKind, Stats } from "@/game/types";
 import { jevStatus } from "@/lib/jev";
 import { cn } from "@/lib/utils";
@@ -413,6 +413,9 @@ export function CareerView() {
   const points = useGame((s) => s.rankPoints);
   const wins = useGame((s) => s.wins);
   const seen = useGame((s) => s.seen);
+  const spiders = useGame((s) => s.spiders);
+  const next = RANKS[rank + 1];
+  const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
       <header>
@@ -421,7 +424,24 @@ export function CareerView() {
         <p className="text-sm text-dust">
           {wins} stick wins · {seen.length} species logged
         </p>
+        <p className="text-xs text-moss">
+          Circuit score {points}{next ? ` · ${Math.max(0, next.points - points)} to ${next.name}` : " · World Stick"}
+        </p>
       </header>
+      <section className="rounded-xl border border-line bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-dust">Yard leaderboard</p>
+        <ol className="mt-2 space-y-2">
+          {board.map((spider, index) => (
+            <li key={spider.id} className="flex items-center gap-2 text-sm">
+              <span className="w-5 text-dust">{index + 1}</span>
+              <img src={portraitOf(spider)} alt="" className="size-8 rounded object-cover" />
+              <span className="min-w-0 flex-1 truncate">{spider.name}</span>
+              <span className="tabular text-moss">{spiderScore(spider)} pts</span>
+              <span className="text-xs text-dust">+{trainingTotal(spider)} drilled</span>
+            </li>
+          ))}
+        </ol>
+      </section>
       <ol className="space-y-2">
         {RANKS.map((r) => (
           <li
@@ -435,7 +455,7 @@ export function CareerView() {
             <p className="font-medium">{r.name}</p>
             <p className="text-xs text-dust">{r.blurb}</p>
             <p className="tabular text-[11px] text-mute">
-              {points}/{r.points} · purse ${r.purse}
+              {r.points} circuit pts · purse ${r.purse}
             </p>
           </li>
         ))}

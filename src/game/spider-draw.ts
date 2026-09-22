@@ -1,4 +1,4 @@
-import type { MorphColors, MoveId } from "./types";
+import type { MorphColors, MoveId, WebStyle } from "./types";
 
 export type DrawPose = MoveId | "idle" | "hurt" | "ko" | "intro";
 
@@ -12,6 +12,7 @@ export type SpiderDraw = {
   pose: DrawPose;
   t: number;
   plump: number;
+  training: number;
   hurtFlash: number;
   mark?: "hourglass";
 };
@@ -155,11 +156,13 @@ function drawBody(
   facing: number,
   pose: DrawPose,
   mark?: "hourglass",
+  training = 0,
 ): void {
-  const abdW = 16 * scale * lerp(0.85, 1.25, plump);
-  const abdH = 20 * scale * lerp(0.9, 1.2, plump);
-  const cephW = 8.5 * scale;
-  const cephH = 10 * scale;
+  const edge = Math.min(1, training / 36);
+  const abdW = 16 * scale * lerp(0.85, 1.25, plump) * (1 + edge * 0.08);
+  const abdH = 20 * scale * lerp(0.9, 1.2, plump) * (1 + edge * 0.06);
+  const cephW = 8.5 * scale * (1 + edge * 0.14);
+  const cephH = 10 * scale * (1 + edge * 0.12);
 
   // abdomen
   ctx.save();
@@ -282,6 +285,8 @@ export function drawSilk(
   x1: number,
   y1: number,
   taut: number,
+  style: WebStyle = "orb",
+  training = 0,
 ): void {
   ctx.save();
   ctx.beginPath();
@@ -295,6 +300,38 @@ export function drawSilk(
   ctx.strokeStyle = "rgba(255,255,245,0.25)";
   ctx.lineWidth = 0.5;
   ctx.stroke();
+  if (style === "cross" || style === "spoked") {
+    ctx.beginPath();
+    ctx.moveTo(x0 + (style === "cross" ? -5 : 5), y0 + 2);
+    ctx.quadraticCurveTo(mx, my + 7, x1 + (style === "cross" ? 5 : -5), y1 - 3);
+    ctx.strokeStyle = "rgba(232,220,198,0.26)";
+    ctx.lineWidth = 0.65;
+    ctx.stroke();
+  } else if (style === "tangle") {
+    ctx.beginPath();
+    ctx.moveTo(x0, y0 + 4);
+    ctx.lineTo(mx - 5, my - 3);
+    ctx.lineTo(mx + 4, my + 5);
+    ctx.lineTo(x1, y1 - 4);
+    ctx.strokeStyle = "rgba(232,220,198,0.32)";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+  if (style === "golden") {
+    ctx.strokeStyle = "rgba(240,196,60,0.58)";
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+  const knots = Math.min(4, Math.floor(training / 6));
+  for (let i = 1; i <= knots; i += 1) {
+    const t = i / (knots + 1);
+    const x = x0 + (x1 - x0) * t;
+    const y = y0 + (y1 - y0) * t + (1 - taut) * 10 * 4 * t * (1 - t);
+    ctx.beginPath();
+    ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+    ctx.fillStyle = style === "golden" ? "rgba(240,196,60,0.9)" : "rgba(248,240,220,0.8)";
+    ctx.fill();
+  }
   ctx.restore();
 }
 
@@ -340,7 +377,7 @@ export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
   const ox = 6 * d.scale;
   const oy = -2 * d.scale;
   back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1));
-  drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark);
+  drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training);
   front.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2.4 * d.scale, l, d.scale, 1));
 
   ctx.restore();

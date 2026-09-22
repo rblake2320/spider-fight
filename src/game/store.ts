@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { FightOutcome, Habitat, SaveState, Screen, Spider, Stats } from "./types";
+import type { FightOutcome, SaveState, Screen, Spider, Stats } from "./types";
 import {
   HABITATS,
   HUNTS_PER_DAY,

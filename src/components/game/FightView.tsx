@@ -145,7 +145,6 @@ export function FightArena() {
   const spiders = useGame((s) => s.spiders);
   const applyResult = useGame((s) => s.applyResult);
   const result = useGame((s) => s.result);
-  const clearResult = useGame((s) => s.clearResult);
   const setScreen = useGame((s) => s.setScreen);
   const player = spiders.find((s) => s.id === fightMeta?.playerId);
   const sim = useRef<StickFight | null>(null);
@@ -216,7 +215,7 @@ export function FightArena() {
       }
     }, 80);
     return () => clearInterval(id);
-  }, [fightMeta?.playerId, fightMeta?.rivalId]);
+  }, [applyResult, fightMeta, player]);
 
   if (result) return <ResultCard />;
   if (!fightMeta || !player || !sim.current) {
@@ -243,6 +242,9 @@ export function FightArena() {
       ) : f.jevMinded ? (
         <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-dust">Reads the stick</p>
       ) : null}
+      <p className="px-3 pb-1 text-center text-[10px] text-dust">
+        {f.player.web.name} · {f.player.web.ability}
+      </p>
       <div className="relative min-h-[240px] flex-1">
         <FightCanvas fight={f} className="absolute inset-0 h-full w-full" />
         <p className="pointer-events-none absolute bottom-2 left-0 right-0 text-center font-display text-lg text-paper drop-shadow">

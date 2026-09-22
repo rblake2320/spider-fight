@@ -16,6 +16,7 @@ export type Stage = "nymph" | "juvenile" | "adult" | "veteran" | "champion" | "l
 export type Sex = "female" | "male";
 export type Rarity = "common" | "uncommon" | "rare" | "legendary";
 export type MoveId = "lunge" | "grapple" | "feint" | "brace" | "yank" | "drop";
+export type WebStyle = "orb" | "cross" | "tangle" | "spoked" | "golden";
 export type GearSlot = "wraps" | "fang" | "silk" | "stim" | "charm";
 export type ItemKind = GearSlot | "feed" | "bait" | "tonic" | "upgrade";
 export type ShopTab = "gear" | "feed" | "tonics" | "bait" | "stable";
@@ -77,6 +78,14 @@ export type Species = {
   spread: Stats;
   traits: string[];
   habitats: string[];
+  web: WebProfile;
+};
+
+export type WebProfile = {
+  name: string;
+  style: WebStyle;
+  move: MoveId;
+  ability: string;
 };
 
 export type MorphColors = {

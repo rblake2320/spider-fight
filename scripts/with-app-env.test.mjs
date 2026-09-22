@@ -7,6 +7,7 @@ import { test } from "node:test";
 import { promisify } from "node:util";
 import {
   APP_ENV_REL_PATH,
+  commandForPlatform,
   mergeAppEnv,
   parseAppEnv,
   projectRoot,
@@ -61,6 +62,17 @@ test("an explicit process-env override wins over the file", () => {
 
 test("the template ships auth off", () => {
   assert.deepEqual(readAppEnv(projectRoot()), { VITE_AUTH_ENABLED: "false" });
+});
+
+test("uses Vite's JavaScript entry on Windows without changing POSIX commands", () => {
+  const windows = commandForPlatform("vite", ["build"], projectRoot(), "win32");
+  assert.equal(windows.file, process.execPath);
+  assert.match(windows.args[0], /node_modules[\\/]vite[\\/]bin[\\/]vite\.js$/);
+  assert.deepEqual(windows.args.slice(1), ["build"]);
+  assert.deepEqual(commandForPlatform("vite", ["build"], projectRoot(), "linux"), {
+    file: "vite",
+    args: ["build"],
+  });
 });
 
 test("vite loadEnv resolves the wrapped value", () => {

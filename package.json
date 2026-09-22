@@ -14,7 +14,7 @@
     "preview": "node scripts/with-app-env.mjs vite preview",
     "typecheck": "tsc --noEmit",
     "check:auth": "node scripts/check-auth-invariant.mjs",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/auth/gate-identity.test.ts",
+    "test": "node --test 'scripts/**/*.test.mjs' && tsx --test src/game/combat.test.ts src/lib/app-data/app-data.test.ts src/lib/auth/gate-identity.test.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -89,6 +89,7 @@
     "playwright": "^1.62.0",
     "prettier": "^3.4.0",
     "typescript": "^5.7.0",
+    "tsx": "^4.20.6",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.2.0"
   }

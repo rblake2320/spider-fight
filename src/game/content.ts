@@ -65,6 +65,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 3, speed: 3, grit: 3, venom: 2, silk: 2, size: 3 },
     traits: ["Porch-bred", "Night feeder", "Stubborn"],
     habitats: ["porch", "garden", "barn", "woods"],
+    web: { name: "Porch snare", style: "orb", move: "lunge", ability: "Lunge hits harder" },
   },
   cross: {
     id: "cross",
@@ -87,6 +88,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 3, speed: 2, grit: 3, venom: 2, silk: 2, size: 2 },
     traits: ["Garden cross", "Heavy", "Patient"],
     habitats: ["garden", "barn", "woods"],
+    web: { name: "Cross brace", style: "cross", move: "brace", ability: "Brace restores extra stamina" },
   },
   shamrock: {
     id: "shamrock",
@@ -109,6 +111,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 3, speed: 2, grit: 3, venom: 2, silk: 2, size: 3 },
     traits: ["Clover back", "Slow", "Crushing"],
     habitats: ["garden", "woods", "fair"],
+    web: { name: "Pecan lattice", style: "spoked", move: "grapple", ability: "Grapple hits harder" },
   },
   catface: {
     id: "catface",
@@ -131,6 +134,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 2, speed: 3, grit: 3, venom: 2, silk: 2, size: 2 },
     traits: ["Cat-faced", "Iron gut", "Watchful"],
     habitats: ["barn", "porch", "woods"],
+    web: { name: "Eave tangle", style: "tangle", move: "brace", ability: "Brace restores extra stamina" },
   },
   marbled: {
     id: "marbled",
@@ -153,6 +157,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 3, speed: 3, grit: 2, venom: 3, silk: 3, size: 2 },
     traits: ["Marbled", "Showy", "Hot-blooded"],
     habitats: ["woods", "garden", "fair"],
+    web: { name: "Marble spiral", style: "spoked", move: "feint", ability: "Feint hits harder" },
   },
   arrowhead: {
     id: "arrowhead",
@@ -175,6 +180,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 2, speed: 3, grit: 2, venom: 3, silk: 2, size: 2 },
     traits: ["Arrowback", "Quick fang", "Skittish"],
     habitats: ["woods", "garden"],
+    web: { name: "Arrow line", style: "tangle", move: "lunge", ability: "Lunge hits harder" },
   },
   spiny: {
     id: "spiny",
@@ -197,6 +203,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 2, speed: 2, grit: 3, venom: 2, silk: 2, size: 1 },
     traits: ["Spined", "Armored", "Crab-stance"],
     habitats: ["garden", "fair", "woods"],
+    web: { name: "Spine net", style: "cross", move: "brace", ability: "Brace restores extra stamina" },
   },
   golden: {
     id: "golden",
@@ -219,6 +226,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 2, speed: 3, grit: 2, venom: 2, silk: 3, size: 2 },
     traits: ["Golden wind", "Long-leg", "Silk singer"],
     habitats: ["woods", "fair"],
+    web: { name: "Golden dragline", style: "golden", move: "yank", ability: "Yank pulls farther" },
   },
   joro: {
     id: "joro",
@@ -241,6 +249,7 @@ export const SPECIES: Record<string, Species> = {
     spread: { power: 3, speed: 3, grit: 2, venom: 3, silk: 3, size: 2 },
     traits: ["Joro", "Invasive", "Showboat"],
     habitats: ["fair", "woods", "garden"],
+    web: { name: "Joro bridge", style: "golden", move: "drop", ability: "Drop pays out less silk" },
   },
   widow: {
     id: "widow",

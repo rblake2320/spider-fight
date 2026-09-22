@@ -70,6 +70,15 @@ export function effective(s: Spider): Stats {
   return e;
 }
 
+export function trainingTotal(s: Spider): number {
+  return Object.values(s.trained).reduce((total, value) => total + value, 0);
+}
+
+export function spiderScore(s: Spider): number {
+  const gearScore = Object.values(s.gear).filter(Boolean).length * 8;
+  return Math.max(0, s.wins * 32 - s.losses * 6 + s.level * 12 + trainingTotal(s) * 5 + gearScore);
+}
+
 export function filledHp(s: Spider): number {
   const e = effective(s);
   return maxHp(e.size, e.grit, s.stage);

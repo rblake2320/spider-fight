@@ -104,6 +104,21 @@ export function isMainModule(moduleUrl) {
   }
 }
 
+/**
+ * Windows cannot directly execute npm's `.cmd` shim through Node's `spawn`.
+ * Start Vite's declared JavaScript entry with Node instead, avoiding a shell
+ * and preserving argument handling.
+ */
+export function commandForPlatform(command, args, root = projectRoot(), platform = process.platform) {
+  if (platform === "win32" && command === "vite") {
+    return {
+      file: process.execPath,
+      args: [join(root, "node_modules", "vite", "bin", "vite.js"), ...args],
+    };
+  }
+  return { file: command, args };
+}
+
 function main(argv) {
   const [command, ...args] = argv;
   if (!command) {
@@ -111,7 +126,8 @@ function main(argv) {
     process.exit(2);
   }
   const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+  const childCommand = commandForPlatform(command, args);
+  const child = spawn(childCommand.file, childCommand.args, { stdio: "inherit", env });
   // The dev server is long-running and is stopped by signalling this wrapper.
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));

@@ -2,6 +2,17 @@ import { useEffect, useRef } from "react";
 import { bobPos, stepFight, type StickFight } from "@/game/combat";
 import { drawParticles, drawSilk, drawSpider, drawStick } from "@/game/spider-draw";
 
+// A fight can be rendered by more than one canvas briefly during development
+// remounts. The simulation belongs to the shared fight, so exactly one canvas
+// owns its animation loop at a time. Store this on globalThis so a Vite hot
+// reload cannot leave an older module's loop advancing the same fight.
+const simulationOwners = (() => {
+  const host = globalThis as typeof globalThis & {
+    __spiderFightSimulationOwners?: WeakMap<StickFight, symbol>;
+  };
+  return (host.__spiderFightSimulationOwners ??= new WeakMap<StickFight, symbol>());
+})();
+
 export function FightCanvas({ fight, className }: { fight: StickFight; className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const bg = useRef<HTMLImageElement | null>(null);
@@ -20,16 +31,23 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
+    const fight = fightRef.current;
+    if (simulationOwners.has(fight)) return;
+    const owner = Symbol("fight-canvas");
+    simulationOwners.set(fight, owner);
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      simulationOwners.delete(fight);
+      return;
+    }
     let raf = 0;
     let last = performance.now();
-
     const loop = (now: number) => {
+      if (simulationOwners.get(fight) !== owner) return;
       const raw = (now - last) / 1000;
       last = now;
-      const dt = Math.min(raw, 0.1);
       const f = fightRef.current;
+      const dt = Math.max(0, Math.min(raw, 0.1));
       stepFight(f, dt);
 
       const parent = canvas.parentElement;
@@ -76,9 +94,11 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
       const ey = stickY + eb.y * h * 0.55;
       const pAttach = p.attachX * w;
       const eAttach = e.attachX * w;
+      const trainedP = Object.values(p.spider.trained).reduce((sum, value) => sum + value, 0);
+      const trainedE = Object.values(e.spider.trained).reduce((sum, value) => sum + value, 0);
 
-      drawSilk(ctx, pAttach, stickY + 4, px, py - 8, 0.85);
-      drawSilk(ctx, eAttach, stickY + 4, ex, ey - 8, 0.85);
+      drawSilk(ctx, pAttach, stickY + 4, px, py - 8, 0.85, p.web.style, trainedP);
+      drawSilk(ctx, eAttach, stickY + 4, ex, ey - 8, 0.85, e.web.style, trainedE);
 
       const scale = Math.min(w, h) / 140;
       const plumpP = Math.min(1, p.stats.size / 16);
@@ -94,6 +114,7 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
         pose: p.pose,
         t: now / 1000,
         plump: plumpP,
+        training: trainedP,
         hurtFlash: p.hurtFlash,
         mark: p.spider.speciesId === "widow" ? "hourglass" : undefined,
       });
@@ -107,13 +128,11 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
         pose: e.pose,
         t: now / 1000 + 1.7,
         plump: plumpE,
+        training: trainedE,
         hurtFlash: e.hurtFlash,
         mark: e.spider.speciesId === "widow" ? "hourglass" : undefined,
       });
 
-      f.particles.forEach((pt) => {
-        pt.x = pt.x; // already pixel-ish from burst in fighter space — remap if needed
-      });
       // particles were spawned in normalized-ish coords; convert on draw
       drawParticles(
         ctx,
@@ -128,7 +147,10 @@ export function FightCanvas({ fight, className }: { fight: StickFight; className
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (simulationOwners.get(fight) === owner) simulationOwners.delete(fight);
+    };
   }, []);
 
   return <canvas ref={ref} className={className} style={{ touchAction: "none" }} />;

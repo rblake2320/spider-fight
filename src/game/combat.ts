@@ -1,8 +1,8 @@
-import { MOVES, RANKS, maxHp } from "./content";
+import { MOVES, RANKS, SPECIES, maxHp } from "./content";
 import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
 import { colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
-import type { FightOutcome, MorphColors, MoveId, Spider, Stats } from "./types";
+import type { FightOutcome, MorphColors, MoveId, Spider, Stats, WebProfile } from "./types";
 
 export type Fighter = {
   spider: Spider;
@@ -22,6 +22,7 @@ export type Fighter = {
   colors: MorphColors;
   facing: 1 | -1;
   name: string;
+  web: WebProfile;
 };
 
 export type StickFight = {
@@ -76,6 +77,7 @@ function makeFighter(s: Spider, attach: number, facing: 1 | -1): Fighter {
     colors: colorsOf(s),
     facing,
     name: s.name,
+    web: SPECIES[s.speciesId]?.web ?? { name: "Loose line", style: "orb", move: "brace", ability: "Brace restores stamina" },
   };
 }
 
@@ -251,7 +253,7 @@ function beginTell(f: StickFight): void {
   f.enemy.stam = clamp(f.enemy.stam + 7, 0, 100);
   f.timing = 0.08;
   f.timingHit = false;
-  f.lastText = "Watch the legs.";
+  f.lastText = f.tellReady && f.enemy.tell ? MOVES[f.enemy.tell].tell : "Watch the legs.";
 }
 
 function resolveRound(f: StickFight): void {
@@ -308,6 +310,8 @@ function resolveRound(f: StickFight): void {
 
   if (pMove === "brace") f.player.stam = clamp(f.player.stam + 10, 0, 100);
   if (eMove === "brace") f.enemy.stam = clamp(f.enemy.stam + 10, 0, 100);
+  applyWebSignature(f.player, f.enemy, pMove);
+  applyWebSignature(f.enemy, f.player, eMove);
 }
 
 function attackPower(f: Fighter, move: MoveId): number {
@@ -315,7 +319,19 @@ function attackPower(f: Fighter, move: MoveId): number {
   const s = f.stats;
   const core = s.power * 1.1 + s.size * 0.35 + s.venom * 0.45 + s.speed * 0.2;
   const stamPen = f.stam < 12 ? 0.7 : 1;
-  return (8 + core * 0.55) * m.power * stamPen;
+  const signature = f.web.move === move && move !== "brace" ? 1.16 : 1;
+  return (8 + core * 0.55) * m.power * stamPen * signature;
+}
+
+function applyWebSignature(fighter: Fighter, opponent: Fighter, move: MoveId): void {
+  if (fighter.web.move !== move) return;
+  if (move === "brace") {
+    fighter.stam = clamp(fighter.stam + 7, 0, 100);
+  } else if (move === "yank") {
+    opponent.silk = clamp(opponent.silk + 0.035, 0.14, 0.4);
+  } else if (move === "drop") {
+    fighter.silk = clamp(fighter.silk - 0.025, 0.14, 0.4);
+  }
 }
 
 function applyHit(f: StickFight, target: Fighter, raw: number, move: MoveId): void {
