@@ -296,3 +296,12 @@ test("a practice loss preserves gear, record, and competitive rewards", () => {
   assert.equal(fight.player.spider.gear.wraps, "porch-twine");
   assert.equal(fight.player.spider.losses, 0);
 });
+
+test("the guided lead is the strongest legal counter", () => {
+  for (const tell of Object.keys(MOVES) as Array<keyof typeof MOVES>) {
+    const lead = bestCounterFor(tell);
+    assert.ok(lead);
+    assert.ok(countersFor(tell).includes(lead));
+    assert.equal(MOVES[lead].power, Math.max(...countersFor(tell).map((move) => MOVES[move].power)));
+  }
+});
