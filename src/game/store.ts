@@ -124,7 +124,7 @@ type Game = SaveState &
     releaseCatch: () => void;
     leaveHunt: () => void;
     prepareFight: (rivalId: string, playerId: string, wager: number, practice?: boolean) => string | null;
-    startPractice: (playerId: string) => string | null;
+    startPractice: (playerId: string, rivalId?: string) => string | null;
     startYardSeries: (playerId: string) => string | null;
     continueYardSeries: () => string | null;
     setClutch: (aId: string, bId: string) => string | null;
@@ -476,7 +476,7 @@ export const useGame = create<Game>()(
         if (g.cash < wager) return "Can't cover the wager";
         const rival = RIVALS.find((r) => r.id === rivalId) ?? RIVALS[0]!;
         if (!isShipped(rival)) return "That crew isn't on this year's circuit";
-        if (rival.mind && !canCallWidow(g.rank)) return "Reach District before calling the Widow";
+        if (rival.mind && !practice && !canCallWidow(g.rank)) return "Reach District before calling the Widow";
         const fightRank = rival.always ? Math.max(g.rank, rival.rank) : rival.rank;
         const rng = mulberry32(seedFrom(rival.id + String(g.rank) + player.id.slice(0, 4)));
         const bias = rng.pick(rival.bias.filter((id) => SPECIES[id]) as string[]) || "hentz";
@@ -735,7 +735,7 @@ export const useGame = create<Game>()(
         return null;
       },
 
-      startPractice: (playerId) => get().prepareFight("tom", playerId, 0, true),
+      startPractice: (playerId, rivalId = "tom") => get().prepareFight(rivalId, playerId, 0, true),
 
       claimDailyWebChallenge: () => {
         const g = get();

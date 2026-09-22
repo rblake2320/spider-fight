@@ -16,7 +16,7 @@ import { fightShareText } from "@/game/share";
 import { NIGHTLY_BONUS_CASH, NIGHTLY_BONUS_POINTS, nightlyRival } from "@/game/night-card";
 import { tonightSky } from "@/game/sky";
 import { rivalIntel } from "@/game/rival-intel";
-import { canCallWidow, WIDOW_UNLOCK_RANK } from "@/game/boss";
+import { WIDOW_UNLOCK_RANK, widowCallMode } from "@/game/boss";
 import { todayStamp } from "@/game/rng";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
@@ -146,7 +146,9 @@ export function FightSelect() {
         />
       </label>
       <div className="grid gap-2">
-        {rivals.map((r) => (
+        {rivals.map((r) => {
+          const widowMode = r.mind ? widowCallMode(rank) : null;
+          return (
           <button
             key={r.id}
             type="button"
@@ -155,10 +157,10 @@ export function FightSelect() {
               r.mind ? "border-rust/70" : "border-line",
               r.id === headline.id && "border-moss/70",
             )}
-            disabled={r.mind && !canCallWidow(rank)}
+            disabled={!player}
             onClick={() => {
               if (!player) return;
-              const msg = prepare(r.id, player.id, wager);
+              const msg = widowMode === "shadow" ? startPractice(player.id, r.id) : prepare(r.id, player.id, wager);
               setErr(msg);
             }}
           >
@@ -197,13 +199,14 @@ export function FightSelect() {
             })()}
             {r.mind ? (
               <p className="mt-1 text-xs text-dust">
-                {canCallWidow(rank)
+                {widowMode === "challenge"
                   ? "Always on the line. Scales with your rank. The Widow hangs on the far silk. Stick mind throws for her."
-                  : `Watching from the far silk. Reach ${RANKS[WIDOW_UNLOCK_RANK]?.name ?? "District"} to call her.`}
+                  : `Shadow spar · no stakes. Read the Widow's tells now; reach ${RANKS[WIDOW_UNLOCK_RANK]?.name ?? "District"} to make the ranked call.`}
               </p>
             ) : null}
           </button>
-        ))}
+          );
+        })}
       </div>
       {err ? <p className="text-sm text-rust">{err}</p> : null}
     </div>
@@ -564,7 +567,7 @@ function ResultCard() {
               return;
             }
             const error = result.practice
-              ? startPractice(fighter.id)
+              ? startPractice(fighter.id, result.rivalId)
               : prepareFight(result.rivalId, fighter.id, result.wager);
             setRematchError(error);
           }}

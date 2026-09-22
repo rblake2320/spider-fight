@@ -42,7 +42,7 @@ More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt resu
 - **Practice Thread** — learn a real opponent's tells with no cash, gear, rank, record, or daily progress at risk
 - **Daily loop** — a rotating contract, a species-web challenge, nightly headliner, and three-call Yard Series
 - **Circuit** — personal spider scores, web marks, a collection Almanac, and an authenticated shared score board
-- **Black Widow** — always on the fight card, scales with you, hourglass on a black gut. Stick mind (Jev) throws for her when `TYPESAFE_API_KEY` is set; local instinct covers if the line is dark
+- **Black Widow** — Shadow Spar her from the first night to learn her tells with no stakes; the ranked call opens at District. Stick mind (Jev) throws for her when `TYPESAFE_API_KEY` is set; local instinct covers if the line is dark
 
 ## Run it
 
