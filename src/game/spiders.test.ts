@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { mulberry32 } from "./rng.ts";
-import { canMolt, molt, recoveryRests, rollMoltQuality, rollSpider } from "./spiders.ts";
+import { canMolt, molt, recoveryRests, rollMoltQuality, rollSpider, trainingLook } from "./spiders.ts";
 
 test("molt quality is seeded, and a ready adult can shed", () => {
   assert.equal(rollMoltQuality({ ...mulberry32(1), next: () => 0.01 }, ["Molt glutton"]), "perfect");
@@ -40,4 +40,13 @@ test("injury recovery tells the yard exactly how many rests remain", () => {
   assert.equal(recoveryRests(spider), 3);
   spider.injury.fightsLeft = 0;
   assert.equal(recoveryRests(spider), 0);
+});
+
+test("training look describes the trained build that is drawn at the stick", () => {
+  const spider = rollSpider(mulberry32(12), { speciesId: "hentz" });
+  assert.deepEqual(trainingLook(spider), { title: "Fresh shell", detail: "Put in drills to change the body on the stick." });
+  spider.trained.silk = 5;
+  assert.deepEqual(trainingLook(spider), { title: "Yard-built", detail: "Thicker lines and a tighter web shape." });
+  spider.trained.size = 7;
+  assert.deepEqual(trainingLook(spider), { title: "Stick-built", detail: "Broader body and a larger silhouette." });
 });

@@ -8,7 +8,7 @@ import { circuitDay, listCircuitBoard, listDailyCircuitBoard, postCircuitScore, 
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
-import { canFight, canMolt, effective, moltLine, portraitOf, recoveryRests, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
+import { canFight, canMolt, effective, moltLine, portraitOf, recoveryRests, spiderScore, STAGE_LABEL, STAT_LABEL, trainingLook, trainingTotal } from "@/game/spiders";
 import { traitBlurb, traitTrainCost } from "@/game/traits";
 import { activeSpiders, canRelease, canRetire, rafterSpiders, releaseCash } from "@/game/rafters";
 import type { GearSlot, ItemKind, Stats } from "@/game/types";
@@ -18,6 +18,7 @@ import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
 import { DAILY_STREAK_CAP, dailyStreakBonus } from "@/game/daily-streak";
 import { archiveShareText } from "@/game/share";
 import { shareMatchCard } from "@/game/share-client";
+import { SpiderBuildCanvas } from "./SpiderBuildCanvas";
 
 const CompetitionSignIn = lazy(() => import("./CompetitionSignIn").then((module) => ({ default: module.CompetitionSignIn })));
 
@@ -286,6 +287,7 @@ export function SpiderDetail() {
   }
   const e = effective(spider);
   const spec = SPECIES[spider.speciesId];
+  const build = trainingLook(spider);
   return (
     <div className="flex h-full flex-col overflow-auto pb-24">
       <div className="relative h-64">
@@ -329,6 +331,15 @@ export function SpiderDetail() {
             <p className="mt-1 text-xs text-paper">At two web charge: {webSurgeHint(spec.web)}.</p>
           </section>
         ) : null}
+        <section className="rounded-xl border border-rust/40 bg-raised p-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-xs uppercase tracking-widest text-rust">Yard build</p>
+            <p className="text-xs text-moss">{trainingTotal(spider)} drills</p>
+          </div>
+          <p className="mt-1 font-medium">{build.title}</p>
+          <p className="mt-1 text-xs text-dust">{build.detail}</p>
+          <div className="mt-3"><SpiderBuildCanvas spider={spider} /></div>
+        </section>
         <XpBar level={spider.level} xp={spider.xp} />
         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
           {(Object.keys(STAT_LABEL) as Array<keyof Stats>).map((k) => (

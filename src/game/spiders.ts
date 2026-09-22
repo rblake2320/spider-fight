@@ -78,6 +78,23 @@ export function trainingTotal(s: Spider): number {
   return Object.values(s.trained).reduce((total, value) => total + value, 0);
 }
 
+/** A readable stable-side description of the same build that changes the fight silhouette. */
+export function trainingLook(s: Spider): { title: string; detail: string } {
+  const total = trainingTotal(s);
+  const focus = (Object.keys(s.trained) as Array<keyof Stats>).reduce((best, stat) =>
+    s.trained[stat] > s.trained[best] ? stat : best, "power");
+  const title = total === 0 ? "Fresh shell" : total < 5 ? "Wire-trained" : total < 12 ? "Yard-built" : "Stick-built";
+  const detail: Record<keyof Stats, string> = {
+    power: "Heavier frame and a harder first shove.",
+    speed: "Longer reach and a quicker first step.",
+    grit: "Low stance, settled legs, hard to move.",
+    venom: "Bright fangs and a meaner finish.",
+    silk: "Thicker lines and a tighter web shape.",
+    size: "Broader body and a larger silhouette.",
+  };
+  return { title, detail: total ? detail[focus] : "Put in drills to change the body on the stick." };
+}
+
 export function spiderScore(s: Spider): number {
   const gearScore = Object.values(s.gear).filter(Boolean).length * 8;
   const rafterScore = s.retired ? 20 : 0;
