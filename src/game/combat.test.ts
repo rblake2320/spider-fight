@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { applyEnemyTell, createFight, queuePlayerMove, stepFight } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
-import { rollSpider } from "./spiders";
+import { applyRivalGrit, rollSpider } from "./spiders";
 
 function makeFight() {
   const player = rollSpider(mulberry32(11), { speciesId: "hentz", stage: "adult" });
@@ -60,4 +60,13 @@ test("crew style is carried into the fallback stick AI", () => {
   const enemy = rollSpider(mulberry32(66), { speciesId: "cross", stage: "adult", asRival: true });
   const fight = createFight(player, enemy, 10, "tom", "Alley Tom", "brace");
   assert.equal(fight.rivalStyle, "brace");
+});
+
+test("crew grit changes the rolled opponent strength", () => {
+  const spider = rollSpider(mulberry32(77), { speciesId: "hentz", stage: "adult", asRival: true });
+  const tougher = applyRivalGrit(spider, 1.4);
+  const softer = applyRivalGrit(spider, 0.7);
+  assert.ok(tougher.base.power > spider.base.power);
+  assert.ok(softer.base.power < spider.base.power);
+  assert.ok(tougher.hp > softer.hp);
 });

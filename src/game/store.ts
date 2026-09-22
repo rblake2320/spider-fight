@@ -17,6 +17,7 @@ import {
 import { clamp, mulberry32, seedFrom, todayStamp, uid } from "./rng";
 import {
   applyXp,
+  applyRivalGrit,
   canFight,
   effective,
   filledHp,
@@ -401,7 +402,7 @@ export const useGame = create<Game>()(
         const bias = rng.pick(rival.bias.filter((id) => SPECIES[id]) as string[]) || "hentz";
         const stage =
           fightRank < 1 ? "juvenile" : fightRank < 3 ? "adult" : fightRank < 5 ? "veteran" : "champion";
-        const enemy = rollSpider(rng, { speciesId: bias, rank: fightRank, stage, asRival: true });
+        const enemy = applyRivalGrit(rollSpider(rng, { speciesId: bias, rank: fightRank, stage, asRival: true }), rival.grit);
         if (rival.mind) {
           enemy.name = "Black Widow";
           enemy.sex = "female";

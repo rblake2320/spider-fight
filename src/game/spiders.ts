@@ -159,6 +159,22 @@ export function rollSpider(
   };
 }
 
+/** Applies a crew's authored toughness after the species and rank roll. */
+export function applyRivalGrit(spider: Spider, grit: number): Spider {
+  const scale = clamp(grit, 0.65, 1.7);
+  const base = Object.fromEntries(
+    Object.entries(spider.base).map(([key, value]) => [key, clamp(Math.round(value * scale), 2, MAX_STAT)]),
+  ) as Stats;
+  const hp = maxHp(base.size, base.grit, spider.stage);
+  return {
+    ...spider,
+    base,
+    hp,
+    energy: maxEnergy(base.size),
+    traits: [...spider.traits, `${Math.round(scale * 100)}% grit`].slice(0, 6),
+  };
+}
+
 function rollRarity(rng: Rng, weights: Partial<Record<Rarity, number>>): Rarity {
   const items = (Object.entries(weights) as [Rarity, number][])
     .filter(([, w]) => w > 0)

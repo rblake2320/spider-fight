@@ -130,6 +130,7 @@ export function FightSelect() {
             </div>
             <p className="mt-1 text-sm italic text-mute">“{r.quote}”</p>
             {r.style ? <p className="mt-1 text-xs text-dust">Tends toward {MOVES[r.style].name.toLowerCase()}.</p> : null}
+            <p className="mt-1 text-xs text-dust">{Math.round(r.grit * 100)}% grit</p>
             {(() => {
               const record = rivalRecords[r.id];
               return record ? (
