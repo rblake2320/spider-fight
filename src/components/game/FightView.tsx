@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { fightShareText } from "@/game/share";
 import { NIGHTLY_BONUS_CASH, NIGHTLY_BONUS_POINTS, nightlyRival } from "@/game/night-card";
 import { rivalIntel } from "@/game/rival-intel";
+import { canCallWidow, WIDOW_UNLOCK_RANK } from "@/game/boss";
 import { todayStamp } from "@/game/rng";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
@@ -141,6 +142,7 @@ export function FightSelect() {
               r.mind ? "border-rust/70" : "border-line",
               r.id === headline.id && "border-moss/70",
             )}
+            disabled={r.mind && !canCallWidow(rank)}
             onClick={() => {
               if (!player) return;
               const msg = prepare(r.id, player.id, wager);
@@ -182,7 +184,9 @@ export function FightSelect() {
             })()}
             {r.mind ? (
               <p className="mt-1 text-xs text-dust">
-                Always on the line. Scales with your rank. The Widow hangs on the far silk. Stick mind throws for her.
+                {canCallWidow(rank)
+                  ? "Always on the line. Scales with your rank. The Widow hangs on the far silk. Stick mind throws for her."
+                  : `Watching from the far silk. Reach ${RANKS[WIDOW_UNLOCK_RANK]?.name ?? "District"} to call her.`}
               </p>
             ) : null}
           </button>

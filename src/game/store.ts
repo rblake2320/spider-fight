@@ -36,6 +36,7 @@ import { badgeReward, newlyEarnedBadges } from "./badges";
 import { nightlyReward, nightlyRival } from "./night-card";
 import { SERIES_BONUS_CASH, SERIES_BONUS_POINTS, yardSeriesLineup } from "./series";
 import { recordRivalMoves } from "./rival-intel";
+import { canCallWidow } from "./boss";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -438,6 +439,7 @@ export const useGame = create<Game>()(
         if (g.cash < wager) return "Can't cover the wager";
         const rival = RIVALS.find((r) => r.id === rivalId) ?? RIVALS[0]!;
         if (!isShipped(rival)) return "That crew isn't on this year's circuit";
+        if (rival.mind && !canCallWidow(g.rank)) return "Reach District before calling the Widow";
         const fightRank = rival.always ? Math.max(g.rank, rival.rank) : rival.rank;
         const rng = mulberry32(seedFrom(rival.id + String(g.rank) + player.id.slice(0, 4)));
         const bias = rng.pick(rival.bias.filter((id) => SPECIES[id]) as string[]) || "hentz";
