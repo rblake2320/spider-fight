@@ -53,13 +53,14 @@ test("migrate keeps unknown species from crashing", () => {
     },
     1,
   );
-  assert.equal(next.version, 5);
+  assert.equal(next.version, 6);
   assert.equal(next.spiders[0]?.speciesId, "hentz");
   assert.equal(next.spiders[0]?.gear.wraps, undefined);
   assert.equal(next.inventory.cricket, 2);
   assert.equal(next.inventory["culvert-silk"], 9);
   assert.ok(next.career);
   assert.equal(next.dailyContract.progress, 0);
+  assert.equal(next.dailyWebChallenge.progress, 0);
   assert.deepEqual(next.rivalRecords.tom, { wins: 2, losses: 1, streak: 2 });
   assert.equal(next.rivalRecords.ghost, undefined);
   assert.deepEqual(next.earnedBadges, []);

@@ -25,6 +25,8 @@ export function Yard() {
   const collect = useGame((s) => s.collectDaily);
   const contract = useGame((s) => s.dailyContract);
   const claimContract = useGame((s) => s.claimDailyContract);
+  const webChallenge = useGame((s) => s.dailyWebChallenge);
+  const claimWebChallenge = useGame((s) => s.claimDailyWebChallenge);
   const flags = useGame((s) => s.flags);
   const tutorial = useGame((s) => s.tutorial);
   const lead = spiders[0];
@@ -108,6 +110,31 @@ export function Yard() {
             {contract.claimed ? null : (
               <Button size="sm" variant="rust" disabled={contract.progress < contract.target} onClick={() => claimContract()}>
                 Collect
+              </Button>
+            )}
+          </div>
+        </section>
+        <section className="rounded-xl border border-moss/50 bg-raised p-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-xs uppercase tracking-widest text-moss">Daily web challenge</p>
+            <p className="tabular text-xs text-moss">${webChallenge.reward} · +{webChallenge.points} pts</p>
+          </div>
+          <p className="mt-1 font-medium">
+            {lead ? `${SPECIES[lead.speciesId]?.web.name} signature` : "Land a web signature"}
+          </p>
+          <p className="mt-1 text-xs text-dust">
+            {lead
+              ? `Win an exchange with ${MOVES[SPECIES[lead.speciesId]?.web.move ?? "lunge"].name}. Different species solve the stick their own way.`
+              : "Keep a spider, then land its species web move in a winning exchange."}
+          </p>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="tabular text-sm text-paper">
+              {webChallenge.progress}/{webChallenge.target}
+              {webChallenge.claimed ? " · collected" : ""}
+            </p>
+            {webChallenge.claimed ? null : (
+              <Button size="sm" variant="outline" disabled={webChallenge.progress < webChallenge.target} onClick={() => claimWebChallenge()}>
+                Collect web mark
               </Button>
             )}
           </div>

@@ -1,5 +1,5 @@
 import { mulberry32, seedFrom } from "./rng";
-import type { ContractKind, DailyContract } from "./types";
+import type { ContractKind, DailyContract, DailyWebChallenge } from "./types";
 
 type ContractTemplate = Pick<DailyContract, "kind" | "title" | "detail" | "target" | "reward">;
 
@@ -23,4 +23,17 @@ export function advanceContract(contract: DailyContract, kind: ContractKind): Da
 
 export function canClaimContract(contract: DailyContract): boolean {
   return !contract.claimed && contract.progress >= contract.target;
+}
+
+export function makeDailyWebChallenge(date: string, rank: number): DailyWebChallenge {
+  return { date, target: 1, progress: 0, reward: 14 + rank * 3, points: 6 + rank, claimed: false };
+}
+
+export function advanceWebChallenge(challenge: DailyWebChallenge, landedWebMove: boolean): DailyWebChallenge {
+  if (challenge.claimed || !landedWebMove) return challenge;
+  return { ...challenge, progress: Math.min(challenge.target, challenge.progress + 1) };
+}
+
+export function canClaimWebChallenge(challenge: DailyWebChallenge): boolean {
+  return !challenge.claimed && challenge.progress >= challenge.target;
 }

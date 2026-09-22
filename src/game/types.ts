@@ -206,6 +206,16 @@ export type DailyContract = {
   claimed: boolean;
 };
 
+/** Daily tactical card that rewards using the active spider's own web move. */
+export type DailyWebChallenge = {
+  date: string;
+  target: number;
+  progress: number;
+  reward: number;
+  points: number;
+  claimed: boolean;
+};
+
 export type RivalRecord = {
   wins: number;
   losses: number;
@@ -242,6 +252,7 @@ export type SaveState = {
   flags: Record<string, string | boolean>;
   career: CareerLog;
   dailyContract: DailyContract;
+  dailyWebChallenge: DailyWebChallenge;
   rivalRecords: Record<string, RivalRecord>;
   earnedBadges: string[];
   yardSeries: YardSeries | null;

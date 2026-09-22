@@ -31,7 +31,14 @@ import {
 import { unlockAudio, setMusicEnabled, setSfxEnabled } from "./audio";
 import { isShipped } from "./catalog";
 import { EMPTY_CAREER, migrateSave } from "./migrate";
-import { advanceContract, canClaimContract, makeDailyContract } from "./contracts";
+import {
+  advanceContract,
+  advanceWebChallenge,
+  canClaimContract,
+  canClaimWebChallenge,
+  makeDailyContract,
+  makeDailyWebChallenge,
+} from "./contracts";
 import { firstWinTrophy } from "./rewards";
 import { applyBait } from "./bait";
 import { badgeReward, newlyEarnedBadges } from "./badges";
@@ -62,6 +69,7 @@ const emptySave = (): SaveState => ({
   flags: {},
   career: { ...EMPTY_CAREER },
   dailyContract: makeDailyContract(todayStamp(), 0),
+  dailyWebChallenge: makeDailyWebChallenge(todayStamp(), 0),
   rivalRecords: {},
   earnedBadges: [],
   yardSeries: null,
@@ -117,6 +125,7 @@ type Game = SaveState &
     clearResult: () => void;
     collectDaily: () => void;
     claimDailyContract: () => string | null;
+    claimDailyWebChallenge: () => string | null;
     setSetting: (k: keyof SaveState["settings"], v: boolean) => void;
     resetAll: () => void;
     rollYear: () => string | null;
@@ -165,11 +174,12 @@ export const useGame = create<Game>()(
 
       hydrate: () => {
         const s = get();
-        if (s.dayStamp !== todayStamp() || s.dailyContract.date !== todayStamp()) {
+        if (s.dayStamp !== todayStamp() || s.dailyContract.date !== todayStamp() || s.dailyWebChallenge.date !== todayStamp()) {
           set({
             huntsLeft: HUNTS_PER_DAY,
             dayStamp: todayStamp(),
             dailyContract: makeDailyContract(todayStamp(), s.rank),
+            dailyWebChallenge: makeDailyWebChallenge(todayStamp(), s.rank),
             yardSeries: s.yardSeries?.date === todayStamp() ? s.yardSeries : null,
           });
         }
@@ -599,6 +609,10 @@ export const useGame = create<Game>()(
           { ...g, rank, rankPoints },
           { spiders, career, wins, seen: g.seen },
         );
+        const signatureMove = SPECIES[finalSpider.speciesId]?.web.move;
+        const landedWebMove = signatureMove
+          ? out.rounds.some((round) => round.playerMove === signatureMove && round.result === "edge")
+          : false;
         const nextSeries = isSeries && out.won && g.yardSeries
           ? { ...g.yardSeries, stage: g.yardSeries.stage + 1 }
           : null;
@@ -615,6 +629,7 @@ export const useGame = create<Game>()(
           result: out,
           career,
           dailyContract: out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
+          dailyWebChallenge: advanceWebChallenge(g.dailyWebChallenge, landedWebMove),
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
           earnedBadges: badges.earnedBadges,
           yardSeries: seriesFinished ? null : nextSeries,
@@ -653,6 +668,21 @@ export const useGame = create<Game>()(
         set({
           cash: g.cash + g.dailyContract.reward,
           dailyContract: { ...g.dailyContract, claimed: true },
+        });
+        return null;
+      },
+
+      claimDailyWebChallenge: () => {
+        const g = get();
+        if (!canClaimWebChallenge(g.dailyWebChallenge)) return "Land your web move first";
+        const rankPoints = g.rankPoints + g.dailyWebChallenge.points;
+        let rank = g.rank;
+        while (rank < RANKS.length - 1 && rankPoints >= RANKS[rank + 1]!.points) rank += 1;
+        set({
+          cash: g.cash + g.dailyWebChallenge.reward,
+          rank,
+          rankPoints,
+          dailyWebChallenge: { ...g.dailyWebChallenge, claimed: true },
         });
         return null;
       },
@@ -709,6 +739,7 @@ export const useGame = create<Game>()(
         flags: s.flags,
         career: s.career,
         dailyContract: s.dailyContract,
+        dailyWebChallenge: s.dailyWebChallenge,
         rivalRecords: s.rivalRecords,
         earnedBadges: s.earnedBadges,
         yardSeries: s.yardSeries,
