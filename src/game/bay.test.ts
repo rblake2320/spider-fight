@@ -81,3 +81,19 @@ test("saves drop unknown grafts and keep a real slot job", () => {
   assert.deepEqual(clean?.grafts, { fangs: "whet-fangs" });
   assert.equal(clean?.spliceMark, undefined);
 });
+
+test("steel eyes and web sacs bolt on, show on the mill, and stack silk", () => {
+  const spider = adult(8);
+  const eye = BAY_BY_ID["bonnet-eye"]!;
+  assert.equal(canFit(eye, spider, 80, 1), null);
+  const fitted = applyJob(spider, eye);
+  assert.equal(fitted.grafts?.eye, "bonnet-eye");
+  assert.equal(bayLook(fitted).eye, 1);
+  const sacs = BAY_BY_ID["web-sacs"]!;
+  const withSacs = applyJob({ ...fitted, energy: 80 }, sacs);
+  assert.equal(withSacs.grafts?.gland, "web-sacs");
+  assert.ok((bayLook(withSacs).sacs ?? 0) >= 1);
+  assert.ok((bayStats(withSacs).silk ?? 0) >= 3);
+  const laser = BAY_BY_ID["optic-sting"]!;
+  assert.match(canFit(laser, spider, 1000, 1) ?? "", /Need/);
+});

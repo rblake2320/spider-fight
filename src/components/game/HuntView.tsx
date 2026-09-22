@@ -21,6 +21,7 @@ export function HuntSelect() {
   const bait = ITEM_LIST.filter((item) => item.kind === "bait" && isShipped(item) && item.rank <= rank);
   const [err, setErr] = useState<string | null>(null);
   const sky = tonightSky();
+  const infestation = useGame((s) => s.infestation);
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
       <header>
@@ -29,6 +30,11 @@ export function HuntSelect() {
         <p className="mt-1 text-sm text-dust">{huntsLeft} lights left tonight.</p>
         <p className="mt-1 text-xs text-moss">{sky.name}. {sky.blurb}</p>
         <p className="mt-1 text-xs text-moss">{huntBait ? `${ITEMS[huntBait]?.name} set for this hunt.` : "No bait set."}</p>
+        {infestation ? (
+          <p className="mt-2 text-xs text-paper">
+            Brood in the lights: {infestation.count} {SPECIES[infestation.speciesId]?.common ?? "spiderlings"} · {infestation.nights} night{infestation.nights === 1 ? "" : "s"}
+          </p>
+        ) : null}
       </header>
       <section className="rounded-xl bg-raised p-3">
         <p className="text-xs uppercase tracking-widest text-dust">Hunt shelf · ${cash}</p>

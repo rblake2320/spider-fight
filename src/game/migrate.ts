@@ -1,12 +1,13 @@
 import { ITEMS, RIVALS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
 import { isShipped } from "./catalog.ts";
 import { BAY_BY_ID } from "./bay.ts";
-import type { CareerLog, FightArchive, FightRound, MoltQuality, PaperClip, SaveState, Spider, Stats, WeeklyCircuit, YardSeries } from "./types.ts";
+import { isHideSrc } from "./hides.ts";
+import type { CareerLog, FightArchive, FightRound, Hide, Infestation, MoltQuality, PaperClip, SaveState, Spider, Stats, WeeklyCircuit, YardSeries } from "./types.ts";
 import { makeDailyContract, makeDailyWebChallenge } from "./contracts.ts";
 import { makeWeeklyCircuit } from "./weekly-circuit.ts";
 import type { MoveId } from "./types.ts";
 
-const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0, bayJobs: 0, splices: 0 };
+const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0, bayJobs: 0, splices: 0, hatches: 0, hides: 0 };
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -40,7 +41,7 @@ function sanitizeGrafts(raw: unknown): Spider["grafts"] {
   const record = asRecord(raw);
   const out: NonNullable<Spider["grafts"]> = {};
   for (const [slot, id] of Object.entries(record)) {
-    if ((slot === "legs" || slot === "fangs" || slot === "gut" || slot === "gland") && typeof id === "string" && BAY_BY_ID[id]?.slot === slot) {
+    if ((slot === "legs" || slot === "fangs" || slot === "gut" || slot === "gland" || slot === "eye") && typeof id === "string" && BAY_BY_ID[id]?.slot === slot) {
       out[slot] = id;
     }
   }
@@ -93,7 +94,28 @@ export function sanitizeSpider(raw: unknown): Spider | null {
     grafts: sanitizeGrafts(s.grafts),
     splicedFrom: str(s.splicedFrom) || undefined,
     spliceMark: SPECIES[str(s.spliceMark)] ? str(s.spliceMark) : undefined,
+    brood: sanitizeBrood(s.brood),
+    hatchlings: Math.max(0, num(s.hatchlings)) || undefined,
+    hideId: str(s.hideId) || undefined,
   };
+}
+
+function sanitizeBrood(raw: unknown): Spider["brood"] {
+  const record = asRecord(raw);
+  const speciesId = str(record.speciesId);
+  const fightsLeft = Math.max(0, num(record.fightsLeft));
+  if (!SPECIES[speciesId] || fightsLeft <= 0) return undefined;
+  const mateName = str(record.mateName);
+  return { speciesId, fightsLeft: Math.min(4, fightsLeft), ...(mateName ? { mateName } : {}) };
+}
+
+function sanitizeInfestation(raw: unknown): Infestation | null {
+  const record = asRecord(raw);
+  const speciesId = str(record.speciesId);
+  const nights = Math.max(0, num(record.nights));
+  const count = Math.max(0, num(record.count));
+  if (!SPECIES[speciesId] || nights <= 0 || count <= 0) return null;
+  return { speciesId, nights: Math.min(8, nights), count: Math.min(40, count) };
 }
 
 export function sanitizeInventory(raw: unknown): Record<string, number> {
@@ -161,9 +183,33 @@ function sanitizeFightArchive(raw: unknown): FightArchive[] {
   return archives;
 }
 
+function sanitizeHides(raw: unknown): Hide[] {
+  if (!Array.isArray(raw)) return [];
+  const out: Hide[] = [];
+  for (const entry of raw) {
+    if (out.length >= 6) break;
+    const hide = asRecord(entry);
+    const id = str(hide.id).slice(0, 48);
+    const src = str(hide.src);
+    if (!id || !isHideSrc(src)) continue;
+    out.push({
+      id,
+      name: str(hide.name, "Yard hide").slice(0, 18),
+      src,
+      madeAt: num(hide.madeAt),
+    });
+  }
+  return out;
+}
+
 export function migrateSave(persisted: unknown, fromVersion: number): SaveState {
   const p = asRecord(persisted);
   const spiders = (Array.isArray(p.spiders) ? p.spiders : []).map(sanitizeSpider).filter((s): s is Spider => !!s);
+  const hides = sanitizeHides(p.hides);
+  const hideIds = new Set(hides.map((hide) => hide.id));
+  for (const spider of spiders) {
+    if (spider.hideId && !hideIds.has(spider.hideId)) delete spider.hideId;
+  }
   const seen = (Array.isArray(p.seen) ? p.seen : [])
     .filter((id): id is string => typeof id === "string" && !!SPECIES[id]);
   const careerRaw = asRecord(p.career);
@@ -238,6 +284,8 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       worldTitles: Math.max(0, num(careerRaw.worldTitles)),
       bayJobs: Math.max(0, num(careerRaw.bayJobs)),
       splices: Math.max(0, num(careerRaw.splices)),
+      hatches: Math.max(0, num(careerRaw.hatches)),
+      hides: Math.max(0, num(careerRaw.hides)),
     },
     dailyContract: {
       ...generatedContract,
@@ -261,6 +309,8 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
     yardSeries,
     paper: sanitizePaper(p.paper),
     fightArchive: sanitizeFightArchive(p.fightArchive),
+    infestation: sanitizeInfestation(p.infestation),
+    hides,
   } satisfies SaveState;
   void fromVersion;
   return save;

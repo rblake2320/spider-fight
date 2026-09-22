@@ -184,6 +184,32 @@ test("a District splice mixes donor blood and spends the graft purse", () => {
   }
 });
 
+test("a hide ticket hangs on the rack and drapes onto a mill for cash", () => {
+  const before = useGame.getState();
+  try {
+    const spider = rollSpider(mulberry32(91), { speciesId: "hentz", stage: "adult" });
+    const src =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+    useGame.setState({
+      spiders: [spider], selectedId: spider.id, cash: 48, rank: 0, rankPoints: 0,
+      career: { ...EMPTY_CAREER }, seen: ["hentz"], earnedBadges: [], hides: [],
+    });
+    assert.equal(useGame.getState().addHide("Clay mill", src), null);
+    const hung = useGame.getState();
+    assert.equal(hung.hides.length, 1);
+    assert.equal(hung.career.hides, 1);
+    assert.ok(hung.earnedBadges.includes("hide-one"));
+    const hideId = hung.hides[0]!.id;
+    assert.equal(useGame.getState().drapeHide(spider.id, hideId), null);
+    const draped = useGame.getState();
+    assert.equal(draped.spiders[0]?.hideId, hideId);
+    assert.equal(draped.cash, 24);
+    assert.equal(useGame.getState().drapeHide(spider.id, hideId), "Already wearing that hide");
+  } finally {
+    useGame.setState(before, true);
+  }
+});
+
 test("a completed weekly Circuit card pays cash and points exactly once", () => {
   const before = useGame.getState();
   try {

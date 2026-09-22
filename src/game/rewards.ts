@@ -11,6 +11,7 @@ export const RIVAL_TROPHIES: Readonly<Record<string, string>> = {
   gateseven: "silk-key",
   world: "world-seal",
   lastlight: "last-light-lens",
+  pithands: "clay-fang",
 };
 
 export function firstWinTrophy(rivalId: string, inventory: Record<string, number>, spiders: Spider[]): string | null {

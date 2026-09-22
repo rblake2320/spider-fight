@@ -9,7 +9,10 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
+import { canSetSac, sacCost } from "@/game/brood";
+import { CLASS_LABEL, sizeClassOfSpecies, sizeClassOfSpider } from "@/game/weight";
 import { BAY_JOBS, BAY_SLOTS, bayBonusLine, bayJobOf, bayKitLine, bayStats, canFit, canSplice, graftsOf, spliceCost } from "@/game/bay";
+import { canDrape, cookHide, encodeHideTicket, HIDE_COST, hideOf, hideSrcOf } from "@/game/hides";
 import { canFight, canMolt, effective, moltLine, portraitOf, recoveryRests, spiderScore, STAGE_LABEL, STAT_LABEL, trainingLook, trainingTotal } from "@/game/spiders";
 import { traitBlurb, traitTrainCost } from "@/game/traits";
 import { activeSpiders, canRelease, canRetire, rafterSpiders, releaseCash } from "@/game/rafters";
@@ -43,6 +46,8 @@ export function Yard() {
   const flags = useGame((s) => s.flags);
   const tutorial = useGame((s) => s.tutorial);
   const paper = useGame((s) => s.paper);
+  const infestation = useGame((s) => s.infestation);
+  const hides = useGame((s) => s.hides);
   const lead = spiders.find((s) => !s.retired) ?? spiders[0];
   const next = RANKS[rank + 1];
   const firstNight = FIRST_NIGHT[tutorial];
@@ -63,19 +68,30 @@ export function Yard() {
         </div>
       </div>
       <div className="flex flex-col gap-3 p-4 pb-24">
+        {infestation ? (
+          <section className="rounded-xl border border-moss/50 bg-moss/10 p-3">
+            <p className="text-xs uppercase tracking-widest text-moss">Yard brood</p>
+            <p className="mt-1 text-sm">
+              {infestation.count} {SPECIES[infestation.speciesId]?.common ?? "spiderlings"} running the lights
+              {infestation.nights === 1 ? " · last night" : ` · ${infestation.nights} nights`}
+            </p>
+            <p className="mt-1 text-xs text-dust">Hunt anywhere and some of them show. Shake a hen to send more.</p>
+          </section>
+        ) : null}
         {lead ? (
           <button
             type="button"
             onClick={() => useGame.getState().selectSpider(lead.id)}
             className="flex items-center gap-3 rounded-xl bg-raised p-3 text-left"
           >
-            <img src={portraitOf(lead)} alt="" className="size-20 rounded-lg object-cover" />
+            <img src={hideSrcOf(lead, hides) || portraitOf(lead)} alt="" className="size-20 rounded-lg object-cover" />
             <div>
               <p className="font-display text-2xl">{lead.name}</p>
               <p className="text-xs text-dust">
                 {SPECIES[lead.speciesId]?.common} · {STAGE_LABEL[lead.stage]}
               </p>
               <p className="text-xs text-mute">{canFight(lead) ?? `${lead.wins} wins on the stick`}</p>
+              <p className="text-xs text-moss">{CLASS_LABEL[sizeClassOfSpider(lead)]} mill</p>
             </div>
           </button>
         ) : null}
@@ -109,6 +125,7 @@ export function Yard() {
           <Action label="Train" onClick={() => setScreen("train")} />
           <Action label="Shop" onClick={() => setScreen("shop")} />
           <Action label="Bay" onClick={() => setScreen("bay")} />
+          <Action label="Hides" onClick={() => setScreen("hides")} />
           <Action label="Team" onClick={() => setScreen("team")} />
           <Action label="Circuit" onClick={() => setScreen("career")} />
         </div>
@@ -240,6 +257,7 @@ export function Stable() {
   const cap = useGame((s) => s.rosterCap);
   const select = useGame((s) => s.selectSpider);
   const team = useGame((s) => s.activeTeam);
+  const hides = useGame((s) => s.hides);
   const active = activeSpiders(spiders);
   const hung = rafterSpiders(spiders);
   return (
@@ -254,7 +272,7 @@ export function Stable() {
       <div className="grid grid-cols-2 gap-2">
         {active.map((s) => (
           <button key={s.id} type="button" onClick={() => select(s.id)} className="overflow-hidden rounded-xl bg-raised text-left">
-            <img src={portraitOf(s)} alt="" className="h-28 w-full object-cover" />
+            <img src={hideSrcOf(s, hides) || portraitOf(s)} alt="" className="h-28 w-full object-cover" />
             <div className="p-2">
               <p className="truncate font-medium">{s.name}</p>
               <p className="truncate text-[11px] text-dust">
@@ -271,7 +289,7 @@ export function Stable() {
           <div className="grid grid-cols-2 gap-2">
             {hung.map((s) => (
               <button key={s.id} type="button" onClick={() => select(s.id)} className="overflow-hidden rounded-xl border border-line bg-panel text-left">
-                <img src={portraitOf(s)} alt="" className="h-20 w-full object-cover opacity-80" />
+                <img src={hideSrcOf(s, hides) || portraitOf(s)} alt="" className="h-20 w-full object-cover opacity-80" />
                 <div className="p-2">
                   <p className="truncate font-medium">{s.name}</p>
                   <p className="truncate text-[11px] text-moss">{s.line ?? "Watching the yard"}</p>
@@ -294,6 +312,8 @@ export function SpiderDetail() {
   const rank = useGame((s) => s.rank);
   const cash = useGame((s) => s.cash);
   const setClutch = useGame((s) => s.setClutch);
+  const setSac = useGame((s) => s.setSac);
+  const shakeBrood = useGame((s) => s.shakeBrood);
   const retireSpider = useGame((s) => s.retireSpider);
   const releaseSpider = useGame((s) => s.releaseSpider);
   const setScreen = useGame((s) => s.setScreen);
@@ -301,6 +321,7 @@ export function SpiderDetail() {
   const unequip = useGame((s) => s.unequip);
   const setTeam = useGame((s) => s.setTeamSlot);
   const team = useGame((s) => s.activeTeam);
+  const hides = useGame((s) => s.hides);
   const [mateId, setMateId] = useState<string | null>(null);
   const [clutchMsg, setClutchMsg] = useState<string | null>(null);
   const [yardMsg, setYardMsg] = useState<string | null>(null);
@@ -317,7 +338,7 @@ export function SpiderDetail() {
   return (
     <div className="flex h-full flex-col overflow-auto pb-24">
       <div className="relative h-64">
-        <img src={portraitOf(spider)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={hideSrcOf(spider, hides) || portraitOf(spider)} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/30" />
         <button type="button" onClick={() => setScreen("stable")} className="absolute left-3 top-3 rounded-md bg-ink/70 px-3 py-1 text-sm">
           Back
@@ -332,6 +353,7 @@ export function SpiderDetail() {
         />
         <p className="text-sm text-dust">
           {spec?.common} · {spec?.latin} · {STAGE_LABEL[spider.stage]} lv {spider.level}
+          {spec ? ` · ${CLASS_LABEL[sizeClassOfSpecies(spec)]} mill` : ""}
         </p>
         <p className="text-sm text-mute">{spec?.blurb}</p>
         {spider.retired ? <p className="text-sm text-moss">Hung in the rafters. Breeding stock. She watches the yard.</p> : null}
@@ -348,6 +370,7 @@ export function SpiderDetail() {
           {spider.lastMolt ? ` · last molt ${spider.lastMolt}` : ""}
         </p>
         {spider.bredFrom ? <p className="text-xs text-moss">Out of {spider.bredFrom}{spider.line ? ` · ${spider.line}` : ""}</p> : spider.line ? <p className="text-xs text-moss">{spider.line}</p> : null}
+        {hideOf(hides, spider.hideId) ? <p className="text-xs text-moss">Wearing {hideOf(hides, spider.hideId)?.name}</p> : null}
         {spider.injury ? <p className="text-sm text-rust">{spider.injury.label}</p> : null}
         {spec ? (
           <section className="rounded-xl border border-moss/40 bg-moss/10 p-3">
@@ -391,6 +414,9 @@ export function SpiderDetail() {
             </Button>
             <Button variant="outline" onClick={() => setScreen("bay")}>
               Open the bay
+            </Button>
+            <Button variant="outline" onClick={() => setScreen("hides")}>
+              Drape a hide
             </Button>
             <Button
               variant={team.includes(spider.id) ? "outline" : "primary"}
@@ -440,6 +466,34 @@ export function SpiderDetail() {
         ) : (
           <p className="text-xs text-dust">Catch a second adult before you set a clutch in the yard.</p>
         )}
+        <section className="rounded-xl border border-moss/40 bg-raised p-3">
+          <p className="text-xs uppercase tracking-widest text-moss">Egg sac</p>
+          <p className="mt-1 text-xs text-mute">
+            A hen carries it. Two ranked fights and they hatch on her back — then they go everywhere.
+          </p>
+          {spider.brood?.fightsLeft ? (
+            <p className="mt-2 text-sm text-paper">Carrying · {spider.brood.fightsLeft} fight{spider.brood.fightsLeft === 1 ? "" : "s"} left</p>
+          ) : (spider.hatchlings ?? 0) > 0 ? (
+            <>
+              <p className="mt-2 text-sm text-paper">{spider.hatchlings} riding her abdomen</p>
+              <Button className="mt-3 w-full" variant="outline" onClick={() => setClutchMsg(shakeBrood(spider.id))}>
+                Shake them off
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                className="mt-3 w-full"
+                variant="outline"
+                disabled={Boolean(canSetSac(spider)) || cash < sacCost(rank)}
+                onClick={() => setClutchMsg(canSetSac(spider) ?? setSac(spider.id, mateId) ?? `Sac set. ${sacCost(rank)} gone. They hatch on her.`)}
+              >
+                Set a sac · ${sacCost(rank)}
+              </Button>
+              {canSetSac(spider) ? <p className="mt-2 text-xs text-dust">{canSetSac(spider)}</p> : null}
+            </>
+          )}
+        </section>
         {spider.retired ? null : (
           <section className="rounded-xl border border-line bg-raised p-3">
             <p className="text-xs uppercase tracking-widest text-dust">Yard decisions</p>
@@ -615,7 +669,7 @@ export function BayView() {
         <p className="text-xs uppercase tracking-widest text-dust">The bay</p>
         <h2 className="font-display text-3xl font-semibold">Chassis work</h2>
         <p className="text-sm text-dust">
-          Gear walks off a loss. This stays bolted — until the stick cracks it. {formatCash(cash)}
+          Gear walks off a loss. Steel stays bolted — bonnet eyes, sticky press, web sacs — until the stick cracks it. {formatCash(cash)}
         </p>
       </header>
       <div className="flex gap-2 overflow-x-auto">
@@ -629,7 +683,7 @@ export function BayView() {
       <p className="text-xs text-moss">{bayKitLine(host)}</p>
       <p className="text-xs text-dust">Chassis effect: {chassisLine} · +{boltedScore} yard score</p>
       <SpiderBuildCanvas spider={host} />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {BAY_SLOTS.map((entry) => {
           const current = bayJobOf(fitted[entry.id]);
           return (
@@ -712,6 +766,171 @@ export function BayView() {
         )}
       </section>
       {msg ? <p className="text-sm text-paper">{msg}</p> : null}
+      <button type="button" onClick={() => useGame.getState().setScreen("hides")} className="min-h-11 text-sm text-moss">
+        Hide rack — hang a mill you made
+      </button>
+    </div>
+  );
+}
+
+export function HideView() {
+  const spiders = useGame((s) => s.spiders);
+  const selectedId = useGame((s) => s.selectedId);
+  const select = useGame((s) => s.selectSpider);
+  const cash = useGame((s) => s.cash);
+  const rank = useGame((s) => s.rank);
+  const hides = useGame((s) => s.hides);
+  const addHide = useGame((s) => s.addHide);
+  const importHide = useGame((s) => s.importHide);
+  const drapeHide = useGame((s) => s.drapeHide);
+  const strip = useGame((s) => s.stripHide);
+  const releaseHide = useGame((s) => s.releaseHide);
+  const live = activeSpiders(spiders);
+  const host = live.find((s) => s.id === selectedId) ?? live[0];
+  const [ticket, setTicket] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const worn = hideOf(hides, host?.hideId);
+
+  const bringFile = (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    void cookHide(file).then((cooked) => {
+      setBusy(false);
+      if ("error" in cooked) {
+        setMsg(cooked.error);
+        return;
+      }
+      setMsg(addHide(cooked.name, cooked.src) ?? `${cooked.name} is on the rack.`);
+    });
+  };
+
+  return (
+    <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
+      <header>
+        <p className="text-xs uppercase tracking-widest text-dust">The rack</p>
+        <h2 className="font-display text-3xl font-semibold">Bring a hide</h2>
+        <p className="text-sm text-dust">
+          Sculpt in Blender, Unreal, Sketchfab — then export a picture from the front. This yard cannot swallow a 3D file. The picture hangs on the stick and the fight makes it lunge, brace, and drop.
+        </p>
+        <p className="mt-1 tabular text-sm text-dust">{formatCash(cash)} · drape ${HIDE_COST}</p>
+      </header>
+      {host ? (
+        <>
+          <div className="flex gap-2 overflow-x-auto">
+            {live.map((sp) => (
+              <button key={sp.id} type="button" onClick={() => select(sp.id)} className="shrink-0">
+                <img
+                  src={hideSrcOf(sp, hides) || portraitOf(sp)}
+                  alt=""
+                  className={cn("size-14 rounded-lg object-cover", sp.id === host.id && "ring-2 ring-paper")}
+                />
+              </button>
+            ))}
+          </div>
+          <p className="font-display text-2xl">{host.name}</p>
+          <p className="text-xs text-moss">{worn ? `Wearing ${worn.name}` : "Stock mill. No hide draped."}</p>
+          <SpiderBuildCanvas spider={host} />
+        </>
+      ) : (
+        <p className="text-sm text-dust">Catch someone first, then drape a hide on them.</p>
+      )}
+      <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-line bg-raised text-sm">
+        {busy ? "Cooking the hide…" : "Bring a picture"}
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          className="hidden"
+          disabled={busy}
+          onChange={(ev) => {
+            bringFile(ev.target.files?.[0]);
+            ev.target.value = "";
+          }}
+        />
+      </label>
+      <p className="text-xs text-mute">PNG or JPEG of your model. GLB, FBX, and Blend files stay in the crate.</p>
+      <section className="rounded-xl border border-line bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-dust">Hide ticket</p>
+        <p className="mt-1 text-xs text-mute">Another yard made a mill. Paste their ticket and hang it here.</p>
+        <textarea
+          value={ticket}
+          onChange={(ev) => setTicket(ev.target.value)}
+          rows={3}
+          placeholder="SFHIDE.1.…"
+          className="mt-2 w-full rounded-lg border border-line bg-panel p-2 text-xs text-paper"
+        />
+        <Button
+          className="mt-2"
+          size="sm"
+          variant="outline"
+          disabled={!ticket.trim()}
+          onClick={() => {
+            const result = importHide(ticket);
+            setMsg(result ?? "Hide hung on the rack.");
+            if (!result) setTicket("");
+          }}
+        >
+          Hang ticket
+        </Button>
+      </section>
+      <div className="flex flex-col gap-2">
+        {hides.length === 0 ? <p className="text-sm text-dust">The rack is empty. Bring a picture of a mill you made.</p> : null}
+        {hides.map((hide) => {
+          const blocked = host ? canDrape(host, hide, cash, rank) : "Catch someone first";
+          const current = host?.hideId === hide.id;
+          return (
+            <div key={hide.id} className="rounded-xl border border-line bg-raised p-3">
+              <div className="flex gap-3">
+                <img src={hide.src} alt="" className="size-16 rounded-lg object-contain bg-panel" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{hide.name}</p>
+                  <p className="text-xs text-dust">{current ? "On this mill" : blocked ?? `$${HIDE_COST} to drape`}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!host || Boolean(blocked)}
+                      onClick={() => {
+                        if (!host) return;
+                        setMsg(drapeHide(host.id, hide.id) ?? `Draped ${hide.name} on ${host.name}.`);
+                      }}
+                    >
+                      Drape
+                    </Button>
+                    {current ? (
+                      <Button size="sm" variant="outline" onClick={() => host && setMsg(strip(host.id) ?? "Hide pulled.")}>
+                        Strip
+                      </Button>
+                    ) : null}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const code = encodeHideTicket(hide);
+                        const clip = navigator.clipboard;
+                        if (!clip) {
+                          setMsg(code);
+                          return;
+                        }
+                        void clip.writeText(code).then(
+                          () => setMsg("Ticket copied. Another yard can paste it on their rack."),
+                          () => setMsg(code),
+                        );
+                      }}
+                    >
+                      Copy ticket
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setMsg(releaseHide(hide.id) ?? "Hide let go.")}>
+                      Let go
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {msg ? <p className="text-sm text-paper break-all">{msg}</p> : null}
     </div>
   );
 }
@@ -741,7 +960,10 @@ export function ShopView() {
         <h2 className="font-display text-3xl font-semibold">The crate</h2>
         <p className="tabular text-sm text-dust">{formatCash(cash)}</p>
         <button type="button" onClick={() => useGame.getState().setScreen("bay")} className="mt-2 min-h-11 text-sm text-moss">
-          Open the bay for chassis work
+          Open the bay — steel eyes, sticky silk, web sacs
+        </button>
+        <button type="button" onClick={() => useGame.getState().setScreen("hides")} className="min-h-11 text-sm text-moss">
+          Hide rack — hang a mill you made
         </button>
       </header>
       <div className="mb-3 flex gap-1 overflow-x-auto">
@@ -1062,6 +1284,7 @@ export function CareerView() {
           {(career?.worldTitles ?? 0) > 0 ? ` · ${career.worldTitles} World title${career.worldTitles === 1 ? "" : "s"}` : ""}
           {(career?.bayJobs ?? 0) > 0 ? ` · ${career.bayJobs} bay jobs` : ""}
           {(career?.splices ?? 0) > 0 ? ` · ${career.splices} splices` : ""}
+          {(career?.hides ?? 0) > 0 ? ` · ${career.hides} hides` : ""}
         </p>
       </div>
 
@@ -1276,7 +1499,7 @@ export function CareerView() {
                 )}
                 <p className="truncate text-sm font-medium">{known ? sp.common : "???"}</p>
                 <p className="truncate text-xs text-moss">{known ? `${sp.web.name} · ${MOVES[sp.web.move].name}` : "Unlogged"}</p>
-                {known ? <p className="mt-1 text-[11px] text-dust">{sp.web.ability}</p> : null}
+                {known ? <p className="mt-1 text-[11px] text-dust">{CLASS_LABEL[sizeClassOfSpecies(sp)]} mill · {sp.web.ability}</p> : null}
               </div>
             );
           })}

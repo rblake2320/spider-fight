@@ -190,6 +190,8 @@ export function rollSpider(
     moltReady: rng.int(0, 20),
     retired: false,
     grafts: {},
+    brood: null,
+    hatchlings: 0,
   };
 }
 

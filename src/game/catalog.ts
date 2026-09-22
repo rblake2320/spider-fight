@@ -2,8 +2,8 @@ import { HABITATS, ITEMS, ITEM_LIST, RIVALS, SPECIES, SPECIES_LIST } from "./con
 import type { Habitat, Item, Rival, Species } from "./types.ts";
 
 /** Shipped content year. Bump this when a pack goes live — old saves keep working. */
-export const SHIPPED_SEASON = 6;
-export const BUILD = "1.8.0";
+export const SHIPPED_SEASON = 7;
+export const BUILD = "1.10.0";
 
 export type SeasonPack = {
   id: number;
@@ -48,6 +48,12 @@ export const SEASONS: SeasonPack[] = [
     name: "Threshold Circuit",
     blurb: "Signal underpasses, last-light roads, and the crews who can read a web from the dark.",
     adds: ["Signal Underpass", "Last-Light Switchback", "Giant House Spider", "Labyrinth Orbweaver", "Bolas Spider", "Last Light Line"],
+  },
+  {
+    id: 7,
+    name: "Pit Circuit",
+    blurb: "Crawlspaces, clay banks, steel eyes, and mills that don't hang.",
+    adds: ["Crawlspace", "Red Clay Bank", "Brown Recluse", "Huntsman", "Trapdoor", "Texas Brown Tarantula", "Goliath Bird-eater", "Weight cards", "Bonnet eye"],
   },
 ];
 

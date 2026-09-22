@@ -3,7 +3,7 @@ import { callKo, callRound } from "./caller";
 import { clamp, mulberry32, seedFrom } from "./rng";
 import { burst, type Particle } from "./spider-draw";
 import { addStats, colorsOf, decayTrained, effective, luckOf, stripGear, tickStim } from "./spiders";
-import { crackGraft } from "./bay";
+import { crackGraft, bayCombat } from "./bay";
 import { traitAi, traitHeat } from "./traits";
 import type { FightOutcome, FightRound, MorphColors, MoveId, Spider, Stats, WebProfile } from "./types";
 
@@ -107,6 +107,7 @@ export function webSurgeHint(web: Pick<WebProfile, "style" | "surge">): string {
 function makeFighter(s: Spider, attach: number, facing: 1 | -1, bonus: Partial<Stats> = {}): Fighter {
   const stats = addStats(effective(s), bonus);
   const hp = maxHp(stats.size, stats.grit, s.stage);
+  const kit = bayCombat(s);
   return {
     spider: s,
     stats,
@@ -114,8 +115,8 @@ function makeFighter(s: Spider, attach: number, facing: 1 | -1, bonus: Partial<S
     max: hp,
     stam: 100,
     attachX: attach,
-    silk: 0.22,
-    webCharge: 0,
+    silk: kit.sacs ? 0.3 : 0.22,
+    webCharge: kit.sacs ? 1 : 0,
     angle: facing * 0.18,
     aVel: 0,
     pose: "intro",
@@ -386,11 +387,13 @@ function resolveRound(f: StickFight): void {
   const eAtk = attackPower(f.enemy, eMove);
 
   if (pMove === "yank") {
-    f.enemy.silk = clamp(f.enemy.silk + 0.04, 0.14, 0.36);
+    const gum = bayCombat(f.player.spider).sticky ? 0.035 : 0;
+    f.enemy.silk = clamp(f.enemy.silk + 0.04 + gum, 0.14, 0.36);
     impulse(f.enemy, f.player.facing, 3.2);
   }
   if (eMove === "yank") {
-    f.player.silk = clamp(f.player.silk + 0.04, 0.14, 0.36);
+    const gum = bayCombat(f.enemy.spider).sticky ? 0.035 : 0;
+    f.player.silk = clamp(f.player.silk + 0.04 + gum, 0.14, 0.36);
     impulse(f.player, f.enemy.facing, 3.2);
   }
   if (pMove === "drop") f.player.silk = clamp(f.player.silk + 0.06, 0.14, 0.4);
@@ -462,7 +465,8 @@ function attackPower(f: Fighter, move: MoveId): number {
   const stamPen = f.stam < 12 ? 0.7 : 1;
   const signature = f.web.move === move && move !== "brace" ? 1.16 : 1;
   const heat = traitHeat(f.spider.traits, f.hp / Math.max(1, f.max));
-  return (8 + core * 0.55) * m.power * stamPen * signature * heat;
+  const optic = bayCombat(f.spider).optic && move === "lunge" ? 1.16 : 1;
+  return (8 + core * 0.55) * m.power * stamPen * signature * heat * optic;
 }
 
 function applyWebSignature(fighter: Fighter, opponent: Fighter, move: MoveId): void {
@@ -592,8 +596,9 @@ function applyWebSurge(f: StickFight, fighter: Fighter, opponent: Fighter, move:
     fighter.stam = clamp(fighter.stam + 10, 0, 100);
     label = "cross brace restores shell";
   } else if (fighter.web.style === "tangle") {
-    opponent.stam = clamp(opponent.stam - 18, 0, 100);
-    label = "tangle drains stamina";
+    const gum = bayCombat(fighter.spider).sticky ? 6 : 0;
+    opponent.stam = clamp(opponent.stam - 18 - gum, 0, 100);
+    label = gum ? "sticky tangle drinks stamina" : "tangle drains stamina";
   } else if (fighter.web.style === "spoked") {
     applyHit(f, opponent, 7 + fighter.stats.speed * 0.45, move);
     fighter.silk = clamp(fighter.silk - 0.05, 0.14, 0.4);

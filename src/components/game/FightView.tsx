@@ -6,6 +6,7 @@ import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { canFight, portraitOf, STAGE_LABEL } from "@/game/spiders";
+import { hideSrcOf } from "@/game/hides";
 import { SPECIES, RIVALS, RANKS, SLOT_LABEL, ITEMS } from "@/game/content";
 import { isShipped } from "@/game/catalog";
 import type { MoveId } from "@/game/types";
@@ -25,6 +26,7 @@ import { nextStreakReward } from "@/game/streak";
 import { rivalWebProfiles } from "@/game/rival-scout";
 import { practiceSummary } from "@/game/practice-summary";
 import { strongestTapePlay } from "@/game/fight-playbook";
+import { CLASS_BLURB, CLASS_LABEL, meetingLine, sizeClassOfSpider } from "@/game/weight";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -62,6 +64,7 @@ export function FightSelect() {
   const continueYardSeries = useGame((s) => s.continueYardSeries);
   const yardSeries = useGame((s) => s.yardSeries);
   const seriesCalled = useGame((s) => s.flags.yardSeries === s.dayStamp);
+  const hides = useGame((s) => s.hides);
   const [wager, setWager] = useState(10);
   const [err, setErr] = useState<string | null>(null);
   const [mind, setMind] = useState<"checking" | "live" | "dark">("checking");
@@ -141,12 +144,13 @@ export function FightSelect() {
           onClick={() => setScreen("stable")}
           className="flex items-center gap-3 rounded-xl bg-raised p-3 text-left"
         >
-          <img src={portraitOf(player)} alt="" className="size-16 rounded-lg object-cover" />
+          <img src={hideSrcOf(player, hides) || portraitOf(player)} alt="" className="size-16 rounded-lg object-cover" />
           <div className="min-w-0">
             <p className="font-medium">{player.name}</p>
             <p className="truncate text-xs text-dust">
-              {SPECIES[player.speciesId]?.common} · {STAGE_LABEL[player.stage]}
+              {SPECIES[player.speciesId]?.common} · {STAGE_LABEL[player.stage]} · {CLASS_LABEL[sizeClassOfSpider(player)]} card
             </p>
+            <p className="text-xs text-moss">Meets {meetingLine(sizeClassOfSpider(player))}. Pit never farms Thread.</p>
             <p className="text-xs text-rust">{canFight(player) ?? "Ready"}</p>
           </div>
         </button>
@@ -214,6 +218,11 @@ export function FightSelect() {
             {webProfiles.length ? (
               <p className="mt-1 text-xs text-dust">
                 Possible webs: {webProfiles.map((profile) => `${profile.species} · ${profile.web} (${profile.move})`).join(" / ")}
+              </p>
+            ) : null}
+            {player ? (
+              <p className="mt-1 text-xs text-moss">
+                They have to match her {CLASS_LABEL[sizeClassOfSpider(player)].toLowerCase()} mill — {CLASS_BLURB[sizeClassOfSpider(player)]}
               </p>
             ) : null}
             <p className="mt-1 text-xs text-dust">{Math.round(r.grit * 100)}% grit</p>
@@ -588,6 +597,7 @@ function ResultCard() {
         {result.loot ? <li className="text-moss">Lifted {ITEMS[result.loot]?.name}</li> : null}
         {result.injury ? <li className="text-rust">{result.injury.label}</li> : null}
         {result.cracked ? <li className="text-rust">Bay kit cracked · {result.cracked}</li> : null}
+        {result.broodHatch ? <li className="text-moss">Sac hatched on her back · {result.broodHatch} riding</li> : null}
       </ul>
       {result.discovery ? (
         <section className="rounded-xl border border-moss/50 bg-moss/10 p-3 text-sm text-paper">

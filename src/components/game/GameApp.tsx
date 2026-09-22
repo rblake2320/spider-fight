@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SpiderMark } from "./mark";
-import { Yard, Stable, SpiderDetail, TrainView, ShopView, BayView, TeamView, CareerView, SettingsView } from "./panels";
+import { Yard, Stable, SpiderDetail, TrainView, ShopView, BayView, HideView, TeamView, CareerView, SettingsView } from "./panels";
 import { HuntPlay, HuntSelect } from "./HuntView";
 import { FightArena, FightSelect } from "./FightView";
 import { useGame } from "@/game/store";
@@ -46,6 +46,7 @@ export function GameApp() {
         {screen === "train" ? <TrainView /> : null}
         {screen === "shop" ? <ShopView /> : null}
         {screen === "bay" ? <BayView /> : null}
+        {screen === "hides" ? <HideView /> : null}
         {screen === "fight" && (fight || result) ? <FightArena /> : null}
         {screen === "fight" && !fight && !result ? <FightSelect /> : null}
         {screen === "team" ? <TeamView /> : null}
@@ -97,7 +98,7 @@ function TopBar() {
 function NavBar() {
   const screen = useGame((s) => s.screen);
   const setScreen = useGame((s) => s.setScreen);
-  const mapped: Screen = screen === "spider" ? "stable" : screen === "train" ? "yard" : screen === "bay" ? "shop" : screen;
+  const mapped: Screen = screen === "spider" ? "stable" : screen === "train" ? "yard" : screen === "bay" || screen === "hides" ? "shop" : screen;
   return (
     <nav className="safe-b grid grid-cols-5 border-t border-line bg-raised">
       {TABS.map((t) => (
@@ -126,8 +127,7 @@ function TitleScreen() {
         <p className="text-xs uppercase tracking-[0.35em] text-dust">Hold the stick</p>
         <h1 className="font-display text-6xl font-semibold leading-none">Spider Fight</h1>
         <p className="mt-4 max-w-sm text-sm text-paper/80">
-          Catch porch orb-weavers. Drill them. Wager cash. Lose a bout and the wraps walk off with the
-          other yard.
+          Catch porch orb-weavers. Bolt steel on the mill. They start even — the kit, the sac, and the stick make them yours.
         </p>
         <Button
           className="mt-8 w-full max-w-xs"

@@ -28,8 +28,8 @@ test("item and species ids match their keys", () => {
   for (const [id, item] of Object.entries(ITEMS)) assert.equal(item.id, id);
 });
 
-test("season 2 through 6 content is live and available to the circuit", () => {
-  assert.equal(SHIPPED_SEASON, 6);
+test("season 2 through 7 content is live and available to the circuit", () => {
+  assert.equal(SHIPPED_SEASON, 7);
   assert.ok(SPECIES.brownwidow);
   assert.equal(seasonOf(SPECIES.brownwidow!), 2);
   assert.equal(isShipped(SPECIES.brownwidow!), true);
@@ -54,6 +54,17 @@ test("season 2 through 6 content is live and available to the circuit", () => {
   assert.equal(isShipped(SPECIES.gianthouse!), true);
   assert.ok(HABITATS.some((h) => h.id === "switchback" && isShipped(h)));
   assert.ok(RIVALS.some((r) => r.id === "lastlight" && isShipped(r)));
+  assert.ok(SPECIES.tarantula);
+  assert.ok(SPECIES.birdeater);
+  assert.ok(SPECIES.recluse);
+  assert.ok(SPECIES.trapdoor);
+  assert.ok(SPECIES.huntsman);
+  assert.equal(seasonOf(SPECIES.tarantula!), 7);
+  assert.equal(isShipped(SPECIES.birdeater!), true);
+  assert.ok(HABITATS.some((h) => h.id === "crawlspace" && isShipped(h)));
+  assert.ok(HABITATS.some((h) => h.id === "claybank" && isShipped(h)));
+  assert.ok(RIVALS.some((r) => r.id === "pithands" && isShipped(r)));
+  assert.ok(SEASONS.some((s) => s.id === 7));
 });
 
 test("every hunt ground points at a shipped background asset", () => {
@@ -103,6 +114,8 @@ test("migrate keeps unknown species from crashing", () => {
   assert.deepEqual(next.earnedBadges, []);
   assert.deepEqual(next.paper, []);
   assert.deepEqual(next.fightArchive, []);
+  assert.equal(next.infestation, null);
+  assert.deepEqual(next.hides, []);
   speciesOf("nope");
 });
 

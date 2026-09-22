@@ -8,6 +8,7 @@ export type Screen =
   | "train"
   | "shop"
   | "bay"
+  | "hides"
   | "fight"
   | "team"
   | "career"
@@ -20,10 +21,12 @@ export type MoveId = "lunge" | "grapple" | "feint" | "brace" | "yank" | "drop";
 export type WebStyle = "orb" | "cross" | "tangle" | "spoked" | "golden" | "sheet";
 export type GearSlot = "wraps" | "fang" | "silk" | "stim" | "charm";
 /** Chassis work. Like tires/engine/body kit — stays on the spider, shows on the stick. */
-export type BaySlot = "legs" | "fangs" | "gut" | "gland";
+export type BaySlot = "legs" | "fangs" | "gut" | "gland" | "eye";
 export type ItemKind = GearSlot | "feed" | "bait" | "tonic" | "upgrade";
 export type ShopTab = "gear" | "feed" | "tonics" | "bait" | "stable";
 export type MoltQuality = "perfect" | "clean" | "rough";
+/** Ranked cards match inside one class and the neighbors. Pit never farms Thread. */
+export type SizeClass = "thread" | "stick" | "floor" | "pit";
 
 export type Stats = {
   power: number;
@@ -39,6 +42,18 @@ export type Gear = Partial<Record<GearSlot, string>>;
 export type Injury = {
   label: string;
   fightsLeft: number;
+};
+
+export type BroodSac = {
+  mateName?: string;
+  fightsLeft: number;
+  speciesId: string;
+};
+
+export type Infestation = {
+  speciesId: string;
+  nights: number;
+  count: number;
 };
 
 export type Spider = {
@@ -72,6 +87,18 @@ export type Spider = {
   grafts?: Partial<Record<BaySlot, string>>;
   splicedFrom?: string;
   spliceMark?: string;
+  brood?: BroodSac | null;
+  hatchlings?: number;
+  /** A custom hide draped from the rack — a picture of a 3D mill, hung on the stick. */
+  hideId?: string;
+};
+
+export type Hide = {
+  id: string;
+  name: string;
+  /** Cooked PNG data URL. Small enough to persist with the yard. */
+  src: string;
+  madeAt: number;
 };
 
 export type Species = {
@@ -90,6 +117,8 @@ export type Species = {
   habitats: string[];
   web: WebProfile;
   season?: number;
+  /** Override for ranked matching. Defaults from bases.size. */
+  weight?: SizeClass;
 };
 
 export type WebProfile = {
@@ -193,6 +222,8 @@ export type FightOutcome = {
   badges?: { name: string; reward: number }[];
   /** The rank crossed during this bout, so the result card can make progression tangible. */
   rankUp?: { name: string; blurb: string };
+  /** Egg sac finished incubating on the fighter this bout. */
+  broodHatch?: number;
   rounds: FightRound[];
 };
 
@@ -218,6 +249,8 @@ export type CareerLog = {
   worldTitles: number;
   bayJobs: number;
   splices: number;
+  hatches: number;
+  hides: number;
 };
 
 export type PaperClip = {
@@ -326,4 +359,6 @@ export type SaveState = {
   yardSeries: YardSeries | null;
   paper: PaperClip[];
   fightArchive: FightArchive[];
+  infestation: Infestation | null;
+  hides: Hide[];
 };

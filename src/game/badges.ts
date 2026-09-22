@@ -2,7 +2,7 @@ import { trainingTotal } from "./spiders";
 import { SPECIES_LIST } from "./content";
 import type { CareerLog, Spider } from "./types";
 
-export type BadgeId = "first-molt" | "drill-five" | "yard-five" | "field-guide" | "web-scholar" | "whole-yard" | "first-clutch" | "glass-shell" | "rafter-one" | "bay-one" | "splice-one" | "world-title";
+export type BadgeId = "first-molt" | "drill-five" | "yard-five" | "field-guide" | "web-scholar" | "whole-yard" | "first-clutch" | "glass-shell" | "rafter-one" | "bay-one" | "splice-one" | "first-brood" | "world-title" | "hide-one";
 
 export type Badge = {
   id: BadgeId;
@@ -27,6 +27,8 @@ export const BADGES: readonly Badge[] = [
   { id: "rafter-one", name: "Hung in the rafters", detail: "Hang a veteran where the yard can see her.", reward: 20 },
   { id: "bay-one", name: "Bay kit", detail: "Bolt the first chassis job onto a fighter.", reward: 14 },
   { id: "splice-one", name: "Yard splice", detail: "Mix blood on the mill.", reward: 18 },
+  { id: "first-brood", name: "Sac on the mill", detail: "Hatch a sac on a hen's back.", reward: 16 },
+  { id: "hide-one", name: "Brought hide", detail: "Hang a custom hide on the rack.", reward: 12 },
   { id: "world-title", name: "World Stick", detail: "Carry the World Stick into a new year.", reward: 50 },
 ];
 
@@ -50,6 +52,8 @@ export function newlyEarnedBadges(earned: string[], progress: BadgeProgress): Ba
     if (badge.id === "rafter-one") return progress.spiders.some((spider) => spider.retired);
     if (badge.id === "bay-one") return progress.career.bayJobs >= 1;
     if (badge.id === "splice-one") return progress.career.splices >= 1;
+    if (badge.id === "first-brood") return (progress.career.hatches ?? 0) >= 1;
+    if (badge.id === "hide-one") return (progress.career.hides ?? 0) >= 1;
     if (badge.id === "world-title") return progress.career.worldTitles >= 1;
     const fieldGuide = FIELD_GUIDE_MILESTONES.find((milestone) => milestone.id === badge.id);
     return fieldGuide ? progress.seen.length >= fieldGuide.target : false;

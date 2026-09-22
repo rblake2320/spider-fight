@@ -86,6 +86,15 @@ export const TRAITS: Record<string, TraitDef> = {
   "Rail brace": { blurb: "Plants every leg before the hit.", stats: { grit: 1 }, ai: { brace: 2 } },
   "Scrap blind": { blurb: "Hides in the loose thread.", stats: { speed: 1 }, ai: { feint: 2 } },
   "Bark runner": { blurb: "Explodes off the cedar grain.", stats: { speed: 1, power: 1 }, ai: { lunge: 1 } },
+  "Violin back": { blurb: "The mark does the talking.", stats: { venom: 1 } },
+  Necrotic: { blurb: "The bite writes its name later.", stats: { venom: 2 }, heat: 0.1 },
+  "Wall runner": { blurb: "Takes the vertical like a floor.", stats: { speed: 1 }, ai: { feint: 2 } },
+  "Crab gait": { blurb: "Sidesteps into the lock.", stats: { speed: 1 }, ai: { feint: 1 } },
+  "Burrow lid": { blurb: "Waits under a door of silk.", stats: { grit: 1 }, ai: { brace: 2 } },
+  "Ambush wait": { blurb: "The opening is already over.", stats: { power: 1 }, ai: { lunge: 2 } },
+  Urticating: { blurb: "Kicks hair into the other mill.", stats: { grit: 1, power: 1 } },
+  "Pit-bred": { blurb: "Raised in a hole, not a porch.", stats: { size: 1, grit: 1 } },
+  "Bird-eater": { blurb: "Dinner-plate legs. No manners.", stats: { size: 2, silk: -1 } },
 };
 
 export function traitOf(name: string): TraitDef | undefined {

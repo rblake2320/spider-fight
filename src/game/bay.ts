@@ -10,6 +10,10 @@ export type BayLook = {
   plump: number;
   silk: number;
   splice: boolean;
+  eye: number;
+  chrome: number;
+  sacs: number;
+  sticky: number;
 };
 
 export type BayJob = {
@@ -28,7 +32,8 @@ export const BAY_SLOTS: { id: BaySlot; label: string; blurb: string }[] = [
   { id: "legs", label: "Legs", blurb: "Tires. Reach, shove, how she hangs." },
   { id: "fangs", label: "Fangs", blurb: "The mill. Bite first." },
   { id: "gut", label: "Gut", blurb: "The chassis. Size and grit." },
-  { id: "gland", label: "Gland", blurb: "The turbo. Silk and pull." },
+  { id: "gland", label: "Gland", blurb: "The turbo. Silk, sacs, and stick." },
+  { id: "eye", label: "Eye", blurb: "Bonnet glass. Read, or sting from the mill." },
 ];
 
 /** Rank-gated body work. Gear still walks off a loss; this is bolted to the shell. */
@@ -67,6 +72,17 @@ export const BAY_JOBS: BayJob[] = [
     look: { length: 1.22, legs: 0.92 },
   },
   {
+    id: "chrome-tarsi",
+    slot: "legs",
+    name: "Chrome tarsi",
+    blurb: "Steel rings at the joints. She flashes on the stick.",
+    price: 160,
+    rank: 3,
+    energy: 16,
+    bonus: { speed: 1, grit: 1 },
+    look: { chrome: 1, legs: 1.08 },
+  },
+  {
     id: "whet-fangs",
     slot: "fangs",
     name: "Whet fangs",
@@ -89,6 +105,28 @@ export const BAY_JOBS: BayJob[] = [
     look: { plump: 0.22 },
   },
   {
+    id: "sticky-press",
+    slot: "gland",
+    name: "Sticky press",
+    blurb: "Web extra gummed. Yank holds and tangle drinks.",
+    price: 120,
+    rank: 2,
+    energy: 16,
+    bonus: { silk: 2 },
+    look: { sticky: 1, silk: 1 },
+  },
+  {
+    id: "web-sacs",
+    slot: "gland",
+    name: "Web sacs",
+    blurb: "Extra sacs on the gut. She comes in already charged.",
+    price: 170,
+    rank: 3,
+    energy: 18,
+    bonus: { silk: 3, size: 1 },
+    look: { sacs: 1, silk: 1 },
+  },
+  {
     id: "spinner-press",
     slot: "gland",
     name: "Spinner press",
@@ -98,6 +136,28 @@ export const BAY_JOBS: BayJob[] = [
     energy: 18,
     bonus: { silk: 3, speed: 1 },
     look: { silk: 1 },
+  },
+  {
+    id: "bonnet-eye",
+    slot: "eye",
+    name: "Bonnet eye",
+    blurb: "A glass mill over the anterior eye. She reads a tick sooner.",
+    price: 54,
+    rank: 1,
+    energy: 12,
+    bonus: { speed: 2 },
+    look: { eye: 1 },
+  },
+  {
+    id: "optic-sting",
+    slot: "eye",
+    name: "Optic sting",
+    blurb: "The bonnet that shoots. Lunge carries a red line.",
+    price: 240,
+    rank: 4,
+    energy: 18,
+    bonus: { venom: 2, speed: 1 },
+    look: { eye: 2 },
   },
   {
     id: "race-frame",
@@ -156,7 +216,18 @@ export function bayStats(spider: Spider): Partial<Stats> {
 }
 
 export function bayLook(spider: Spider): BayLook {
-  const look: BayLook = { legs: 1, length: 1, fangs: 1, plump: 0, silk: 0, splice: Boolean(spider.spliceMark) };
+  const look: BayLook = {
+    legs: 1,
+    length: 1,
+    fangs: 1,
+    plump: 0,
+    silk: 0,
+    splice: Boolean(spider.spliceMark),
+    eye: 0,
+    chrome: 0,
+    sacs: 0,
+    sticky: 0,
+  };
   for (const id of Object.values(graftsOf(spider))) {
     const extra = bayJobOf(id)?.look;
     if (!extra) continue;
@@ -165,8 +236,21 @@ export function bayLook(spider: Spider): BayLook {
     if (extra.fangs) look.fangs *= extra.fangs;
     look.plump += extra.plump ?? 0;
     look.silk += extra.silk ?? 0;
+    look.eye = Math.max(look.eye, extra.eye ?? 0);
+    look.chrome += extra.chrome ?? 0;
+    look.sacs += extra.sacs ?? 0;
+    look.sticky += extra.sticky ?? 0;
   }
   return look;
+}
+
+export function bayCombat(spider: Spider): { optic: boolean; sticky: number; sacs: boolean } {
+  const grafts = graftsOf(spider);
+  return {
+    optic: grafts.eye === "optic-sting",
+    sticky: grafts.gland === "sticky-press" ? 1 : 0,
+    sacs: grafts.gland === "web-sacs",
+  };
 }
 
 export function canFit(job: BayJob, spider: Spider, cash: number, rank: number): string | null {
@@ -249,5 +333,7 @@ export function bayKitLine(spider: Spider): string {
     .map((slot) => bayJobOf(graftsOf(spider)[slot])?.name)
     .filter((name): name is string => Boolean(name));
   if (spider.splicedFrom) names.push(`spliced ${spider.splicedFrom}`);
+  if (spider.brood?.fightsLeft) names.push(`sac · ${spider.brood.fightsLeft} nights`);
+  if ((spider.hatchlings ?? 0) > 0) names.push(`${spider.hatchlings} on her back`);
   return names.length ? names.join(" · ") : "Stock frame";
 }

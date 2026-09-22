@@ -37,6 +37,11 @@ More shots in [`docs/screenshots`](docs/screenshots): train, settings, hunt resu
 - **Hunt** six lights a night across porch, garden, barn, woods, fair
 - **Stable** of fighters that molt, take injury, lose gear on a drop, and carry bloodlines
 - **Species webs** — every spider has a signature move and a distinct charged-web payoff
+- **Pit Circuit** — recluses, huntsmen, trapdoors, Texas brown tarantulas, and goliath bird-eaters, each with their own mill
+- **Weight cards** — Thread, Stick, Floor, Pit. Ranked calls match inside one class and its neighbors so a bird-eater never farms a jumper
+- **Steel bay** — bonnet eye, optic sting, chrome tarsi, sticky press, web sacs. They start even; the mill is how she becomes hers
+- **Hide rack** — bring a picture of a mill you made (Blender, Unreal, Sketchfab). It hangs on the stick and the fight makes it lunge. Copy a ticket so another yard can hang it too. 3D files stay in the crate.
+- **Egg sacs** — a hen carries a sac, it hatches on her back, then the spiderlings go everywhere (one stays if you have a crate, the rest infest the hunt lights)
 - **Train / shop / team** — drills change the fighter, and cash buys wraps, fangs, silk, stims, bait
 - **Stick fights** — readable, timed counter rounds on a bamboo line (lunge, grapple, feint, brace, yank, drop)
 - **Rival trophies** — first wins over key crews lift one-of-a-kind, equipable gear to collect and build around
@@ -71,7 +76,7 @@ The repo is public for now, so treat this key as exposed. Rotate it at [console.
 
 The game is built to get bigger without breaking old yards.
 
-- **Seasons** live in `src/game/catalog.ts` (`SHIPPED_SEASON`). Porch Year through Threshold Circuit are live: culverts, brown widows, ditch wolves, jumpers, feed stores, fair pavilions, motel eaves, stadium gates, freight depots, rooftop towers, signal underpasses, last-light switchbacks, new gear, and new crews open by rank.
+- **Seasons** live in `src/game/catalog.ts` (`SHIPPED_SEASON`). Porch Year through Pit Circuit are live: culverts, brown widows, ditch wolves, jumpers, feed stores, fair pavilions, motel eaves, stadium gates, freight depots, rooftop towers, signal underpasses, last-light switchbacks, crawlspaces, clay banks, steel bay work, and new crews open by rank.
 - **Saves migrate.** `src/game/migrate.ts` upgrades old crates, drops unknown items, and maps missing species back to Hentz.
 - **Circuit** in the yard shows open packs, coming packs, ranks, and the almanac. Hold World Stick to roll a new year.
 - To ship a pack: fill the pack file, then set `SHIPPED_SEASON` to that pack’s id. No save wipe.

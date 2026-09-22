@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import { bobPos, stepFight, type StickFight } from "@/game/combat";
 import { bayLook } from "@/game/bay";
+import { hideSrcOf } from "@/game/hides";
 import { drawParticles, drawSilk, drawSpider, drawStick } from "@/game/spider-draw";
 import { tonightSky } from "@/game/sky";
+import { useGame } from "@/game/store";
 
 // A fight can be rendered by more than one canvas briefly during development
 // remounts. The simulation belongs to the shared fight, so exactly one canvas
@@ -20,6 +22,9 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
   const bg = useRef<HTMLImageElement | null>(null);
   const fightRef = useRef(fight);
   fightRef.current = fight;
+  const hides = useGame((s) => s.hides);
+  const hidesRef = useRef(hides);
+  hidesRef.current = hides;
 
   useEffect(() => {
     const img = new Image();
@@ -100,9 +105,10 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
       const trainedE = Object.values(e.spider.trained).reduce((sum, value) => sum + value, 0);
       const lookP = bayLook(p.spider);
       const lookE = bayLook(e.spider);
+      const hides = hidesRef.current;
 
-      drawSilk(ctx, pAttach, stickY + 4, px, py - 8, 0.85, p.web.style, trainedP, lookP.silk);
-      drawSilk(ctx, eAttach, stickY + 4, ex, ey - 8, 0.85, e.web.style, trainedE, lookE.silk);
+      drawSilk(ctx, pAttach, stickY + 4, px, py - 8, 0.85, p.web.style, trainedP, lookP.silk, lookP.sticky);
+      drawSilk(ctx, eAttach, stickY + 4, ex, ey - 8, 0.85, e.web.style, trainedE, lookE.silk, lookE.sticky);
 
       const scale = Math.min(w, h) / 140;
       const plumpP = Math.min(1, p.stats.size / 16);
@@ -123,6 +129,9 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         mark: p.spider.speciesId === "widow" ? "hourglass" : undefined,
         gear: p.spider.gear,
         look: lookP,
+        brood: Boolean(p.spider.brood?.fightsLeft),
+        hatchlings: p.spider.hatchlings,
+        hideSrc: hideSrcOf(p.spider, hides),
       });
       drawSpider(ctx, {
         x: ex,
@@ -139,6 +148,9 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         mark: e.spider.speciesId === "widow" ? "hourglass" : undefined,
         gear: e.spider.gear,
         look: lookE,
+        brood: Boolean(e.spider.brood?.fightsLeft),
+        hatchlings: e.spider.hatchlings,
+        hideSrc: hideSrcOf(e.spider, hides),
       });
 
       // particles were spawned in normalized-ish coords; convert on draw

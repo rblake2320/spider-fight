@@ -17,6 +17,8 @@ import {
 import { clamp, mulberry32, seedFrom, todayStamp, uid } from "./rng";
 import { mixHunt, tonightSky } from "./sky";
 import { canClutch, clutchCost, makeClutch } from "./clutch";
+import { canSetSac, mergeInfestation, sacCost, scatterBrood, setSac, tickBrood, tickInfestation } from "./brood";
+import { pickRivalSpecies, sizeClassOfSpider } from "./weight";
 import {
   applyXp,
   applyRivalGrit,
@@ -51,6 +53,7 @@ import { recordRivalMoves } from "./rival-intel";
 import { canCallWidow } from "./boss";
 import { traitHuntChance, traitTrainCost } from "./traits";
 import { applyJob, bayJobOf, canFit, canSplice, splice, spliceCost } from "./bay";
+import { canDrape, decodeHideTicket, drape, HIDE_COST, makeHide, stripHide } from "./hides";
 import { activeSpiders, canRelease, canRetire, releaseCash, retire } from "./rafters";
 import { pushPaper, writeClip } from "./paper";
 import { dailyStreakBonus, nextDailyStreak } from "./daily-streak";
@@ -88,6 +91,8 @@ const emptySave = (): SaveState => ({
   yardSeries: null,
   paper: [],
   fightArchive: [],
+  infestation: null,
+  hides: [],
 });
 
 type Session = {
@@ -138,10 +143,17 @@ type Game = SaveState &
     startYardSeries: (playerId: string) => string | null;
     continueYardSeries: () => string | null;
     setClutch: (aId: string, bId: string) => string | null;
+    setSac: (motherId: string, mateId?: string | null) => string | null;
+    shakeBrood: (motherId: string) => string | null;
     retireSpider: (id: string) => string | null;
     releaseSpider: (id: string) => string | null;
     fitBay: (spiderId: string, jobId: string) => string | null;
     spliceDna: (hostId: string, donorId: string) => string | null;
+    addHide: (name: string, src: string) => string | null;
+    importHide: (ticket: string) => string | null;
+    drapeHide: (spiderId: string, hideId: string) => string | null;
+    stripHide: (spiderId: string) => string | null;
+    releaseHide: (hideId: string) => string | null;
     applyResult: (out: FightOutcome, finalSpider: Spider) => void;
     clearResult: () => void;
     collectDaily: () => void;
@@ -207,12 +219,14 @@ export const useGame = create<Game>()(
               dailyContract: makeDailyContract(today, s.rank),
               dailyWebChallenge: makeDailyWebChallenge(today, s.rank),
               yardSeries: s.yardSeries?.date === today ? s.yardSeries : null,
+              infestation: tickInfestation(s.infestation),
             } : {}),
             ...(refreshWeek ? { weeklyCircuit: makeWeeklyCircuit(today, s.rank) } : {}),
           });
         }
         if (!s.career) set({ career: { ...EMPTY_CAREER } });
         if (!s.paper) set({ paper: [] });
+        if (!s.hides) set({ hides: [] });
         set({ hydrated: true });
         setSfxEnabled(s.settings.sfx);
         setMusicEnabled(s.settings.music);
@@ -432,6 +446,23 @@ export const useGame = create<Game>()(
         if (lead && lead.energy < energyCost) return "Your lead spider is spent";
         const inventory = g.huntBait ? takeInv(g.inventory, g.huntBait) : g.inventory;
         if (!inventory) return "That bait is gone";
+        let spiders = g.spiders;
+        let infestation = g.infestation;
+        let career = { ...g.career, hunts: g.career.hunts + 1 };
+        let seen = g.seen;
+        const rider = spiders.find((s) => (s.hatchlings ?? 0) > 0);
+        if (rider) {
+          const result = scatterBrood(
+            rider,
+            mulberry32(seedFrom(rider.id + habitatId + String(g.dayStamp))),
+            g.stableName,
+            activeSpiders(spiders).length,
+            g.rosterCap,
+          );
+          spiders = [...patchSpider(spiders, rider.id, () => result.mother), ...result.kept];
+          infestation = mergeInfestation(infestation, result.speciesId, result.escaped);
+          seen = result.kept.reduce((list, nymph) => (list.includes(nymph.speciesId) ? list : [...list, nymph.speciesId]), seen);
+        }
         set({
           cash: g.cash - hab.cost,
           huntsLeft: g.huntsLeft - 1,
@@ -442,12 +473,15 @@ export const useGame = create<Game>()(
           inventory,
           screen: "hunt",
           tutorial: g.tutorial === 1 ? 2 : g.tutorial,
-          career: { ...g.career, hunts: g.career.hunts + 1 },
+          career,
+          seen,
+          infestation,
           dailyContract: advanceContract(g.dailyContract, "hunt"),
           weeklyCircuit: advanceWeeklyCircuit(g.weeklyCircuit, "hunt"),
           spiders: lead
-            ? patchSpider(g.spiders, lead.id, (s) => ({ ...s, energy: s.energy - energyCost }))
-            : g.spiders,
+            ? patchSpider(spiders, lead.id, (s) => ({ ...s, energy: s.energy - energyCost }))
+            : spiders,
+          ...badgeProgress(g, { spiders, career, wins: g.wins, seen }),
         });
         return null;
       },
@@ -462,7 +496,16 @@ export const useGame = create<Game>()(
         const lead = g.spiders.find((s) => s.id === g.selectedId && !s.retired) ?? g.spiders.find((s) => !s.retired);
         const luck = lead ? traitHuntChance(lead.traits) : 0;
         if (rng.next() > 0.28 + quality * 0.5 + bait.chanceBonus + sky.chance + luck) return null;
-        const caught = rollSpider(rng, { habitat: { ...hab, weights: bait.weights }, rank: g.rank });
+        const infested = g.infestation && SPECIES[g.infestation.speciesId] ? g.infestation : null;
+        const ground = infested && !hab.species.includes(infested.speciesId)
+          ? { ...hab, species: [infested.speciesId, ...hab.species], weights: bait.weights }
+          : { ...hab, weights: bait.weights };
+        const forceBrood = infested && rng.chance(0.38);
+        const caught = rollSpider(rng, {
+          habitat: ground,
+          rank: g.rank,
+          speciesId: forceBrood ? infested.speciesId : undefined,
+        });
         const seen = g.seen.includes(caught.speciesId) ? g.seen : [...g.seen, caught.speciesId];
         set({
           pendingCatch: caught,
@@ -503,10 +546,10 @@ export const useGame = create<Game>()(
         if (rival.mind && !practice && !canCallWidow(g.rank)) return "Reach District before calling the Widow";
         const fightRank = rival.always ? Math.max(g.rank, rival.rank) : rival.rank;
         const rng = mulberry32(seedFrom(rival.id + String(g.rank) + player.id.slice(0, 4)));
-        const bias = rng.pick(rival.bias.filter((id) => SPECIES[id]) as string[]) || "hentz";
         const stage =
           fightRank < 1 ? "juvenile" : fightRank < 3 ? "adult" : fightRank < 5 ? "veteran" : "champion";
-        const enemy = applyRivalGrit(rollSpider(rng, { speciesId: bias, rank: fightRank, stage, asRival: true }), rival.grit);
+        const speciesId = rival.mind ? "widow" : pickRivalSpecies(rng, rival.bias, sizeClassOfSpider(player));
+        const enemy = applyRivalGrit(rollSpider(rng, { speciesId, rank: fightRank, stage, asRival: true }), rival.grit);
         if (rival.mind) {
           enemy.name = "Black Widow";
           enemy.sex = "female";
@@ -587,6 +630,46 @@ export const useGame = create<Game>()(
         return null;
       },
 
+      setSac: (motherId, mateId) => {
+        const g = get();
+        const mother = g.spiders.find((s) => s.id === motherId);
+        if (!mother) return "Pick a hen";
+        const blocked = canSetSac(mother);
+        if (blocked) return blocked;
+        const cost = sacCost(g.rank);
+        if (g.cash < cost) return "Not enough cash";
+        const mate = mateId ? g.spiders.find((s) => s.id === mateId) ?? null : null;
+        const spiders = patchSpider(g.spiders, motherId, () => setSac(mother, mate));
+        set({ cash: g.cash - cost, spiders });
+        return null;
+      },
+
+      shakeBrood: (motherId) => {
+        const g = get();
+        const mother = g.spiders.find((s) => s.id === motherId);
+        if (!mother) return "No spider";
+        if (!(mother.hatchlings ?? 0)) return "Nothing riding her";
+        const result = scatterBrood(
+          mother,
+          mulberry32(seedFrom(mother.id + String(Date.now()))),
+          g.stableName,
+          activeSpiders(g.spiders).length,
+          g.rosterCap,
+        );
+        const spiders = [...patchSpider(g.spiders, motherId, () => result.mother), ...result.kept];
+        const seen = result.kept.reduce((list, nymph) => (list.includes(nymph.speciesId) ? list : [...list, nymph.speciesId]), g.seen);
+        set({
+          spiders,
+          seen,
+          infestation: mergeInfestation(g.infestation, result.speciesId, result.escaped),
+          selectedId: result.kept[0]?.id ?? g.selectedId,
+          ...badgeProgress(g, { spiders, career: g.career, wins: g.wins, seen }),
+        });
+        const kept = result.kept.length ? `Kept ${result.kept[0]!.name} in the crate.` : "Stable is full — they all ran.";
+        const ran = result.escaped ? ` ${result.escaped} went everywhere.` : "";
+        return `${kept}${ran}`;
+      },
+
       retireSpider: (id) => {
         const g = get();
         const spider = g.spiders.find((s) => s.id === id);
@@ -665,6 +748,57 @@ export const useGame = create<Game>()(
         return result.fever ? "Graft fever. She'll sit a night." : null;
       },
 
+      addHide: (name, src) => {
+        const g = get();
+        const made = makeHide(name, src, g.hides);
+        if ("error" in made) return made.error;
+        const hides = [...g.hides, made.hide];
+        const career = { ...g.career, hides: (g.career.hides ?? 0) + 1 };
+        set({
+          hides,
+          career,
+          ...badgeProgress(g, { spiders: g.spiders, career, wins: g.wins, seen: g.seen }),
+        });
+        return null;
+      },
+
+      importHide: (ticket) => {
+        const decoded = decodeHideTicket(ticket);
+        if ("error" in decoded) return decoded.error;
+        return get().addHide(decoded.name, decoded.src);
+      },
+
+      drapeHide: (spiderId, hideId) => {
+        const g = get();
+        const spider = g.spiders.find((s) => s.id === spiderId);
+        const hide = g.hides.find((entry) => entry.id === hideId);
+        if (!spider) return "No spider";
+        const blocked = canDrape(spider, hide, g.cash, g.rank);
+        if (blocked) return blocked;
+        if (!hide) return "Pick a hide";
+        const spiders = patchSpider(g.spiders, spiderId, () => drape(spider, hide));
+        set({ cash: g.cash - HIDE_COST, spiders });
+        return null;
+      },
+
+      stripHide: (spiderId) => {
+        const g = get();
+        const spider = g.spiders.find((s) => s.id === spiderId);
+        if (!spider?.hideId) return "No hide on that mill";
+        set({ spiders: patchSpider(g.spiders, spiderId, stripHide) });
+        return null;
+      },
+
+      releaseHide: (hideId) => {
+        const g = get();
+        if (!g.hides.some((hide) => hide.id === hideId)) return "No such hide";
+        set({
+          hides: g.hides.filter((hide) => hide.id !== hideId),
+          spiders: g.spiders.map((spider) => (spider.hideId === hideId ? stripHide(spider) : spider)),
+        });
+        return null;
+      },
+
       applyResult: (out, finalSpider) => {
         const g = get();
         const practice = g.fight?.practice === true;
@@ -729,13 +863,21 @@ export const useGame = create<Game>()(
         const originalSpider = g.spiders.find((spider) => spider.id === finalSpider.id) ?? finalSpider;
         const spider = practice ? originalSpider : applyXp(finalSpider, out.xp);
         const hpMax = filledHp(spider);
-        const patched = { ...spider, hp: clamp(spider.hp, 0, hpMax) };
-        const spiders = patchSpider(g.spiders, patched.id, () => patched);
-        const career = {
+        let patched = { ...spider, hp: clamp(spider.hp, 0, hpMax) };
+        let career = {
           ...g.career,
           bouts: g.career.bouts + (practice ? 0 : 1),
           stripped: g.career.stripped + (practice ? 0 : out.stripped.length),
         };
+        if (!practice) {
+          const broodTick = tickBrood(patched, mulberry32(seedFrom(patched.id + String(career.bouts))));
+          patched = broodTick.spider;
+          if (broodTick.hatched) {
+            out.broodHatch = broodTick.hatched;
+            career = { ...career, hatches: (career.hatches ?? 0) + 1 };
+          }
+        }
+        const spiders = patchSpider(g.spiders, patched.id, () => patched);
         // Practice can reveal a web but must never change competitive score.
         // Any newly eligible Circuit mark is picked up by the next ranked result.
         const unlockedBadges = practice ? [] : newlyEarnedBadges(g.earnedBadges, { spiders, career, wins, seen });
@@ -917,6 +1059,8 @@ export const useGame = create<Game>()(
         yardSeries: s.yardSeries,
         paper: s.paper,
         fightArchive: s.fightArchive,
+        infestation: s.infestation,
+        hides: s.hides,
       }),
     },
   ),

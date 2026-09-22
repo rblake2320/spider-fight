@@ -18,6 +18,10 @@ export type SpiderDraw = {
   mark?: "hourglass";
   gear?: Gear;
   look?: BayLook;
+  brood?: boolean;
+  hatchlings?: number;
+  /** Cooked hide picture. Swings and poses with the mill. */
+  hideSrc?: string;
 };
 
 function lerp(a: number, b: number, t: number): number {
@@ -152,6 +156,15 @@ function drawLeg(
   ctx.arc(x3, y3, 0.8 * scale, 0, Math.PI * 2);
   ctx.fillStyle = colors.legDark;
   ctx.fill();
+  if (look?.chrome) {
+    ctx.fillStyle = "rgba(214, 196, 148, 0.9)";
+    ctx.beginPath();
+    ctx.arc(x1, y1, 1.15 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x2, y2, 0.95 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 function drawBody(
@@ -233,6 +246,18 @@ function drawBody(
   ctx.ellipse(0, abdH * 0.82, 2.2 * scale, 1.6 * scale, 0, 0, Math.PI * 2);
   ctx.fillStyle = shade(colors.cephalothorax, 10);
   ctx.fill();
+  if ((look?.sacs ?? 0) > 0) {
+    ctx.fillStyle = shade(colors.abdomenLight, 20);
+    ctx.beginPath();
+    ctx.ellipse(-abdW * 0.38, abdH * 0.28, 3.4 * scale, 4.6 * scale, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(abdW * 0.38, abdH * 0.28, 3.4 * scale, 4.6 * scale, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = shade(colors.folium, 10);
+    ctx.lineWidth = 0.5 * scale;
+    ctx.stroke();
+  }
   if (look?.splice) {
     ctx.beginPath();
     ctx.ellipse(0, 0, abdW * 0.72, abdH * 0.62, 0, 0, Math.PI * 2);
@@ -289,10 +314,34 @@ function drawBody(
     ctx.arc(ex * cephW * facing, ey * cephH, 0.7 * scale, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.fillStyle = "rgba(255,220,180,0.7)";
-  ctx.beginPath();
-  ctx.arc(0.38 * cephW * facing, -0.2 * cephH, 0.28 * scale, 0, Math.PI * 2);
-  ctx.fill();
+  const eyeGrade = look?.eye ?? 0;
+  if (eyeGrade > 0) {
+    ctx.beginPath();
+    ctx.arc(0.42 * cephW * facing, -0.22 * cephH, 1.55 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = eyeGrade >= 2 ? "#6a1010" : "#3a2a10";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0.42 * cephW * facing, -0.22 * cephH, 1.05 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = eyeGrade >= 2 ? "#e03828" : "#e8a030";
+    ctx.fill();
+    ctx.fillStyle = eyeGrade >= 2 ? "rgba(255, 180, 140, 0.95)" : "rgba(255, 236, 180, 0.95)";
+    ctx.beginPath();
+    ctx.arc(0.46 * cephW * facing, -0.26 * cephH, 0.4 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    if (eyeGrade >= 2 && (pose === "lunge" || pose === "grapple")) {
+      ctx.strokeStyle = "rgba(255, 70, 40, 0.75)";
+      ctx.lineWidth = 1.15 * scale;
+      ctx.beginPath();
+      ctx.moveTo(cephW * 0.58 * facing, -cephH * 0.22);
+      ctx.lineTo(cephW * 2.6 * facing, -cephH * 0.4);
+      ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = "rgba(255,220,180,0.7)";
+    ctx.beginPath();
+    ctx.arc(0.38 * cephW * facing, -0.2 * cephH, 0.28 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.restore();
 }
 
@@ -306,6 +355,7 @@ export function drawSilk(
   style: WebStyle = "orb",
   training = 0,
   silkBoost = 0,
+  sticky = 0,
 ): void {
   ctx.save();
   ctx.beginPath();
@@ -313,11 +363,11 @@ export function drawSilk(
   const my = (y0 + y1) / 2 + (1 - taut) * 10;
   ctx.moveTo(x0, y0);
   ctx.quadraticCurveTo(mx, my, x1, y1);
-  ctx.strokeStyle = "rgba(232,220,198,0.55)";
-  ctx.lineWidth = 1.15 + silkBoost * 0.55;
+  ctx.strokeStyle = sticky ? "rgba(214, 168, 72, 0.7)" : "rgba(232,220,198,0.55)";
+  ctx.lineWidth = 1.15 + silkBoost * 0.55 + sticky * 0.7;
   ctx.stroke();
-  ctx.strokeStyle = "rgba(255,255,245,0.25)";
-  ctx.lineWidth = 0.5 + silkBoost * 0.2;
+  ctx.strokeStyle = sticky ? "rgba(255, 210, 110, 0.35)" : "rgba(255,255,245,0.25)";
+  ctx.lineWidth = 0.5 + silkBoost * 0.2 + sticky * 0.25;
   ctx.stroke();
   if (style === "cross" || style === "spoked") {
     ctx.beginPath();
@@ -392,6 +442,59 @@ export function drawStick(ctx: CanvasRenderingContext2D, w: number, y: number): 
   ctx.fillRect(x1 - 28, y - 2, 26, 3);
 }
 
+const hideCache = new Map<string, HTMLImageElement | "load" | "fail">();
+
+function primedHide(src: string | undefined): HTMLImageElement | undefined {
+  if (!src) return undefined;
+  const hit = hideCache.get(src);
+  if (hit instanceof HTMLImageElement && hit.complete && hit.naturalWidth > 0) return hit;
+  if (hit === "load" || hit === "fail" || typeof Image === "undefined") return undefined;
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  hideCache.set(src, "load");
+  img.onload = () => hideCache.set(src, img);
+  img.onerror = () => hideCache.set(src, "fail");
+  img.src = src;
+  return undefined;
+}
+
+function drawHide(ctx: CanvasRenderingContext2D, img: HTMLImageElement, d: SpiderDraw): void {
+  const s = d.scale;
+  let ox = 0;
+  let oy = 2 * s;
+  let rot = 0;
+  let squash = 1;
+  if (d.pose === "lunge" || d.pose === "intro") {
+    ox = 5 * s;
+    rot = -0.18;
+  } else if (d.pose === "grapple") {
+    oy = -2 * s;
+    rot = -0.08;
+  } else if (d.pose === "feint") {
+    ox = Math.sin(d.t * 14) * 3 * s;
+  } else if (d.pose === "brace") {
+    oy = 3 * s;
+    squash = 0.9;
+  } else if (d.pose === "yank") {
+    oy = Math.sin(d.t * 8) * 2.2 * s;
+  } else if (d.pose === "drop") {
+    oy = 7 * s;
+    rot = 0.22;
+  } else if (d.pose === "hurt" || d.pose === "ko") {
+    rot = 0.3;
+    oy = 5 * s;
+  }
+  const iw = 34 * s;
+  const ih = 40 * s * squash;
+  ctx.save();
+  ctx.translate(ox, oy);
+  ctx.rotate(rot);
+  ctx.shadowColor = "rgba(20, 10, 4, 0.45)";
+  ctx.shadowBlur = 8 * s;
+  ctx.drawImage(img, -iw, -ih * 0.55, iw * 2, ih * 1.55);
+  ctx.restore();
+}
+
 export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
   ctx.save();
   ctx.translate(d.x, d.y);
@@ -404,12 +507,60 @@ export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
   const front = legs.filter((l) => l.z === 1);
   const ox = 6 * d.scale;
   const oy = -2 * d.scale;
+  const hide = primedHide(d.hideSrc);
+  ctx.save();
+  if (hide) ctx.globalAlpha *= 0.42;
   back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1, d.look));
-  drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training, d.look);
+  ctx.restore();
+  if (hide) drawHide(ctx, hide, d);
+  else drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training, d.look);
+  drawBrood(ctx, d);
   drawGear(ctx, d);
+  ctx.save();
+  if (hide) ctx.globalAlpha *= 0.5;
   front.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2.4 * d.scale, l, d.scale, 1, d.look));
+  ctx.restore();
 
   ctx.restore();
+}
+
+/** Egg sac and spiderlings ride the abdomen until they scatter into the yard. */
+function drawBrood(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
+  const s = d.scale;
+  if (d.brood) {
+    ctx.save();
+    ctx.translate(-8 * s, 8 * s);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 6.2 * s, 7.4 * s, -0.2, 0, Math.PI * 2);
+    const g = ctx.createRadialGradient(-2 * s, -2 * s, 1, 0, 0, 8 * s);
+    g.addColorStop(0, "#f0e2c4");
+    g.addColorStop(1, "#c4a878");
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(90, 60, 30, 0.45)";
+    ctx.lineWidth = 0.6 * s;
+    ctx.stroke();
+    ctx.restore();
+  }
+  const n = d.hatchlings ?? 0;
+  if (n <= 0) return;
+  for (let i = 0; i < Math.min(7, n); i += 1) {
+    const a = (i / Math.max(1, n)) * Math.PI * 1.6 - 0.7;
+    const x = Math.cos(a) * 7 * s;
+    const y = Math.sin(a) * 8 * s + 2 * s;
+    ctx.fillStyle = d.colors.cephalothorax;
+    ctx.beginPath();
+    ctx.arc(x, y, 1.15 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = d.colors.legDark;
+    ctx.lineWidth = 0.45 * s;
+    ctx.beginPath();
+    ctx.moveTo(x - 1.6 * s, y);
+    ctx.lineTo(x + 1.6 * s, y);
+    ctx.moveTo(x, y - 1.4 * s);
+    ctx.lineTo(x, y + 1.4 * s);
+    ctx.stroke();
+  }
 }
 
 /** Small readable silhouettes make equipped kit feel earned in a fast fight. */
