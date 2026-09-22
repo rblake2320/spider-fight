@@ -86,6 +86,7 @@ type Session = {
     rivalId: string;
     playerId: string;
     wager: number;
+    practice: boolean;
     enemy: Spider;
     teamBonus: Partial<Stats>;
     headline: boolean;
@@ -117,7 +118,8 @@ type Game = SaveState &
     keepCatch: () => string | null;
     releaseCatch: () => void;
     leaveHunt: () => void;
-    prepareFight: (rivalId: string, playerId: string, wager: number) => string | null;
+    prepareFight: (rivalId: string, playerId: string, wager: number, practice?: boolean) => string | null;
+    startPractice: (playerId: string) => string | null;
     startYardSeries: (playerId: string) => string | null;
     continueYardSeries: () => string | null;
     setClutch: (aId: string, bId: string) => string | null;
@@ -446,7 +448,7 @@ export const useGame = create<Game>()(
 
       leaveHunt: () => set({ huntHabitat: null, activeBait: null, pendingCatch: null, screen: "hunt" }),
 
-      prepareFight: (rivalId, playerId, wager) => {
+      prepareFight: (rivalId, playerId, wager, practice = false) => {
         const g = get();
         const player = g.spiders.find((s) => s.id === playerId);
         if (!player) return "Pick a fighter";
@@ -473,6 +475,7 @@ export const useGame = create<Game>()(
             rivalId,
             playerId,
             wager,
+            practice,
             enemy,
             teamBonus: teamSupport(player, g.spiders, g.activeTeam),
             headline: nightlyRival(g.dayStamp, g.rank).id === rivalId,
@@ -481,7 +484,7 @@ export const useGame = create<Game>()(
           result: null,
           screen: "fight",
           cash: g.cash - wager,
-          tutorial: g.tutorial === 4 ? 5 : g.tutorial,
+          tutorial: !practice && g.tutorial === 4 ? 5 : g.tutorial,
         });
         return null;
       },
@@ -552,6 +555,7 @@ export const useGame = create<Game>()(
 
       applyResult: (out, finalSpider) => {
         const g = get();
+        const practice = g.fight?.practice === true;
         let cash = g.cash;
         let rankPoints = g.rankPoints;
         const rank = g.rank;
@@ -563,10 +567,12 @@ export const useGame = create<Game>()(
         const isSeries = seriesStage !== null && seriesStage !== undefined && g.yardSeries?.date === g.dayStamp;
         const priorRival = g.rivalRecords[out.rivalId] ?? { wins: 0, losses: 0, streak: 0 };
         const scoutedMoves = recordRivalMoves(priorRival.moves, out.rounds);
-        const rivalRecord = out.won
+        const rivalRecord = practice
+          ? { ...priorRival, moves: scoutedMoves }
+          : out.won
           ? { ...priorRival, wins: priorRival.wins + 1, streak: priorRival.streak + 1, moves: scoutedMoves }
           : { ...priorRival, losses: priorRival.losses + 1, streak: 0, moves: scoutedMoves };
-        if (out.won) {
+        if (!practice && out.won) {
           const prize = (RANKS[g.rank]?.purse ?? 18) + out.wager + headlineReward.cash;
           cash += prize;
           out.purse = prize;
@@ -592,18 +598,19 @@ export const useGame = create<Game>()(
             inventory = addInv(inventory, trophy);
             out.loot = trophy;
           }
-        } else {
+        } else if (!practice) {
           losses += 1;
           rankPoints = Math.max(0, rankPoints - 6);
         }
-        const spider = applyXp(finalSpider, out.xp);
+        const originalSpider = g.spiders.find((spider) => spider.id === finalSpider.id) ?? finalSpider;
+        const spider = practice ? originalSpider : applyXp(finalSpider, out.xp);
         const hpMax = filledHp(spider);
         const patched = { ...spider, hp: clamp(spider.hp, 0, hpMax) };
         const spiders = patchSpider(g.spiders, patched.id, () => patched);
         const career = {
           ...g.career,
-          bouts: g.career.bouts + 1,
-          stripped: g.career.stripped + out.stripped.length,
+          bouts: g.career.bouts + (practice ? 0 : 1),
+          stripped: g.career.stripped + (practice ? 0 : out.stripped.length),
         };
         const badges = badgeProgress(
           { ...g, rank, rankPoints },
@@ -628,8 +635,8 @@ export const useGame = create<Game>()(
           fight: null,
           result: out,
           career,
-          dailyContract: out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
-          dailyWebChallenge: advanceWebChallenge(g.dailyWebChallenge, landedWebMove),
+          dailyContract: !practice && out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
+          dailyWebChallenge: practice ? g.dailyWebChallenge : advanceWebChallenge(g.dailyWebChallenge, landedWebMove),
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
           earnedBadges: badges.earnedBadges,
           yardSeries: seriesFinished ? null : nextSeries,
@@ -671,6 +678,8 @@ export const useGame = create<Game>()(
         });
         return null;
       },
+
+      startPractice: (playerId) => get().prepareFight("tom", playerId, 0, true),
 
       claimDailyWebChallenge: () => {
         const g = get();

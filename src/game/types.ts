@@ -154,6 +154,8 @@ export type Rival = {
 
 export type FightOutcome = {
   won: boolean;
+  /** Practice bouts teach the stick without changing competitive progression. */
+  practice?: boolean;
   wager: number;
   purse: number;
   xp: number;

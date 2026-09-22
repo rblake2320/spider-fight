@@ -47,6 +47,7 @@ export function FightSelect() {
   const cash = useGame((s) => s.cash);
   const selectedId = useGame((s) => s.selectedId);
   const prepare = useGame((s) => s.prepareFight);
+  const startPractice = useGame((s) => s.startPractice);
   const rivalRecords = useGame((s) => s.rivalRecords);
   const setScreen = useGame((s) => s.setScreen);
   const startYardSeries = useGame((s) => s.startYardSeries);
@@ -81,6 +82,17 @@ export function FightSelect() {
         <p className="text-xs uppercase tracking-widest text-moss">Tonight's headliner</p>
         <p className="mt-1 font-medium">{headline.name}</p>
         <p className="mt-1 text-xs text-dust">Win this call for +${NIGHTLY_BONUS_CASH} and +{NIGHTLY_BONUS_POINTS} circuit points.</p>
+      </section>
+      <section className="rounded-xl border border-line bg-raised p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-dust">Practice thread</p>
+            <p className="mt-1 text-xs text-dust">No cash, gear, rank, or daily progress on the line. Read real tells and keep the tape.</p>
+          </div>
+          <Button size="sm" variant="outline" disabled={!player} onClick={() => setErr(player ? startPractice(player.id) : "Pick a fighter")}>
+            Practice
+          </Button>
+        </div>
       </section>
       <section className="rounded-xl border border-paper/25 bg-panel p-3">
         <div className="flex items-center justify-between gap-2">
@@ -224,6 +236,7 @@ export function FightArena() {
       fightMeta.teamBonus,
       sky.fight,
       sky.id,
+      fightMeta.practice,
     );
     askedRound.current = 0;
     jevDead.current = false;
@@ -243,6 +256,7 @@ export function FightArena() {
         fightMeta.teamBonus,
         sky.fight,
         sky.id,
+        fightMeta.practice,
       );
     }
     const pullJev = (f: StickFight) => {
@@ -433,16 +447,16 @@ function ResultCard() {
 
   return (
     <div className="flex h-full flex-col items-stretch justify-center gap-4 p-6">
-      <p className="text-xs uppercase tracking-widest text-dust">{result.won ? "You hold it" : "You dropped it"}</p>
-      <h2 className="font-display text-4xl font-semibold">{result.won ? "Win" : "Loss"}</h2>
+      <p className="text-xs uppercase tracking-widest text-dust">{result.practice ? "Practice thread" : result.won ? "You hold it" : "You dropped it"}</p>
+      <h2 className="font-display text-4xl font-semibold">{result.practice ? "Practice complete" : result.won ? "Win" : "Loss"}</h2>
       <p className="text-dust">vs {result.enemyName}</p>
       <ul className="space-y-1 text-sm">
-        <li>Wager {result.won ? "returned in purse" : "gone"} · ${result.wager}</li>
-        {result.won ? <li className="text-moss">Purse ${result.purse}</li> : null}
+        {result.practice ? <li className="text-moss">No stakes. Your yard stays exactly as it was.</li> : <li>Wager {result.won ? "returned in purse" : "gone"} · ${result.wager}</li>}
+        {result.won && !result.practice ? <li className="text-moss">Purse ${result.purse}</li> : null}
         {result.headlineBonus ? <li className="text-moss">Headliner bonus +${result.headlineBonus} · +{NIGHTLY_BONUS_POINTS} circuit</li> : null}
         {result.seriesBonus ? <li className="text-moss">Yard series bonus +${result.seriesBonus}</li> : null}
         {result.sky ? <li className="text-dust">{tonightSky().name} on the stick</li> : null}
-        <li>+{result.xp} xp</li>
+        {result.practice ? null : <li>+{result.xp} xp</li>}
         {result.stripped.map((id) => (
           <li key={id} className="text-rust">
             Stripped {ITEMS[id]?.name ?? id}
@@ -488,7 +502,9 @@ function ResultCard() {
         </p>
       ) : null}
       <p className="text-sm text-mute">
-        {result.won
+        {result.practice
+          ? "You read a real opponent with nothing on the line. Use the tape, then call a wagered fight when ready."
+          : result.won
           ? "Gear holds. Train the edge they just earned."
           : "What they learned on the stick walked off with the other yard. Drill it back."}
       </p>

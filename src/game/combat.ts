@@ -38,6 +38,7 @@ export type StickFight = {
   shake: number;
   hitstop: number;
   wager: number;
+  practice: boolean;
   rivalId: string;
   rivalName: string;
   rivalStyle: MoveId | null;
@@ -111,6 +112,7 @@ export function createFight(
   teamBonus: Partial<Stats> = {},
   nightMods: Partial<Stats> = {},
   skyId: string | null = null,
+  practice = false,
 ): StickFight {
   return {
     player: makeFighter(player, 0.36, 1, addStats(addStats({ ...ZERO_STATS }, teamBonus), nightMods)),
@@ -122,6 +124,7 @@ export function createFight(
     shake: 0,
     hitstop: 0,
     wager,
+    practice,
     rivalId,
     rivalName,
     rivalStyle,
@@ -454,14 +457,16 @@ function buildOutcome(f: StickFight): FightOutcome {
   const rng = mulberry32(seedFrom(f.player.spider.id + f.round + String(f.wager)));
   const rank = RANKS[clamp(Math.floor(f.wager / 20), 0, RANKS.length - 1)] ?? RANKS[0]!;
   const purse = won ? Math.round(rank.purse * (0.8 + luckOf(f.player.spider) * 0.03) + f.wager) : 0;
-  const xp = won ? 28 + f.round * 4 : 10 + f.round * 2;
+  const xp = f.practice ? 8 : won ? 28 + f.round * 4 : 10 + f.round * 2;
   let stripped: string[] = [];
   let decay: Partial<Stats> = {};
   let injury = f.player.spider.injury;
   let loot: string | null = null;
   let spider = f.player.spider;
 
-  if (!won) {
+  if (f.practice) {
+    spider = { ...spider, hp: f.player.hp };
+  } else if (!won) {
     const n = rng.int(1, Object.values(spider.gear).filter(Boolean).length ? 2 : 1);
     const st = stripGear(spider, rng, n);
     spider = st.spider;
@@ -492,6 +497,7 @@ function buildOutcome(f: StickFight): FightOutcome {
   f.player.spider = spider;
   return {
     won,
+    practice: f.practice || undefined,
     wager: f.wager,
     purse: won ? purse : 0,
     xp,

@@ -126,3 +126,21 @@ test("a twelve-round fight ends on a visible judges decision", () => {
   assert.equal(fight.decisionWinner, "player");
   assert.match(fight.lastText, /judges' decision/);
 });
+
+test("a practice loss preserves gear, record, and competitive rewards", () => {
+  const player = rollSpider(mulberry32(177), { speciesId: "hentz", stage: "adult" });
+  player.gear = { wraps: "porch-twine" };
+  const enemy = rollSpider(mulberry32(178), { speciesId: "cross", stage: "adult", asRival: true });
+  const fight = createFight(player, enemy, 0, "tom", "Alley Tom", null, {}, {}, null, true);
+  fight.player.hp = 0;
+  fight.phase = "ko";
+  fight.phaseT = 1.21;
+  stepFight(fight, 0.05);
+
+  assert.equal(fight.outcome?.practice, true);
+  assert.equal(fight.outcome?.xp, 8);
+  assert.deepEqual(fight.outcome?.stripped, []);
+  assert.equal(fight.outcome?.injury, null);
+  assert.equal(fight.player.spider.gear.wraps, "porch-twine");
+  assert.equal(fight.player.spider.losses, 0);
+});
