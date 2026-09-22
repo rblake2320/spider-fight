@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { HABITATS, ITEMS, SPECIES } from "@/game/content";
+import { HABITATS, ITEM_LIST, ITEMS, SPECIES } from "@/game/content";
 import { isShipped, seasonName } from "@/game/catalog";
 import { playCatch } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -10,9 +10,14 @@ import { cn } from "@/lib/utils";
 
 export function HuntSelect() {
   const rank = useGame((s) => s.rank);
+  const cash = useGame((s) => s.cash);
   const huntsLeft = useGame((s) => s.huntsLeft);
   const startHunt = useGame((s) => s.startHunt);
   const huntBait = useGame((s) => s.huntBait);
+  const inventory = useGame((s) => s.inventory);
+  const buy = useGame((s) => s.buy);
+  const setHuntBait = useGame((s) => s.setHuntBait);
+  const bait = ITEM_LIST.filter((item) => item.kind === "bait" && isShipped(item) && item.rank <= rank);
   const [err, setErr] = useState<string | null>(null);
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
@@ -22,6 +27,32 @@ export function HuntSelect() {
         <p className="mt-1 text-sm text-dust">{huntsLeft} lights left tonight.</p>
         <p className="mt-1 text-xs text-moss">{huntBait ? `${ITEMS[huntBait]?.name} set for this hunt.` : "No bait set."}</p>
       </header>
+      <section className="rounded-xl bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-dust">Hunt shelf · ${cash}</p>
+        <div className="mt-2 grid gap-2">
+          {bait.map((item) => {
+            const have = inventory[item.id] ?? 0;
+            return (
+              <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg bg-panel p-2">
+                <div>
+                  <p className="text-sm font-medium">{item.name}</p>
+                  <p className="text-[11px] text-dust">{item.blurb}</p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button size="sm" variant="ghost" disabled={cash < item.price} onClick={() => setErr(buy(item.id))}>
+                    Buy ${item.price}
+                  </Button>
+                  {have ? (
+                    <Button size="sm" variant={huntBait === item.id ? "rust" : "outline"} onClick={() => setErr(setHuntBait(item.id))}>
+                      {huntBait === item.id ? "Set" : `Set ${have}`}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
       {HABITATS.map((h) => {
         const coming = !isShipped(h);
         const locked = coming || rank < h.rank;
@@ -60,6 +91,7 @@ export function HuntSelect() {
 
 export function HuntPlay() {
   const habitatId = useGame((s) => s.huntHabitat);
+  const activeBait = useGame((s) => s.activeBait);
   const pending = useGame((s) => s.pendingCatch);
   const resolve = useGame((s) => s.resolveHuntTap);
   const keep = useGame((s) => s.keepCatch);
@@ -175,6 +207,7 @@ export function HuntPlay() {
       <div className="absolute inset-0 bg-ink/35" />
       <div className="relative z-10 flex h-full flex-col p-4">
         <p className="text-xs uppercase tracking-widest text-dust">{hab.name}</p>
+        {activeBait ? <p className="mt-1 text-xs text-moss">{ITEMS[activeBait]?.name} is on the line.</p> : null}
         <h2 className="font-display text-2xl">{phase === "miss" ? "Gone" : "In the silk"}</h2>
         <p className="text-sm text-paper/80">{msg}</p>
         <div className="flex flex-1 items-center justify-center">
