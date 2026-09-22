@@ -2,8 +2,8 @@ import { HABITATS, ITEMS, ITEM_LIST, RIVALS, SPECIES, SPECIES_LIST } from "./con
 import type { Habitat, Item, Rival, Species } from "./types.ts";
 
 /** Shipped content year. Bump this when a pack goes live — old saves keep working. */
-export const SHIPPED_SEASON = 2;
-export const BUILD = "1.2.0";
+export const SHIPPED_SEASON = 3;
+export const BUILD = "1.3.0";
 
 export type SeasonPack = {
   id: number;
@@ -27,9 +27,9 @@ export const SEASONS: SeasonPack[] = [
   },
   {
     id: 3,
-    name: "County Brackets",
-    blurb: "Three-spider teams, side pots, a bracket that pays the county.",
-    adds: ["Team brackets", "Side pots", "Travel motel nights"],
+    name: "County Circuit",
+    blurb: "Feed stores, fair pavilions, and crews who bring three to the stick.",
+    adds: ["County Feed Store", "Fair Pavilion", "Fishing Spider", "Green Lynx", "Southern House Spider", "Feed Lot Three"],
   },
   {
     id: 4,

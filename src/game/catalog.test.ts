@@ -25,13 +25,17 @@ test("item and species ids match their keys", () => {
   for (const [id, item] of Object.entries(ITEMS)) assert.equal(item.id, id);
 });
 
-test("season 2 content is live and available to the circuit", () => {
-  assert.equal(SHIPPED_SEASON, 2);
+test("season 2 and 3 content are live and available to the circuit", () => {
+  assert.equal(SHIPPED_SEASON, 3);
   assert.ok(SPECIES.brownwidow);
   assert.equal(seasonOf(SPECIES.brownwidow!), 2);
   assert.equal(isShipped(SPECIES.brownwidow!), true);
   assert.ok(HABITATS.some((h) => h.id === "creek" && isShipped(h)));
   assert.ok(SEASONS.some((s) => s.id === 2));
+  assert.ok(SPECIES.fishing);
+  assert.equal(seasonOf(SPECIES.fishing!), 3);
+  assert.equal(isShipped(SPECIES.fishing!), true);
+  assert.ok(HABITATS.some((h) => h.id === "feedstore" && isShipped(h)));
 });
 
 test("the Widow Knot is a boss-only reward", () => {
