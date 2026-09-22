@@ -36,6 +36,8 @@ export function Yard() {
   const claimContract = useGame((s) => s.claimDailyContract);
   const webChallenge = useGame((s) => s.dailyWebChallenge);
   const claimWebChallenge = useGame((s) => s.claimDailyWebChallenge);
+  const weeklyCircuit = useGame((s) => s.weeklyCircuit);
+  const claimWeeklyCircuit = useGame((s) => s.claimWeeklyCircuit);
   const flags = useGame((s) => s.flags);
   const tutorial = useGame((s) => s.tutorial);
   const paper = useGame((s) => s.paper);
@@ -159,6 +161,27 @@ export function Yard() {
             {webChallenge.claimed ? null : (
               <Button size="sm" variant="outline" disabled={webChallenge.progress < webChallenge.target} onClick={() => claimWebChallenge()}>
                 Collect web mark
+              </Button>
+            )}
+          </div>
+        </section>
+        <section className="rounded-xl border border-paper/35 bg-panel p-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-xs uppercase tracking-widest text-paper">Weekly Circuit</p>
+            <p className="tabular text-xs text-moss">${weeklyCircuit.reward} · +{weeklyCircuit.points} pts</p>
+          </div>
+          <p className="mt-1 font-medium">{weeklyCircuit.title}</p>
+          <p className="mt-1 text-xs text-dust">{weeklyCircuit.detail}</p>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+            <p className="rounded bg-raised px-1 py-2 text-paper"><span className="block text-dust">Hunts</span>{weeklyCircuit.hunts}/{weeklyCircuit.huntTarget}</p>
+            <p className="rounded bg-raised px-1 py-2 text-paper"><span className="block text-dust">Drills</span>{weeklyCircuit.trains}/{weeklyCircuit.trainTarget}</p>
+            <p className="rounded bg-raised px-1 py-2 text-paper"><span className="block text-dust">Wins</span>{weeklyCircuit.wins}/{weeklyCircuit.winTarget}</p>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-dust">Week of {weeklyCircuit.week}</p>
+            {weeklyCircuit.claimed ? <p className="text-xs text-moss">Collected</p> : (
+              <Button size="sm" variant="outline" disabled={weeklyCircuit.hunts < weeklyCircuit.huntTarget || weeklyCircuit.trains < weeklyCircuit.trainTarget || weeklyCircuit.wins < weeklyCircuit.winTarget} onClick={() => claimWeeklyCircuit()}>
+                Collect Circuit purse
               </Button>
             )}
           </div>

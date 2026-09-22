@@ -233,6 +233,7 @@ export type FightArchive = {
 };
 
 export type ContractKind = "hunt" | "train" | "win";
+export type CircuitActivity = ContractKind;
 
 export type DailyContract = {
   date: string;
@@ -250,6 +251,22 @@ export type DailyWebChallenge = {
   date: string;
   target: number;
   progress: number;
+  reward: number;
+  points: number;
+  claimed: boolean;
+};
+
+/** A multi-night Circuit card. Unlike daily cards, it survives until the next Monday. */
+export type WeeklyCircuit = {
+  week: string;
+  title: string;
+  detail: string;
+  huntTarget: number;
+  trainTarget: number;
+  winTarget: number;
+  hunts: number;
+  trains: number;
+  wins: number;
   reward: number;
   points: number;
   claimed: boolean;
@@ -293,6 +310,7 @@ export type SaveState = {
   career: CareerLog;
   dailyContract: DailyContract;
   dailyWebChallenge: DailyWebChallenge;
+  weeklyCircuit: WeeklyCircuit;
   rivalRecords: Record<string, RivalRecord>;
   earnedBadges: string[];
   yardSeries: YardSeries | null;

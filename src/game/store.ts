@@ -55,6 +55,7 @@ import { pushPaper, writeClip } from "./paper";
 import { dailyStreakBonus, nextDailyStreak } from "./daily-streak";
 import { streakReward } from "./streak";
 import { archiveFight, pushFightArchive } from "./fight-archive";
+import { advanceWeeklyCircuit, canClaimWeeklyCircuit, makeWeeklyCircuit, weekStamp } from "./weekly-circuit";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -80,6 +81,7 @@ const emptySave = (): SaveState => ({
   career: { ...EMPTY_CAREER },
   dailyContract: makeDailyContract(todayStamp(), 0),
   dailyWebChallenge: makeDailyWebChallenge(todayStamp(), 0),
+  weeklyCircuit: makeWeeklyCircuit(todayStamp(), 0),
   rivalRecords: {},
   earnedBadges: [],
   yardSeries: null,
@@ -142,6 +144,7 @@ type Game = SaveState &
     collectDaily: () => void;
     claimDailyContract: () => string | null;
     claimDailyWebChallenge: () => string | null;
+    claimWeeklyCircuit: () => string | null;
     setSetting: (k: keyof SaveState["settings"], v: boolean) => void;
     resetAll: () => void;
     rollYear: () => string | null;
@@ -190,13 +193,19 @@ export const useGame = create<Game>()(
 
       hydrate: () => {
         const s = get();
-        if (s.dayStamp !== todayStamp() || s.dailyContract.date !== todayStamp() || s.dailyWebChallenge?.date !== todayStamp()) {
+        const today = todayStamp();
+        const refreshDay = s.dayStamp !== today || s.dailyContract.date !== today || s.dailyWebChallenge?.date !== today;
+        const refreshWeek = s.weeklyCircuit?.week !== weekStamp(today);
+        if (refreshDay || refreshWeek) {
           set({
-            huntsLeft: HUNTS_PER_DAY,
-            dayStamp: todayStamp(),
-            dailyContract: makeDailyContract(todayStamp(), s.rank),
-            dailyWebChallenge: makeDailyWebChallenge(todayStamp(), s.rank),
-            yardSeries: s.yardSeries?.date === todayStamp() ? s.yardSeries : null,
+            ...(refreshDay ? {
+              huntsLeft: HUNTS_PER_DAY,
+              dayStamp: today,
+              dailyContract: makeDailyContract(today, s.rank),
+              dailyWebChallenge: makeDailyWebChallenge(today, s.rank),
+              yardSeries: s.yardSeries?.date === today ? s.yardSeries : null,
+            } : {}),
+            ...(refreshWeek ? { weeklyCircuit: makeWeeklyCircuit(today, s.rank) } : {}),
           });
         }
         if (!s.career) set({ career: { ...EMPTY_CAREER } });
@@ -344,6 +353,7 @@ export const useGame = create<Game>()(
         set({
           cash: g.cash - cost,
           dailyContract: advanceContract(g.dailyContract, "train"),
+          weeklyCircuit: advanceWeeklyCircuit(g.weeklyCircuit, "train"),
           tutorial: g.tutorial === 3 ? 4 : g.tutorial,
           spiders,
           ...badgeProgress(g, { spiders, career: g.career, wins: g.wins, seen: g.seen }),
@@ -431,6 +441,7 @@ export const useGame = create<Game>()(
           tutorial: g.tutorial === 1 ? 2 : g.tutorial,
           career: { ...g.career, hunts: g.career.hunts + 1 },
           dailyContract: advanceContract(g.dailyContract, "hunt"),
+          weeklyCircuit: advanceWeeklyCircuit(g.weeklyCircuit, "hunt"),
           spiders: lead
             ? patchSpider(g.spiders, lead.id, (s) => ({ ...s, energy: s.energy - energyCost }))
             : g.spiders,
@@ -722,6 +733,7 @@ export const useGame = create<Game>()(
           seen,
           dailyContract: !practice && out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
           dailyWebChallenge: practice ? g.dailyWebChallenge : advanceWebChallenge(g.dailyWebChallenge ?? makeDailyWebChallenge(g.dayStamp, g.rank), out.rounds),
+          weeklyCircuit: !practice && out.won ? advanceWeeklyCircuit(g.weeklyCircuit, "win") : g.weeklyCircuit,
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
           earnedBadges: badges.earnedBadges,
           yardSeries: seriesFinished ? null : nextSeries,
@@ -785,6 +797,21 @@ export const useGame = create<Game>()(
         return null;
       },
 
+      claimWeeklyCircuit: () => {
+        const g = get();
+        if (!canClaimWeeklyCircuit(g.weeklyCircuit)) return "Finish the Circuit card first";
+        const rankPoints = g.rankPoints + g.weeklyCircuit.points;
+        let rank = g.rank;
+        while (rank < RANKS.length - 1 && rankPoints >= RANKS[rank + 1]!.points) rank += 1;
+        set({
+          cash: g.cash + g.weeklyCircuit.reward,
+          rank,
+          rankPoints,
+          weeklyCircuit: { ...g.weeklyCircuit, claimed: true },
+        });
+        return null;
+      },
+
       setSetting: (k, v) => {
         const settings = { ...get().settings, [k]: v };
         set({ settings });
@@ -842,6 +869,7 @@ export const useGame = create<Game>()(
         career: s.career,
         dailyContract: s.dailyContract,
         dailyWebChallenge: s.dailyWebChallenge,
+        weeklyCircuit: s.weeklyCircuit,
         rivalRecords: s.rivalRecords,
         earnedBadges: s.earnedBadges,
         yardSeries: s.yardSeries,

@@ -3,6 +3,7 @@ import test from "node:test";
 import { EMPTY_CAREER } from "./migrate.ts";
 import { rollSpider } from "./spiders.ts";
 import { mulberry32 } from "./rng.ts";
+import { makeWeeklyCircuit } from "./weekly-circuit.ts";
 import type { FightOutcome } from "./types.ts";
 
 const data = new Map<string, string>();
@@ -130,6 +131,28 @@ test("a ranked win that crosses a threshold records the new Circuit division on 
     useGame.getState().applyResult(outcome, player);
     assert.equal(useGame.getState().rank, 1);
     assert.deepEqual(outcome.rankUp, { name: "Backyard", blurb: "Kids on the fence, cash in a coffee can." });
+  } finally {
+    useGame.setState(before, true);
+  }
+});
+
+test("a completed weekly Circuit card pays cash and points exactly once", () => {
+  const before = useGame.getState();
+  try {
+    const weeklyCircuit = {
+      ...makeWeeklyCircuit("2026-9-21", 0),
+      huntTarget: 1, trainTarget: 1, winTarget: 1,
+      hunts: 1, trains: 1, wins: 1,
+      reward: 52, points: 16,
+    };
+    useGame.setState({ cash: 10, rank: 0, rankPoints: 35, weeklyCircuit });
+    assert.equal(useGame.getState().claimWeeklyCircuit(), null);
+    assert.equal(useGame.getState().cash, 62);
+    assert.equal(useGame.getState().rankPoints, 51);
+    assert.equal(useGame.getState().rank, 1);
+    assert.equal(useGame.getState().weeklyCircuit.claimed, true);
+    assert.equal(useGame.getState().claimWeeklyCircuit(), "Finish the Circuit card first");
+    assert.equal(useGame.getState().cash, 62);
   } finally {
     useGame.setState(before, true);
   }

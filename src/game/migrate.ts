@@ -1,7 +1,8 @@
 import { ITEMS, RIVALS, SAVE_VERSION, SPECIES, ZERO_STATS } from "./content.ts";
 import { isShipped } from "./catalog.ts";
-import type { CareerLog, FightArchive, FightRound, MoltQuality, PaperClip, SaveState, Spider, Stats, YardSeries } from "./types.ts";
+import type { CareerLog, FightArchive, FightRound, MoltQuality, PaperClip, SaveState, Spider, Stats, WeeklyCircuit, YardSeries } from "./types.ts";
 import { makeDailyContract, makeDailyWebChallenge } from "./contracts.ts";
+import { makeWeeklyCircuit } from "./weekly-circuit.ts";
 import type { MoveId } from "./types.ts";
 
 const EMPTY_CAREER: CareerLog = { hunts: 0, molts: 0, bouts: 0, stripped: 0, clutches: 0, perfectMolts: 0, worldTitles: 0 };
@@ -153,6 +154,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
   const careerRaw = asRecord(p.career);
   const dailyRaw = asRecord(p.dailyContract);
   const webChallengeRaw = asRecord(p.dailyWebChallenge);
+  const weeklyRaw = asRecord(p.weeklyCircuit);
   const rawRivalRecords = asRecord(p.rivalRecords);
   const rivalRecords = Object.fromEntries(
     Object.entries(rawRivalRecords)
@@ -179,6 +181,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
     : null;
   const generatedContract = makeDailyContract(date || "1970-1-1", Math.max(0, num(p.rank)));
   const generatedWebChallenge = makeDailyWebChallenge(date || "1970-1-1", Math.max(0, num(p.rank)));
+  const generatedWeeklyCircuit = makeWeeklyCircuit(str(weeklyRaw.week, date || "1970-1-1"), Math.max(0, num(p.rank)));
   const save = {
     version: SAVE_VERSION,
     season: Math.max(1, num(p.season, 1)),
@@ -229,6 +232,13 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       progress: Math.max(0, Math.min(generatedWebChallenge.target, num(webChallengeRaw.progress))),
       claimed: webChallengeRaw.claimed === true,
     },
+    weeklyCircuit: {
+      ...generatedWeeklyCircuit,
+      hunts: Math.max(0, Math.min(generatedWeeklyCircuit.huntTarget, num(weeklyRaw.hunts))),
+      trains: Math.max(0, Math.min(generatedWeeklyCircuit.trainTarget, num(weeklyRaw.trains))),
+      wins: Math.max(0, Math.min(generatedWeeklyCircuit.winTarget, num(weeklyRaw.wins))),
+      claimed: weeklyRaw.claimed === true,
+    } satisfies WeeklyCircuit,
     rivalRecords,
     earnedBadges: Array.isArray(p.earnedBadges) ? p.earnedBadges.filter((id): id is string => typeof id === "string") : [],
     yardSeries,
