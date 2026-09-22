@@ -141,6 +141,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       claimed: dailyRaw.claimed === true,
     },
     rivalRecords,
+    earnedBadges: Array.isArray(p.earnedBadges) ? p.earnedBadges.filter((id): id is string => typeof id === "string") : [],
   } satisfies SaveState;
   void fromVersion;
   return save;

@@ -226,4 +226,5 @@ export type SaveState = {
   career: CareerLog;
   dailyContract: DailyContract;
   rivalRecords: Record<string, RivalRecord>;
+  earnedBadges: string[];
 };

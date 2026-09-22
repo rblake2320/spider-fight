@@ -32,6 +32,7 @@ import { EMPTY_CAREER, migrateSave } from "./migrate";
 import { advanceContract, canClaimContract, makeDailyContract } from "./contracts";
 import { firstWinTrophy } from "./rewards";
 import { applyBait } from "./bait";
+import { badgeReward, newlyEarnedBadges } from "./badges";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -56,6 +57,7 @@ const emptySave = (): SaveState => ({
   career: { ...EMPTY_CAREER },
   dailyContract: makeDailyContract(todayStamp(), 0),
   rivalRecords: {},
+  earnedBadges: [],
 });
 
 type Session = {
@@ -123,6 +125,17 @@ function takeInv(inv: Record<string, number>, id: string, n = 1): Record<string,
   const next = { ...inv, [id]: have - n };
   if (next[id] === 0) delete next[id];
   return next;
+}
+
+function badgeProgress(
+  save: Pick<SaveState, "earnedBadges" | "rank" | "rankPoints">,
+  progress: Pick<SaveState, "spiders" | "career" | "wins" | "seen">,
+) {
+  const unlocked = newlyEarnedBadges(save.earnedBadges, progress);
+  const rankPoints = save.rankPoints + badgeReward(unlocked);
+  let rank = save.rank;
+  while (rank < RANKS.length - 1 && rankPoints >= RANKS[rank + 1]!.points) rank += 1;
+  return { earnedBadges: [...save.earnedBadges, ...unlocked.map((badge) => badge.id)], rankPoints, rank };
 }
 
 export const useGame = create<Game>()(
@@ -279,16 +292,18 @@ export const useGame = create<Game>()(
         if (s.energy < 16) return "Too tired";
         if (s.injury) return "Injured";
         if (s.trained[stat] >= 18) return "That's as far as drills go. They need a molt.";
-        set({
-          cash: g.cash - cost,
-          dailyContract: advanceContract(g.dailyContract, "train"),
-          spiders: patchSpider(g.spiders, spiderId, (sp) => ({
+        const spiders = patchSpider(g.spiders, spiderId, (sp) => ({
             ...sp,
             trained: { ...sp.trained, [stat]: sp.trained[stat] + 1 },
             energy: sp.energy - 16,
             moltReady: clamp(sp.moltReady + 4, 0, 100),
             xp: sp.xp + 8,
-          })),
+          }));
+        set({
+          cash: g.cash - cost,
+          dailyContract: advanceContract(g.dailyContract, "train"),
+          spiders,
+          ...badgeProgress(g, { spiders, career: g.career, wins: g.wins, seen: g.seen }),
         });
         return null;
       },
@@ -320,10 +335,9 @@ export const useGame = create<Game>()(
         const next = molt(s);
         if (!next) return s.moltReady < 70 ? "Not ready to molt" : "Already at the top";
         const g = get();
-        set({
-          spiders: patchSpider(g.spiders, spiderId, () => next),
-          career: { ...(g.career ?? EMPTY_CAREER), molts: (g.career?.molts ?? 0) + 1 },
-        });
+        const spiders = patchSpider(g.spiders, spiderId, () => next);
+        const career = { ...(g.career ?? EMPTY_CAREER), molts: (g.career?.molts ?? 0) + 1 };
+        set({ spiders, career, ...badgeProgress(g, { spiders, career, wins: g.wins, seen: g.seen }) });
         return null;
       },
 
@@ -376,7 +390,8 @@ export const useGame = create<Game>()(
         const bait = applyBait(g.activeBait, hab.weights);
         if (rng.next() > 0.28 + quality * 0.5 + bait.chanceBonus) return null;
         const caught = rollSpider(rng, { habitat: { ...hab, weights: bait.weights }, rank: g.rank });
-        set({ pendingCatch: caught, seen: g.seen.includes(caught.speciesId) ? g.seen : [...g.seen, caught.speciesId] });
+        const seen = g.seen.includes(caught.speciesId) ? g.seen : [...g.seen, caught.speciesId];
+        set({ pendingCatch: caught, seen, ...badgeProgress(g, { spiders: g.spiders, career: g.career, wins: g.wins, seen }) });
         return caught;
       },
 
@@ -432,7 +447,7 @@ export const useGame = create<Game>()(
         const g = get();
         let cash = g.cash;
         let rankPoints = g.rankPoints;
-        let rank = g.rank;
+        const rank = g.rank;
         let wins = g.wins;
         let losses = g.losses;
         let inventory = { ...g.inventory };
@@ -456,27 +471,33 @@ export const useGame = create<Game>()(
           losses += 1;
           rankPoints = Math.max(0, rankPoints - 6);
         }
-        while (rank < RANKS.length - 1 && rankPoints >= RANKS[rank + 1]!.points) rank += 1;
         const spider = applyXp(finalSpider, out.xp);
         const hpMax = filledHp(spider);
         const patched = { ...spider, hp: clamp(spider.hp, 0, hpMax) };
+        const spiders = patchSpider(g.spiders, patched.id, () => patched);
+        const career = {
+          ...g.career,
+          bouts: g.career.bouts + 1,
+          stripped: g.career.stripped + out.stripped.length,
+        };
+        const badges = badgeProgress(
+          { ...g, rank, rankPoints },
+          { spiders, career, wins, seen: g.seen },
+        );
         set({
           cash,
-          rank,
-          rankPoints,
+          rank: badges.rank,
+          rankPoints: badges.rankPoints,
           wins,
           losses,
           inventory,
-          spiders: patchSpider(g.spiders, patched.id, () => patched),
+          spiders,
           fight: null,
           result: out,
-          career: {
-            ...g.career,
-            bouts: g.career.bouts + 1,
-            stripped: g.career.stripped + out.stripped.length,
-          },
+          career,
           dailyContract: out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },
+          earnedBadges: badges.earnedBadges,
         });
       },
 
@@ -567,6 +588,7 @@ export const useGame = create<Game>()(
         career: s.career,
         dailyContract: s.dailyContract,
         rivalRecords: s.rivalRecords,
+        earnedBadges: s.earnedBadges,
       }),
     },
   ),

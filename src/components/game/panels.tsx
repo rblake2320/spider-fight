@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ITEMS, ITEM_LIST, RANKS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
 import { BUILD, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
+import { BADGES } from "@/game/badges";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { canFight, effective, molt, portraitOf, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
 import type { GearSlot, ItemKind, Stats } from "@/game/types";
@@ -449,6 +450,7 @@ export function CareerView() {
   const spiders = useGame((s) => s.spiders);
   const season = useGame((s) => s.season);
   const career = useGame((s) => s.career);
+  const earnedBadges = useGame((s) => s.earnedBadges);
   const rollYear = useGame((s) => s.rollYear);
   const [msg, setMsg] = useState<string | null>(null);
   const next = RANKS[rank + 1];
@@ -491,6 +493,25 @@ export function CareerView() {
           {career?.stripped ?? 0} wraps walked
         </p>
       </div>
+
+      <section className="rounded-xl border border-line bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-dust">Web marks</p>
+        <p className="mt-1 text-xs text-mute">Each mark grants its listed circuit points once.</p>
+        <ol className="mt-2 space-y-2">
+          {BADGES.map((badge) => {
+            const earned = earnedBadges.includes(badge.id);
+            return (
+              <li key={badge.id} className={cn("rounded-lg bg-panel p-2", !earned && "opacity-55")}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-medium">{earned ? "✓ " : "○ "}{badge.name}</span>
+                  <span className="tabular text-xs text-moss">+{badge.reward} pts</span>
+                </div>
+                <p className="mt-0.5 text-xs text-dust">{badge.detail}</p>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
 
       <section>
         <p className="mb-2 text-xs uppercase tracking-widest text-dust">Seasons</p>
