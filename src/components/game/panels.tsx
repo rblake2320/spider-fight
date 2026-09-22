@@ -588,6 +588,8 @@ export function CareerView() {
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
   const current = SEASONS.find((s) => s.id === SHIPPED_SEASON) ?? SEASONS[0]!;
+  const fieldGuide = SPECIES_LIST.filter(isShipped);
+  const foundSpecies = fieldGuide.filter((species) => seen.includes(species.id)).length;
 
   useEffect(() => {
     let alive = true;
@@ -775,25 +777,23 @@ export function CareerView() {
 
       <section>
         <p className="mb-2 text-xs uppercase tracking-widest text-dust">Almanac</p>
-        <p className="mb-2 text-sm text-dust">{seen.length} species logged</p>
+        <p className="mb-2 text-sm text-dust">{foundSpecies}/{fieldGuide.length} species logged · each reveals a new web answer.</p>
         <div className="grid grid-cols-2 gap-2">
-          {SPECIES_LIST.map((sp) => {
+          {fieldGuide.map((sp) => {
             const known = seen.includes(sp.id);
-            const open = isShipped(sp);
             return (
               <div
                 key={sp.id}
                 className={cn("rounded-xl border border-line bg-raised p-2", !known && "opacity-60")}
               >
-                {known && open ? (
+                {known ? (
                   <img src={Object.values(sp.portraits)[0]} alt="" className="mb-2 h-16 w-full rounded object-cover" />
                 ) : (
                   <div className="mb-2 h-16 rounded bg-ink" />
                 )}
-                <p className="truncate text-sm font-medium">{open ? (known ? sp.common : "???") : sp.common}</p>
-                <p className="text-xs text-mute">
-                  {open ? (known ? sp.latin : "Unlogged") : seasonName(sp.season ?? 2)}
-                </p>
+                <p className="truncate text-sm font-medium">{known ? sp.common : "???"}</p>
+                <p className="truncate text-xs text-moss">{known ? `${sp.web.name} · ${MOVES[sp.web.move].name}` : "Unlogged"}</p>
+                {known ? <p className="mt-1 text-[11px] text-dust">{sp.web.ability}</p> : null}
               </div>
             );
           })}
