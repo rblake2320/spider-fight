@@ -3,6 +3,7 @@ import { bobPos, stepFight, type StickFight } from "@/game/combat";
 import { bayLook } from "@/game/bay";
 import { hideSrcOf } from "@/game/hides";
 import { drawParticles, drawSilk, drawSpider, drawStick, silkTaut } from "@/game/spider-draw";
+import { millLookOf } from "@/game/mill-look";
 import { tonightSky } from "@/game/sky";
 import { useGame } from "@/game/store";
 
@@ -137,12 +138,14 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
       const scale = Math.min(w, h) / 128;
       const plumpP = Math.min(1, p.stats.size / 16);
       const plumpE = Math.min(1, e.stats.size / 16);
+      const millP = millLookOf(p.spider.speciesId, p.spider.sex);
+      const millE = millLookOf(e.spider.speciesId, e.spider.sex);
 
       drawSpider(ctx, {
         x: px,
         y: py,
         angle: p.angle,
-        scale: scale * (0.88 + plumpP * 0.28),
+        scale: scale * millP.scale * (0.9 + plumpP * 0.18),
         facing: 1,
         colors: p.colors,
         pose: p.pose,
@@ -152,9 +155,9 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         plump: plumpP,
         training: trainedP,
         hurtFlash: p.hurtFlash,
-        mark: p.spider.speciesId === "widow" ? "hourglass" : undefined,
         gear: p.spider.gear,
         look: lookP,
+        mill: millP,
         brood: Boolean(p.spider.brood?.fightsLeft),
         hatchlings: p.spider.hatchlings,
         hideSrc: hideSrcOf(p.spider, hides),
@@ -164,7 +167,7 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         x: ex,
         y: ey,
         angle: e.angle,
-        scale: scale * (0.88 + plumpE * 0.28),
+        scale: scale * millE.scale * (0.9 + plumpE * 0.18),
         facing: -1,
         colors: e.colors,
         pose: e.pose,
@@ -174,9 +177,9 @@ export function FightCanvas({ fight, className, reduceMotion = false }: { fight:
         plump: plumpE,
         training: trainedE,
         hurtFlash: e.hurtFlash,
-        mark: e.spider.speciesId === "widow" ? "hourglass" : undefined,
         gear: e.spider.gear,
         look: lookE,
+        mill: millE,
         brood: Boolean(e.spider.brood?.fightsLeft),
         hatchlings: e.spider.hatchlings,
         hideSrc: hideSrcOf(e.spider, hides),

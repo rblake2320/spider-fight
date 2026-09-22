@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { millLookOf } from "./mill-look.ts";
 import { poseBlend, poseLegs, silkTaut } from "./spider-draw.ts";
 
 test("pose blends ease in instead of snapping", () => {
@@ -29,4 +30,11 @@ test("a KO curls the mill instead of matching idle", () => {
 test("silk goes slack on a drop and stays taut on a still mill", () => {
   assert.ok(silkTaut(0, 0, "idle") > 0.9);
   assert.ok(silkTaut(0.8, 3, "drop") < silkTaut(0, 0, "idle"));
+});
+
+test("a huntsman stands wider than a jumper", () => {
+  const huntsman = poseLegs("idle", 0, millLookOf("huntsman"));
+  const jumper = poseLegs("idle", 0, millLookOf("jumper"));
+  const span = (legs: typeof huntsman) => legs.reduce((sum, leg) => sum + Math.abs(leg.sweep), 0);
+  assert.ok(span(huntsman) > span(jumper) * 1.5);
 });

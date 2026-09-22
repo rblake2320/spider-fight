@@ -3,6 +3,7 @@ import { SPECIES } from "@/game/content";
 import { bayLook } from "@/game/bay";
 import { hideSrcOf } from "@/game/hides";
 import { drawSilk, drawSpider } from "@/game/spider-draw";
+import { millLookOf } from "@/game/mill-look";
 import { colorsOf, effective, trainingTotal } from "@/game/spiders";
 import { useGame } from "@/game/store";
 import type { Spider } from "@/game/types";
@@ -35,13 +36,14 @@ export function SpiderBuildCanvas({ spider }: { spider: Spider }) {
       const training = trainingTotal(spider);
       const stats = effective(spider);
       const look = bayLook(spider);
+      const mill = millLookOf(spider.speciesId, spider.sex);
       const web = SPECIES[spider.speciesId]?.web;
       drawSilk(ctx, width * 0.16, 12, width * 0.5, height * 0.7, 0.75, web?.style ?? "orb", training, look.silk, look.sticky);
       drawSpider(ctx, {
         x: width * 0.5,
         y: height * 0.75,
         angle: 0,
-        scale: 2.3 + Math.min(training, 24) * 0.035,
+        scale: (2.3 + Math.min(training, 24) * 0.035) * mill.scale,
         facing: 1,
         colors: colorsOf(spider),
         pose: "idle",
@@ -49,9 +51,9 @@ export function SpiderBuildCanvas({ spider }: { spider: Spider }) {
         plump: Math.min(1, stats.size / 16),
         training,
         hurtFlash: 0,
-        mark: spider.speciesId === "widow" ? "hourglass" : undefined,
         gear: spider.gear,
         look,
+        mill,
         brood: Boolean(spider.brood?.fightsLeft),
         hatchlings: spider.hatchlings,
         hideSrc: hideSrcOf(spider, hides),

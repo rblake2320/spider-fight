@@ -1,5 +1,6 @@
 import type { Gear, MorphColors, MoveId, WebStyle } from "./types";
 import type { BayLook } from "./bay";
+import { millLookOf, type MillLook } from "./mill-look";
 
 export type DrawPose = MoveId | "idle" | "hurt" | "ko" | "intro";
 
@@ -25,6 +26,7 @@ export type SpiderDraw = {
   /** Cooked hide picture. Swings and poses with the mill. */
   hideSrc?: string;
   spin?: number;
+  mill?: MillLook;
 };
 
 function lerp(a: number, b: number, t: number): number {
@@ -39,7 +41,7 @@ function shade(hex: string, amt: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-type Leg = { lift: number; sweep: number; bend: number; z: number };
+type Leg = { lift: number; sweep: number; bend: number; z: number; pair: number };
 
 export function poseBlend(poseT: number, pose: DrawPose): number {
   const dur = pose === "hurt" || pose === "ko" ? 0.1 : pose === "feint" ? 0.2 : pose === "intro" ? 0.28 : 0.14;
@@ -53,20 +55,23 @@ function mixLeg(a: Leg, b: Leg, t: number): Leg {
     sweep: lerp(a.sweep, b.sweep, t),
     bend: lerp(a.bend, b.bend, t),
     z: t < 0.5 ? a.z : b.z,
+    pair: b.pair,
   };
 }
 
-export function poseLegs(pose: DrawPose, t: number): Leg[] {
+export function poseLegs(pose: DrawPose, t: number, mill?: MillLook): Leg[] {
+  const spread = mill?.legSpread ?? 1;
   const idle = (i: number): Leg => {
     const side = i < 4 ? -1 : 1;
     const pair = i % 4;
-    const sweep0 = [-1.05, -0.42, 0.48, 1.12][pair]!;
+    const sweep0 = [-1.05, -0.42, 0.48, 1.12][pair]! * spread;
     const gait = Math.sin(t * 3.4 + i * 0.95) * 0.055;
     return {
       lift: 0.22 + pair * 0.045 + gait,
       sweep: sweep0 * side + Math.sin(t * 1.6 + i) * 0.03,
       bend: 0.78 + Math.sin(t * 2.2 + i) * 0.05,
       z: pair === 0 || pair === 3 ? 1 : 0,
+      pair,
     };
   };
   const base = Array.from({ length: 8 }, (_, i) => idle(i));
@@ -139,12 +144,12 @@ export function poseLegs(pose: DrawPose, t: number): Leg[] {
   return base;
 }
 
-function posedLegs(pose: DrawPose, prev: DrawPose | undefined, poseT: number, t: number): Leg[] {
-  const next = poseLegs(pose, t);
+function posedLegs(pose: DrawPose, prev: DrawPose | undefined, poseT: number, t: number, mill?: MillLook): Leg[] {
+  const next = poseLegs(pose, t, mill);
   if (!prev || prev === pose) return next;
   const u = poseBlend(poseT, pose);
   if (u >= 1) return next;
-  const from = poseLegs(prev, t);
+  const from = poseLegs(prev, t, mill);
   return next.map((leg, i) => mixLeg(from[i]!, leg, u));
 }
 
@@ -157,14 +162,15 @@ function drawLeg(
   scale: number,
   facing: number,
   look?: BayLook,
+  mill?: MillLook,
 ): void {
-  const thick = look?.legs ?? 1;
-  const long = look?.length ?? 1;
-  const len1 = 22 * scale * long;
-  const len2 = 20 * scale * long;
+  const thick = (look?.legs ?? 1) * (mill?.legThick ?? 1);
+  const long = (look?.length ?? 1) * (mill?.legLen ?? 1);
+  const crab = mill && (mill.abdShape === "crab" || mill.eyes === "huntsman") && leg.pair <= 1 ? 1.32 : 1;
+  const len1 = 22 * scale * long * crab;
+  const len2 = 20 * scale * long * crab;
   const len3 = 16 * scale * long;
   const ang0 = -Math.PI / 2 + leg.sweep * facing + (facing < 0 ? Math.PI : 0);
-  // origin at cephalothorax side
   const x0 = originX;
   const y0 = originY;
   const a1 = ang0 + (facing > 0 ? -leg.lift : leg.lift);
@@ -198,6 +204,57 @@ function drawLeg(
     ctx.lineWidth = s[4] * 0.35;
     ctx.stroke();
   });
+  if ((mill?.bands ?? 0) > 0.4) {
+    ctx.strokeStyle = colors.legLight;
+    ctx.lineWidth = 1.1 * scale * thick;
+    ctx.globalAlpha = 0.7;
+    for (const [ax, ay, bx, by] of [
+      [x0, y0, x1, y1],
+      [x1, y1, x2, y2],
+    ] as const) {
+      const px = ax + (bx - ax) * 0.42;
+      const py = ay + (by - ay) * 0.42;
+      ctx.beginPath();
+      ctx.arc(px, py, 1.35 * scale * thick, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  if ((mill?.hair ?? 0) > 0.08) {
+    ctx.strokeStyle = shade(colors.legLight, 18);
+    ctx.lineWidth = 0.45 * scale;
+    ctx.globalAlpha = 0.4 + mill!.hair * 0.4;
+    const ticks = 2 + Math.floor(mill!.hair * 3);
+    for (const [ax, ay, bx, by] of segs) {
+      for (let i = 1; i <= ticks; i++) {
+        const u = i / (ticks + 1);
+        const px = ax + (bx - ax) * u;
+        const py = ay + (by - ay) * u;
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = (-dy / len) * 3.2 * scale * mill!.hair;
+        const ny = (dx / len) * 3.2 * scale * mill!.hair;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + nx, py + ny);
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+  if (mill?.tufts) {
+    ctx.strokeStyle = "#1a1208";
+    ctx.lineWidth = 1.05 * scale;
+    ctx.lineCap = "round";
+    for (let i = 0; i < 5; i++) {
+      const a = a1 + (i - 2) * 0.38;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 + Math.cos(a) * 5.2 * scale, y1 + Math.sin(a) * 5.2 * scale);
+      ctx.stroke();
+    }
+  }
   // tarsus tip + claw
   ctx.beginPath();
   ctx.arc(x3, y3, 0.9 * scale, 0, Math.PI * 2);
@@ -220,6 +277,372 @@ function drawLeg(
   }
 }
 
+function abdomenPath(ctx: CanvasRenderingContext2D, shape: MillLook["abdShape"], w: number, h: number): void {
+  ctx.beginPath();
+  if (shape === "triangle") {
+    ctx.moveTo(0, -h);
+    ctx.lineTo(w * 0.95, h * 0.42);
+    ctx.lineTo(0, h);
+    ctx.lineTo(-w * 0.95, h * 0.42);
+    ctx.closePath();
+  } else if (shape === "crab") {
+    ctx.ellipse(0, 0, w * 1.32, h * 0.62, 0, 0, Math.PI * 2);
+  } else if (shape === "star") {
+    const n = 8;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+      const r = i % 2 === 0 ? Math.max(w, h) : Math.min(w, h) * 0.72;
+      const x = Math.cos(a) * r;
+      const y = Math.sin(a) * r * (h / w);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  } else if (shape === "long") {
+    ctx.ellipse(0, 0, w * 0.62, h * 1.28, 0, 0, Math.PI * 2);
+  } else if (shape === "bulb") {
+    ctx.ellipse(0, h * 0.04, w * 1.08, h * 1.02, 0, 0, Math.PI * 2);
+  } else if (shape === "flat") {
+    ctx.ellipse(0, 0, w * 1.18, h * 0.68, 0, 0, Math.PI * 2);
+  } else if (shape === "drop") {
+    ctx.ellipse(0, h * 0.08, w * 0.9, h * 0.92, 0, 0, Math.PI * 2);
+  } else {
+    ctx.ellipse(0, 0, w, h, 0, 0, Math.PI * 2);
+  }
+}
+
+function paintAbdMark(
+  ctx: CanvasRenderingContext2D,
+  mill: MillLook,
+  colors: MorphColors,
+  abdW: number,
+  abdH: number,
+  scale: number,
+): void {
+  const mark = mill.mark;
+  if (mark === "hourglass") {
+    ctx.fillStyle = colors.folium;
+    ctx.beginPath();
+    ctx.moveTo(0, -abdH * 0.42);
+    ctx.lineTo(abdW * 0.34, -abdH * 0.04);
+    ctx.lineTo(-abdW * 0.34, -abdH * 0.04);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, abdH * 0.48);
+    ctx.lineTo(abdW * 0.34, abdH * 0.1);
+    ctx.lineTo(-abdW * 0.34, abdH * 0.1);
+    ctx.closePath();
+    ctx.fill();
+    return;
+  }
+  if (mark === "cross") {
+    ctx.strokeStyle = colors.speckle;
+    ctx.lineWidth = 2.2 * scale;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, -abdH * 0.55);
+    ctx.lineTo(0, abdH * 0.55);
+    ctx.moveTo(-abdW * 0.38, -abdH * 0.12);
+    ctx.lineTo(abdW * 0.38, -abdH * 0.12);
+    ctx.stroke();
+    return;
+  }
+  if (mark === "clover") {
+    ctx.fillStyle = `${colors.folium}dd`;
+    for (const [x, y] of [
+      [0, -abdH * 0.28],
+      [-abdW * 0.28, 0],
+      [abdW * 0.28, 0],
+      [0, abdH * 0.28],
+    ] as const) {
+      ctx.beginPath();
+      ctx.ellipse(x, y, abdW * 0.22, abdH * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+  if (mark === "catface") {
+    ctx.fillStyle = colors.folium;
+    ctx.beginPath();
+    ctx.moveTo(-abdW * 0.22, -abdH * 0.72);
+    ctx.lineTo(-abdW * 0.02, -abdH * 0.18);
+    ctx.lineTo(-abdW * 0.42, -abdH * 0.12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(abdW * 0.22, -abdH * 0.72);
+    ctx.lineTo(abdW * 0.02, -abdH * 0.18);
+    ctx.lineTo(abdW * 0.42, -abdH * 0.12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = `${colors.folium}aa`;
+    ctx.beginPath();
+    ctx.ellipse(0, abdH * 0.12, abdW * 0.22, abdH * 0.28, 0, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  if (mark === "marble") {
+    ctx.fillStyle = `${colors.folium}cc`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, abdW * 0.42, abdH * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = colors.speckle;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.ellipse(-abdW * 0.18, -abdH * 0.2, abdW * 0.18, abdH * 0.16, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    return;
+  }
+  if (mark === "arrow") {
+    ctx.fillStyle = `${colors.folium}bb`;
+    ctx.beginPath();
+    ctx.moveTo(0, -abdH * 0.7);
+    ctx.lineTo(abdW * 0.28, abdH * 0.35);
+    ctx.lineTo(0, abdH * 0.15);
+    ctx.lineTo(-abdW * 0.28, abdH * 0.35);
+    ctx.closePath();
+    ctx.fill();
+    return;
+  }
+  if (mark === "spines") {
+    ctx.fillStyle = colors.folium;
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI - 0.2;
+      const x = Math.cos(a) * abdW * 1.15;
+      const y = Math.sin(a) * abdH * 0.15 - abdH * 0.05;
+      ctx.beginPath();
+      ctx.moveTo(x * 0.4, y);
+      ctx.lineTo(x, y - abdH * 0.55);
+      ctx.lineTo(x * 0.55, y + abdH * 0.08);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = colors.speckle;
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.arc(((i - 2) / 2.4) * abdW * 0.7, 0, 1.4 * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+  if (mark === "star") {
+    ctx.fillStyle = colors.speckle;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+      const r = i % 2 === 0 ? abdW * 0.42 : abdW * 0.16;
+      const x = Math.cos(a) * r;
+      const y = Math.sin(a) * r * (abdH / abdW);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    return;
+  }
+  if (mark === "bands") {
+    ctx.strokeStyle = colors.folium;
+    ctx.lineWidth = 2.4 * scale;
+    ctx.globalAlpha = 0.8;
+    for (const y of [-0.38, -0.08, 0.22, 0.48]) {
+      ctx.beginPath();
+      ctx.moveTo(-abdW * 0.72, abdH * y);
+      ctx.quadraticCurveTo(0, abdH * (y + 0.06), abdW * 0.72, abdH * y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
+  if (mark === "stripe") {
+    ctx.fillStyle = `${colors.folium}cc`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, abdW * 0.18, abdH * 0.72, 0, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  if (mark === "chevron") {
+    ctx.fillStyle = colors.speckle;
+    ctx.beginPath();
+    ctx.moveTo(0, -abdH * 0.35);
+    ctx.lineTo(abdW * 0.38, abdH * 0.05);
+    ctx.lineTo(0, -abdH * 0.08);
+    ctx.lineTo(-abdW * 0.38, abdH * 0.05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, abdH * 0.32, abdW * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  if (mark === "spots") {
+    ctx.fillStyle = colors.speckle;
+    ctx.globalAlpha = 0.7;
+    for (const [x, y, r] of [
+      [0, -0.2, 0.18],
+      [-0.32, 0.15, 0.14],
+      [0.32, 0.15, 0.14],
+      [0, 0.42, 0.12],
+    ] as const) {
+      ctx.beginPath();
+      ctx.ellipse(abdW * x, abdH * y, abdW * r, abdH * r * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
+  if (mark === "debris") {
+    ctx.fillStyle = shade(colors.folium, -10);
+    for (const [x, y, rw, rh, rot] of [
+      [0, -0.35, 0.22, 0.18, -0.4],
+      [-0.22, 0.05, 0.18, 0.22, 0.5],
+      [0.2, 0.22, 0.16, 0.2, -0.2],
+      [0, 0.48, 0.28, 0.12, 0.1],
+    ] as const) {
+      ctx.beginPath();
+      ctx.ellipse(abdW * x, abdH * y, abdW * rw, abdH * rh, rot, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+  if (mark === "none" || mark === "violin" || mark === "knobs") return;
+  ctx.beginPath();
+  ctx.moveTo(0, -abdH * 0.72);
+  ctx.bezierCurveTo(abdW * 0.28, -abdH * 0.2, abdW * 0.22, abdH * 0.3, 0, abdH * 0.7);
+  ctx.bezierCurveTo(-abdW * 0.22, abdH * 0.3, -abdW * 0.28, -abdH * 0.2, 0, -abdH * 0.72);
+  ctx.fillStyle = `${colors.folium}cc`;
+  ctx.fill();
+}
+
+function paintEyes(
+  ctx: CanvasRenderingContext2D,
+  mill: MillLook,
+  colors: MorphColors,
+  cephW: number,
+  cephH: number,
+  scale: number,
+  facing: number,
+  pose: DrawPose,
+  look?: BayLook,
+): void {
+  ctx.fillStyle = "#1a100c";
+  const set = mill.eyes;
+  if (set === "jumper") {
+    ctx.beginPath();
+    ctx.arc(0.42 * cephW * facing, -0.08 * cephH, 2.4 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0.12 * cephW * facing, -0.22 * cephH, 1.6 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = colors.speckle;
+    ctx.beginPath();
+    ctx.arc(0.46 * cephW * facing, -0.12 * cephH, 1.15 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,240,220,0.9)";
+    ctx.beginPath();
+    ctx.arc(0.5 * cephW * facing, -0.16 * cephH, 0.45 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#1a100c";
+    ctx.beginPath();
+    ctx.arc(-0.15 * cephW * facing, 0.18 * cephH, 0.7 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0.55 * cephW * facing, 0.22 * cephH, 0.55 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (set === "wolf") {
+    for (const [ex, ey, r] of [
+      [0.38, -0.28, 0.85],
+      [0.18, -0.38, 0.7],
+      [0.52, -0.08, 0.7],
+      [0.05, -0.18, 0.55],
+      [-0.18, 0.12, 0.5],
+      [0.42, 0.22, 0.5],
+    ] as const) {
+      ctx.beginPath();
+      ctx.arc(ex * cephW * facing, ey * cephH, r * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (set === "recluse") {
+    for (const [ex, ey] of [
+      [0.42, -0.12],
+      [0.22, -0.28],
+      [0.08, -0.08],
+      [-0.12, 0.05],
+      [0.55, 0.12],
+      [0.32, 0.22],
+    ] as const) {
+      ctx.beginPath();
+      ctx.arc(ex * cephW * facing, ey * cephH, 0.55 * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (set === "huntsman") {
+    for (const [ex, ey, r] of [
+      [0.48, -0.12, 1.15],
+      [0.22, -0.32, 0.85],
+      [0.08, -0.08, 0.55],
+      [-0.12, 0.1, 0.45],
+    ] as const) {
+      ctx.beginPath();
+      ctx.arc(ex * cephW * facing, ey * cephH, r * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (set === "tarantula") {
+    for (const [ex, ey] of [
+      [0.12, -0.18],
+      [0.28, -0.08],
+      [0.05, 0.05],
+      [-0.08, -0.05],
+      [0.22, 0.12],
+      [0.38, 0.02],
+    ] as const) {
+      ctx.beginPath();
+      ctx.arc(ex * cephW * facing, ey * cephH, 0.48 * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else {
+    for (const [ex, ey] of [
+      [0.35, -0.15],
+      [0.15, -0.35],
+      [0.45, 0.1],
+      [-0.05, -0.2],
+    ] as const) {
+      ctx.beginPath();
+      ctx.arc(ex * cephW * facing, ey * cephH, 0.7 * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  const eyeGrade = look?.eye ?? 0;
+  if (eyeGrade > 0) {
+    ctx.beginPath();
+    ctx.arc(0.42 * cephW * facing, -0.22 * cephH, 1.55 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = eyeGrade >= 2 ? "#6a1010" : "#3a2a10";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0.42 * cephW * facing, -0.22 * cephH, 1.05 * scale, 0, Math.PI * 2);
+    ctx.fillStyle = eyeGrade >= 2 ? "#e03828" : "#e8a030";
+    ctx.fill();
+    ctx.fillStyle = eyeGrade >= 2 ? "rgba(255, 180, 140, 0.95)" : "rgba(255, 236, 180, 0.95)";
+    ctx.beginPath();
+    ctx.arc(0.46 * cephW * facing, -0.26 * cephH, 0.4 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    if (eyeGrade >= 2 && (pose === "lunge" || pose === "grapple")) {
+      ctx.strokeStyle = "rgba(255, 70, 40, 0.75)";
+      ctx.lineWidth = 1.15 * scale;
+      ctx.beginPath();
+      ctx.moveTo(cephW * 0.58 * facing, -cephH * 0.22);
+      ctx.lineTo(cephW * 2.6 * facing, -cephH * 0.4);
+      ctx.stroke();
+    }
+  } else if (set === "orb") {
+    ctx.fillStyle = "rgba(255,220,180,0.7)";
+    ctx.beginPath();
+    ctx.arc(0.38 * cephW * facing, -0.2 * cephH, 0.28 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 function drawBody(
   ctx: CanvasRenderingContext2D,
   colors: MorphColors,
@@ -227,18 +650,18 @@ function drawBody(
   scale: number,
   facing: number,
   pose: DrawPose,
-  mark: "hourglass" | undefined,
+  mill: MillLook,
   training: number,
   look: BayLook | undefined,
   t: number,
 ): void {
   const edge = Math.min(1, training / 36);
   const bodyPlump = plump + (look?.plump ?? 0);
-  const abdW = 16 * scale * lerp(0.85, 1.25, bodyPlump) * (1 + edge * 0.08);
-  const abdH = 20 * scale * lerp(0.9, 1.2, bodyPlump) * (1 + edge * 0.06);
-  const cephW = 8.5 * scale * (1 + edge * 0.14);
-  const cephH = 10 * scale * (1 + edge * 0.12);
-  const fangMul = look?.fangs ?? 1;
+  const abdW = 16 * scale * lerp(0.85, 1.25, bodyPlump) * (1 + edge * 0.08) * mill.abdW;
+  const abdH = 20 * scale * lerp(0.9, 1.2, bodyPlump) * (1 + edge * 0.06) * mill.abdH;
+  const cephW = 8.5 * scale * (1 + edge * 0.14) * mill.cephW;
+  const cephH = 10 * scale * (1 + edge * 0.12) * mill.cephH;
+  const fangMul = (look?.fangs ?? 1) * mill.fangs;
   let lean = 0;
   let stretch = 1;
   let drop = 0;
@@ -273,48 +696,39 @@ function drawBody(
   ctx.rotate(lean * facing);
   ctx.scale(1 / Math.sqrt(stretch), stretch);
 
-  // abdomen
   ctx.save();
   ctx.translate(-2 * scale * facing, 2 * scale);
   ctx.rotate(-0.15 * facing);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, abdW, abdH, 0, 0, Math.PI * 2);
+  abdomenPath(ctx, mill.abdShape, abdW, abdH);
   const ag = ctx.createRadialGradient(-abdW * 0.3, -abdH * 0.3, 2, 0, 0, abdH);
-  ag.addColorStop(0, colors.abdomenLight);
+  ag.addColorStop(0, mill.shiny > 0.4 ? shade(colors.abdomenLight, 40) : colors.abdomenLight);
   ag.addColorStop(0.55, colors.abdomen);
   ag.addColorStop(1, shade(colors.abdomen, -30));
   ctx.fillStyle = ag;
   ctx.fill();
+  if (mill.shiny > 0.2) {
+    ctx.fillStyle = `rgba(255,255,255,${0.08 + mill.shiny * 0.18})`;
+    ctx.beginPath();
+    ctx.ellipse(-abdW * 0.22, -abdH * 0.28, abdW * 0.32, abdH * 0.18, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.strokeStyle = shade(colors.folium, -10);
   ctx.lineWidth = 0.7 * scale;
   ctx.stroke();
 
-  // folium leaf
-  if (mark !== "hourglass") {
-    ctx.beginPath();
-    ctx.moveTo(0, -abdH * 0.72);
-    ctx.bezierCurveTo(abdW * 0.28, -abdH * 0.2, abdW * 0.22, abdH * 0.3, 0, abdH * 0.7);
-    ctx.bezierCurveTo(-abdW * 0.22, abdH * 0.3, -abdW * 0.28, -abdH * 0.2, 0, -abdH * 0.72);
-    ctx.fillStyle = `${colors.folium}cc`;
-    ctx.fill();
-  } else {
-    ctx.fillStyle = "#e02020";
-    ctx.beginPath();
-    ctx.moveTo(0, -abdH * 0.42);
-    ctx.lineTo(abdW * 0.34, -abdH * 0.04);
-    ctx.lineTo(-abdW * 0.34, -abdH * 0.04);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(0, abdH * 0.48);
-    ctx.lineTo(abdW * 0.34, abdH * 0.1);
-    ctx.lineTo(-abdW * 0.34, abdH * 0.1);
-    ctx.closePath();
-    ctx.fill();
+  const skin = primedHide(mill.skin);
+  if (skin) {
+    ctx.save();
+    abdomenPath(ctx, mill.abdShape, abdW, abdH);
+    ctx.clip();
+    ctx.globalAlpha = 0.82;
+    ctx.drawImage(skin, -abdW * 1.05, -abdH * 1.05, abdW * 2.1, abdH * 2.1);
+    ctx.restore();
   }
 
-  // speckles
-  if (mark !== "hourglass") {
+  paintAbdMark(ctx, mill, colors, abdW, abdH, scale);
+
+  if (mill.mark === "folium" || mill.mark === "marble") {
     ctx.fillStyle = colors.speckle;
     for (let i = 0; i < 7; i++) {
       const a = (i / 7) * Math.PI * 2;
@@ -328,7 +742,6 @@ function drawBody(
     ctx.globalAlpha = 1;
   }
 
-  // spinnerets
   ctx.beginPath();
   ctx.ellipse(0, abdH * 0.82, 2.2 * scale, 1.6 * scale, 0, 0, Math.PI * 2);
   ctx.fillStyle = shade(colors.cephalothorax, 10);
@@ -356,7 +769,6 @@ function drawBody(
   }
   ctx.restore();
 
-  // cephalothorax
   ctx.save();
   ctx.translate(abdW * 0.55 * facing, -abdH * 0.15);
   ctx.beginPath();
@@ -367,7 +779,45 @@ function drawBody(
   ctx.fillStyle = cg;
   ctx.fill();
 
-  // palps
+  if (mill.mark === "violin") {
+    ctx.fillStyle = colors.folium;
+    ctx.beginPath();
+    ctx.moveTo(0.12 * cephW * facing, -cephH * 0.55);
+    ctx.quadraticCurveTo(0.02 * cephW * facing, -cephH * 0.05, 0.18 * cephW * facing, cephH * 0.45);
+    ctx.lineTo(-0.02 * cephW * facing, cephH * 0.48);
+    ctx.quadraticCurveTo(-0.12 * cephW * facing, 0, 0.02 * cephW * facing, -cephH * 0.52);
+    ctx.closePath();
+    ctx.fill();
+  }
+  if (mill.mark === "knobs") {
+    ctx.fillStyle = shade(colors.cephalothorax, 18);
+    ctx.beginPath();
+    ctx.ellipse(-cephW * 0.42, -cephH * 0.55, 2.8 * scale, 2.2 * scale, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cephW * 0.18, -cephH * 0.62, 2.8 * scale, 2.2 * scale, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (mill.mark === "stripe" && mill.eyes === "wolf") {
+    ctx.fillStyle = `${colors.folium}bb`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, cephW * 0.18, cephH * 0.78, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (mill.hair > 0.4) {
+    ctx.strokeStyle = shade(colors.legLight, 10);
+    ctx.lineWidth = 0.45 * scale;
+    ctx.globalAlpha = 0.45;
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * cephW * 0.7, Math.sin(a) * cephH * 0.7);
+      ctx.lineTo(Math.cos(a) * cephW * 1.15, Math.sin(a) * cephH * 1.15);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
   ctx.strokeStyle = colors.legDark;
   ctx.lineWidth = 1.4 * scale;
   ctx.beginPath();
@@ -379,7 +829,6 @@ function drawBody(
   ctx.quadraticCurveTo(cephW * 0.8 * facing, cephH * 0.9, cephW * 1.05 * facing, cephH * 0.4);
   ctx.stroke();
 
-  // chelicerae
   ctx.fillStyle = colors.fang;
   ctx.beginPath();
   ctx.ellipse(cephW * 0.7 * facing, cephH * 0.55, 1.4 * scale * fangMul, 2.2 * scale * fangMul, 0.4 * facing, 0, Math.PI * 2);
@@ -389,46 +838,7 @@ function drawBody(
   ctx.ellipse(cephW * 0.95 * facing, cephH * 0.72, 0.7 * scale * fangMul, 1.4 * scale * fangMul, 0.5 * facing, 0, Math.PI * 2);
   ctx.fill();
 
-  // eyes
-  ctx.fillStyle = "#1a100c";
-  for (const [ex, ey] of [
-    [0.35, -0.15],
-    [0.15, -0.35],
-    [0.45, 0.1],
-    [-0.05, -0.2],
-  ] as const) {
-    ctx.beginPath();
-    ctx.arc(ex * cephW * facing, ey * cephH, 0.7 * scale, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  const eyeGrade = look?.eye ?? 0;
-  if (eyeGrade > 0) {
-    ctx.beginPath();
-    ctx.arc(0.42 * cephW * facing, -0.22 * cephH, 1.55 * scale, 0, Math.PI * 2);
-    ctx.fillStyle = eyeGrade >= 2 ? "#6a1010" : "#3a2a10";
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(0.42 * cephW * facing, -0.22 * cephH, 1.05 * scale, 0, Math.PI * 2);
-    ctx.fillStyle = eyeGrade >= 2 ? "#e03828" : "#e8a030";
-    ctx.fill();
-    ctx.fillStyle = eyeGrade >= 2 ? "rgba(255, 180, 140, 0.95)" : "rgba(255, 236, 180, 0.95)";
-    ctx.beginPath();
-    ctx.arc(0.46 * cephW * facing, -0.26 * cephH, 0.4 * scale, 0, Math.PI * 2);
-    ctx.fill();
-    if (eyeGrade >= 2 && (pose === "lunge" || pose === "grapple")) {
-      ctx.strokeStyle = "rgba(255, 70, 40, 0.75)";
-      ctx.lineWidth = 1.15 * scale;
-      ctx.beginPath();
-      ctx.moveTo(cephW * 0.58 * facing, -cephH * 0.22);
-      ctx.lineTo(cephW * 2.6 * facing, -cephH * 0.4);
-      ctx.stroke();
-    }
-  } else {
-    ctx.fillStyle = "rgba(255,220,180,0.7)";
-    ctx.beginPath();
-    ctx.arc(0.38 * cephW * facing, -0.2 * cephH, 0.28 * scale, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  paintEyes(ctx, mill, colors, cephW, cephH, scale, facing, pose, look);
   ctx.restore();
   ctx.restore();
 }
@@ -635,7 +1045,8 @@ export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
     ctx.globalAlpha = 0.72 + Math.sin(d.t * 48) * 0.28;
   }
 
-  const legs = posedLegs(d.pose, d.prevPose, d.poseT ?? 1, d.t);
+  const mill = d.mill ?? (d.mark === "hourglass" ? millLookOf("widow") : millLookOf("hentz"));
+  const legs = posedLegs(d.pose, d.prevPose, d.poseT ?? 1, d.t, mill);
   const back = legs.filter((l) => l.z === 0);
   const front = legs.filter((l) => l.z === 1);
   const ox = 6 * d.scale;
@@ -648,20 +1059,20 @@ export function drawSpider(ctx: CanvasRenderingContext2D, d: SpiderDraw): void {
     ctx.translate(-8 * d.scale, 0);
     ctx.rotate(-0.08);
     if (hide) drawHide(ctx, hide, d);
-    else drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training, d.look, d.t);
+    else drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, mill, d.training, d.look, d.t);
     ctx.restore();
   }
   ctx.save();
   if (hide) ctx.globalAlpha *= 0.42;
-  back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1, d.look));
+  back.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2 * d.scale, l, d.scale, 1, d.look, mill));
   ctx.restore();
   if (hide) drawHide(ctx, hide, d);
-  else drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, d.mark, d.training, d.look, d.t);
+  else drawBody(ctx, d.colors, d.plump, d.scale, 1, d.pose, mill, d.training, d.look, d.t);
   drawBrood(ctx, d);
   drawGear(ctx, d);
   ctx.save();
   if (hide) ctx.globalAlpha *= 0.5;
-  front.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2.4 * d.scale, l, d.scale, 1, d.look));
+  front.forEach((l, i) => drawLeg(ctx, d.colors, ox, oy + (i - 1.5) * 2.4 * d.scale, l, d.scale, 1, d.look, mill));
   ctx.restore();
 
   ctx.restore();
