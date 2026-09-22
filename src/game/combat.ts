@@ -512,7 +512,10 @@ function buildOutcome(f: StickFight): FightOutcome {
     koMove: null,
     playerHp: f.player.hp,
     enemyHp: f.enemy.hp,
-    enemyName: f.enemy.name,
+    // A rolled spider may share the player's given name. The result card and
+    // share card need the crew the player called, which is stable and was
+    // visible on the fight card.
+    enemyName: f.rivalName,
     rivalId: f.rivalId,
     jevReads: f.jevReads,
     rounds: f.roundLog,

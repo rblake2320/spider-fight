@@ -138,6 +138,7 @@ test("a practice loss preserves gear, record, and competitive rewards", () => {
   stepFight(fight, 0.05);
 
   assert.equal(fight.outcome?.practice, true);
+  assert.equal(fight.outcome?.enemyName, "Alley Tom");
   assert.equal(fight.outcome?.xp, 8);
   assert.deepEqual(fight.outcome?.stripped, []);
   assert.equal(fight.outcome?.injury, null);
