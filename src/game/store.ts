@@ -74,7 +74,7 @@ const emptySave = (): SaveState => ({
   losses: 0,
   winStreak: 0,
   tutorial: 0,
-  settings: { sfx: true, music: true, reduceMotion: false },
+  settings: { sfx: true, music: true, reduceMotion: false, timingAssist: false },
   seen: ["hentz"],
   flags: {},
   career: { ...EMPTY_CAREER },

@@ -206,6 +206,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       sfx: asRecord(p.settings).sfx !== false,
       music: asRecord(p.settings).music !== false,
       reduceMotion: asRecord(p.settings).reduceMotion === true,
+      timingAssist: asRecord(p.settings).timingAssist === true,
     },
     seen: seen.length ? seen : ["hentz"],
     flags: asRecord(p.flags) as SaveState["flags"],

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, bestCounterFor, countersFor, createFight, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, webSurgeHint, type StickFight } from "@/game/combat";
+import { applyEnemyTell, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, moveForKey, queuePlayerMove, READ_WINDOW_SECONDS, readWindowPercent, readWindowSeconds, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -267,6 +267,7 @@ export function FightArena() {
   const applyResult = useGame((s) => s.applyResult);
   const result = useGame((s) => s.result);
   const reduceMotion = useGame((s) => s.settings.reduceMotion);
+  const timingAssist = useGame((s) => s.settings.timingAssist);
   const setScreen = useGame((s) => s.setScreen);
   const player = spiders.find((s) => s.id === fightMeta?.playerId);
   const sim = useRef<StickFight | null>(null);
@@ -288,6 +289,7 @@ export function FightArena() {
       sky.fight,
       sky.id,
       fightMeta.practice,
+      timingAssist ? ASSIST_READ_WINDOW_SECONDS : READ_WINDOW_SECONDS,
     );
     askedRound.current = 0;
     jevDead.current = false;
@@ -308,6 +310,7 @@ export function FightArena() {
         sky.fight,
         sky.id,
         fightMeta.practice,
+        timingAssist ? ASSIST_READ_WINDOW_SECONDS : READ_WINDOW_SECONDS,
       );
     }
     const pullJev = (f: StickFight) => {
@@ -349,7 +352,7 @@ export function FightArena() {
       }
     }, 80);
     return () => clearInterval(id);
-  }, [applyResult, fightMeta, player]);
+  }, [applyResult, fightMeta, player, timingAssist]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -406,6 +409,7 @@ export function FightArena() {
       <p className="px-3 pb-1 text-center text-[10px] uppercase tracking-widest text-moss">
         Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web)}
       </p>
+      {f.readWindow > READ_WINDOW_SECONDS ? <p className="px-3 pb-1 text-center text-[10px] text-dust">Focus timing · extended read window</p> : null}
       {f.enemy.tell && readMoves.length ? (
         <p className="mx-3 rounded-md border border-moss/40 bg-moss/10 px-2 py-1 text-center text-[11px] text-paper">
           Read {MOVES[f.enemy.tell].name} · counter with {readMoves.map((move) => MOVES[move].name).join(" or ")}

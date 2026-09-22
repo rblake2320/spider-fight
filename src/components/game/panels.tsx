@@ -1145,9 +1145,9 @@ export function SettingsView() {
           className="mt-1 h-11 w-full rounded-lg border border-line bg-raised px-3 text-paper"
         />
       </label>
-      {(["sfx", "music", "reduceMotion"] as const).map((k) => (
+      {(["sfx", "music", "reduceMotion", "timingAssist"] as const).map((k) => (
         <label key={k} className="flex items-center justify-between rounded-xl bg-raised px-3 py-3">
-          <span className="capitalize">{k === "sfx" ? "Sound" : k === "music" ? "Yard hum" : "Less motion"}</span>
+          <span className="capitalize">{k === "sfx" ? "Sound" : k === "music" ? "Yard hum" : k === "reduceMotion" ? "Less motion" : "Focus timing · 2.5s reads"}</span>
           <input type="checkbox" checked={settings[k]} onChange={(e) => setSetting(k, e.target.checked)} className="size-5 accent-rust" />
         </label>
       ))}

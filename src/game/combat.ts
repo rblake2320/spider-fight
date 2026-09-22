@@ -59,25 +59,27 @@ export type StickFight = {
   roundLog: FightRound[];
   decisionWinner: "player" | "enemy" | null;
   skyId: string | null;
+  readWindow: number;
 };
 
 const INTRO = 1.15;
 // Players choose only after the tell is exposed. Keep the visible read long
 // enough for a real reaction while preserving the pressure of timed rounds.
 export const READ_WINDOW_SECONDS = 1.7;
+export const ASSIST_READ_WINDOW_SECONDS = 2.5;
 const RESOLVE = 0.9;
 const TELL_LOCK = 0.28;
 export const MAX_ROUNDS = 12;
 
 /** Portion of the visible read window still available to make a move. */
-export function readWindowPercent(fight: Pick<StickFight, "phase" | "phaseT" | "tellReady">): number {
+export function readWindowPercent(fight: Pick<StickFight, "phase" | "phaseT" | "tellReady" | "readWindow">): number {
   if (fight.phase !== "telegraph" || !fight.tellReady) return 0;
-  return clamp(((READ_WINDOW_SECONDS - fight.phaseT) / READ_WINDOW_SECONDS) * 100, 0, 100);
+  return clamp(((fight.readWindow - fight.phaseT) / fight.readWindow) * 100, 0, 100);
 }
 
 /** Exact seconds left in the player-facing reaction window. */
-export function readWindowSeconds(fight: Pick<StickFight, "phase" | "phaseT" | "tellReady">): number {
-  return (readWindowPercent(fight) / 100) * READ_WINDOW_SECONDS;
+export function readWindowSeconds(fight: Pick<StickFight, "phase" | "phaseT" | "tellReady" | "readWindow">): number {
+  return (readWindowPercent(fight) / 100) * fight.readWindow;
 }
 
 export function webSurgeHint(web: Pick<WebProfile, "style" | "surge">): string {
@@ -131,6 +133,7 @@ export function createFight(
   nightMods: Partial<Stats> = {},
   skyId: string | null = null,
   practice = false,
+  readWindow = READ_WINDOW_SECONDS,
 ): StickFight {
   return {
     player: makeFighter(player, 0.36, 1, addStats(addStats({ ...ZERO_STATS }, teamBonus), nightMods)),
@@ -162,6 +165,7 @@ export function createFight(
     roundLog: [],
     decisionWinner: null,
     skyId,
+    readWindow,
   };
 }
 
@@ -285,7 +289,7 @@ export function stepFight(f: StickFight, dt: number): void {
       if (f.lastText === "Watch the legs.") f.lastText = MOVES[f.enemy.tell].tell;
     }
     if (f.player.queued) f.player.pose = f.player.queued;
-    if (f.phaseT >= READ_WINDOW_SECONDS) resolveRound(f);
+    if (f.phaseT >= f.readWindow) resolveRound(f);
     return;
   }
   if (f.phase === "resolve") {

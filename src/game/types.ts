@@ -287,7 +287,7 @@ export type SaveState = {
   losses: number;
   winStreak: number;
   tutorial: number;
-  settings: { sfx: boolean; music: boolean; reduceMotion: boolean };
+  settings: { sfx: boolean; music: boolean; reduceMotion: boolean; timingAssist: boolean };
   seen: string[];
   flags: Record<string, string | boolean>;
   career: CareerLog;

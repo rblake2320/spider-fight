@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, bestCounterFor, countersFor, createFight, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight, webSurgeHint } from "./combat";
+import { applyEnemyTell, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight, webSurgeHint } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
@@ -59,6 +59,17 @@ test("the reaction timer starts only once the tell is readable and runs down", (
   assert.ok(readWindowSeconds(fight) > 1.2 && readWindowSeconds(fight) < 1.7);
   for (let i = 0; i < 10; i += 1) stepFight(fight, 0.05);
   assert.ok(readWindowPercent(fight) < opening);
+});
+
+test("focus timing extends the visible read window without changing the standard fight default", () => {
+  const player = rollSpider(mulberry32(130), { speciesId: "hentz", stage: "adult" });
+  const enemy = rollSpider(mulberry32(131), { speciesId: "cross", stage: "adult", asRival: true });
+  const standard = createFight(player, enemy, 10, "tom", "Alley Tom");
+  const assisted = createFight(player, enemy, 10, "tom", "Alley Tom", null, {}, {}, null, false, ASSIST_READ_WINDOW_SECONDS);
+  assert.ok(assisted.readWindow > standard.readWindow);
+  assisted.phase = "telegraph";
+  assisted.tellReady = true;
+  assert.equal(readWindowSeconds(assisted), ASSIST_READ_WINDOW_SECONDS);
 });
 
 test("the live read guide only recommends moves that win the exchange", () => {
