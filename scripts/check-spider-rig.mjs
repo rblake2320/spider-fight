@@ -7,6 +7,11 @@ const REQUIRED_ACTIONS = ["idle", "intro", "lunge", "grapple", "feint", "brace",
 const REQUIRED_BONES = ["root", "abdomen", "cephalothorax"];
 const LEG_BONES = ["coxa", "femur", "tibia", "tarsus"];
 
+function requireAll(errors, actual, expected, label) {
+  const values = new Set(actual ?? []);
+  for (const value of expected) if (!values.has(value)) errors.push(`rig report missing ${label}: ${value}`);
+}
+
 export function validateSpiderRig(contract, root = process.cwd()) {
   const errors = [];
   const asset = contract?.asset;
@@ -22,6 +27,22 @@ export function validateSpiderRig(contract, root = process.cwd()) {
     for (const [format, file] of Object.entries(asset?.exports ?? {})) {
       if (!file || !existsSync(resolve(root, file))) errors.push(`missing ${format} export: ${file ?? "none"}`);
       else if (format === "web" && statSync(resolve(root, file)).size > contract.limits.webFileMb * 1024 * 1024) errors.push("web export exceeds webFileMb limit");
+    }
+    if (!asset?.sourceFile || !existsSync(resolve(root, asset.sourceFile))) errors.push(`missing source file: ${asset?.sourceFile ?? "none"}`);
+    if (!asset?.rigReport || !existsSync(resolve(root, asset.rigReport))) {
+      errors.push(`missing rig report: ${asset?.rigReport ?? "none"}`);
+    } else {
+      const report = JSON.parse(readFileSync(resolve(root, asset.rigReport), "utf8"));
+      requireAll(errors, report.bones, skeleton?.requiredBones ?? [], "bone");
+      requireAll(errors, report.actions, REQUIRED_ACTIONS, "action");
+      if (!Number.isInteger(report.triangleCount) || report.triangleCount > contract?.limits?.webTriangles) errors.push("rig report exceeds webTriangles limit");
+      if (!Number.isInteger(report.webFileBytes) || report.webFileBytes > contract?.limits?.webFileMb * 1024 * 1024) errors.push("rig report exceeds webFileMb limit");
+      if (!report?.unreal?.sourceIkRig || !report?.unreal?.targetIkRig || !report?.unreal?.retargetPose) errors.push("rig report needs source/target IK rigs and a retarget pose");
+      const vrchat = report?.vrchat;
+      if (vrchat?.rigType !== "Generic") errors.push("rig report requires a Generic VRChat rig");
+      if (!vrchat?.rootAnimatorAvatarReference || !vrchat?.rootControllerBlank) errors.push("rig report requires a configured root Animator");
+      if (JSON.stringify(vrchat?.playableLayers) !== JSON.stringify(["Base", "Action", "FX"])) errors.push("rig report requires Base, Action, FX playable layers");
+      if (vrchat?.writeDefaults !== "Off" || vrchat?.localBuildTest !== "required") errors.push("rig report requires consistent Write Defaults Off and local Build & Test");
     }
   }
   const bones = new Set(skeleton?.requiredBones ?? []);
@@ -45,7 +66,7 @@ function main() {
     console.error(`[spider-rig] failed: ${errors.join("; ")}`);
     process.exit(1);
   }
-  console.log("[spider-rig] contract valid: 8 leg chains, 10 fight actions, provenance gate active");
+  console.log("[spider-rig] export valid: 8 leg chains, 10 fight actions, Unreal and VRChat gates active");
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();

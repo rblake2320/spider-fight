@@ -1,17 +1,18 @@
 {
   "schemaVersion": 1,
-  "status": "contract-only",
+  "status": "ready",
   "asset": {
-    "id": "eratigena-atrica",
-    "displayName": "Eratigena atrica spider",
-    "sourceUrl": "https://sketchfab.com/3d-models/spider-eratigena-atrica-464d4c6773684786ac488a65d7020ff1",
-    "license": "UNVERIFIED",
-    "sourceFile": null,
+    "id": "original-yard-spider",
+    "displayName": "Original Yard Spider",
+    "sourceUrl": "https://github.com/rblake2320/spider-fight",
+    "license": "Original project asset — all rights reserved",
+    "sourceFile": "assets/3d/original-yard-spider.blend",
     "exports": {
-      "web": null,
-      "unreal": null,
-      "vrchat": null
-    }
+      "web": "public/models/original-yard-spider.glb",
+      "unreal": "assets/3d/original-yard-spider.fbx",
+      "vrchat": "assets/3d/original-yard-spider.fbx"
+    },
+    "rigReport": "assets/3d/original-yard-spider.rig-report.json"
   },
   "limits": {
     "webTriangles": 30000,
@@ -44,7 +45,7 @@
   "actions": ["idle", "intro", "lunge", "grapple", "feint", "brace", "yank", "drop", "hurt", "ko"],
   "verification": {
     "blender": ["applied-transforms", "outward-normals", "four-or-fewer-weights", "named-actions"],
-    "unreal": ["set-pelvis", "map-identical-retarget-chains", "preview-every-action", "check-retarget-output-log"],
-    "vrchat": ["generic-fbx-rig", "root-animator-avatar-reference", "base-action-fx-playable-layers", "local-build-and-test"]
+    "unreal": ["source-and-target-ik-rigs", "set-pelvis", "map-identical-retarget-chains", "named-matched-retarget-pose", "preview-every-action", "check-retarget-output-log"],
+    "vrchat": ["generic-fbx-rig", "root-animator-avatar-reference", "blank-root-controller", "base-action-fx-playable-layers", "consistent-write-defaults-off", "local-build-and-test"]
   }
 }

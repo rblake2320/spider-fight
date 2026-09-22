@@ -5,11 +5,11 @@ import { validateSpiderRig } from "./check-spider-rig.mjs";
 
 const contract = JSON.parse(readFileSync(new URL("../assets/3d/spider-rig.contract.json", import.meta.url), "utf8"));
 
-test("the spider rig contract holds every current fight action and eight leg chains", () => {
+test("the original spider export holds every current fight action and eight leg chains", () => {
   assert.deepEqual(validateSpiderRig(contract), []);
 });
 
-test("a shipped asset cannot evade provenance or limb validation", () => {
+test("a shipped asset cannot evade provenance, limb, engine, or avatar validation", () => {
   const bad = structuredClone(contract);
   bad.status = "ready";
   bad.asset.license = "UNVERIFIED";
@@ -19,4 +19,11 @@ test("a shipped asset cannot evade provenance or limb validation", () => {
   assert.ok(errors.includes("ready assets require a verified license"));
   assert.ok(errors.includes("missing required bone: leg_r_4_tarsus"));
   assert.ok(errors.some((error) => error.startsWith("missing web export:")));
+});
+
+test("a rig report cannot omit the engine and VRChat setup", () => {
+  const bad = structuredClone(contract);
+  bad.asset.rigReport = "assets/3d/does-not-exist.json";
+  const errors = validateSpiderRig(bad);
+  assert.ok(errors.includes("missing rig report: assets/3d/does-not-exist.json"));
 });
