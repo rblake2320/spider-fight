@@ -67,6 +67,9 @@ const INTRO = 1.15;
 // enough for a real reaction while preserving the pressure of timed rounds.
 export const READ_WINDOW_SECONDS = 1.7;
 export const ASSIST_READ_WINDOW_SECONDS = 2.5;
+/** The moving timing needle earns its bonus while inside this visible band. */
+export const SWEET_TIMING_CENTER = 0.62;
+export const SWEET_TIMING_TOLERANCE = 0.16;
 const RESOLVE = 0.9;
 const TELL_LOCK = 0.28;
 export const MAX_ROUNDS = 12;
@@ -80,6 +83,10 @@ export function readWindowPercent(fight: Pick<StickFight, "phase" | "phaseT" | "
 /** Exact seconds left in the player-facing reaction window. */
 export function readWindowSeconds(fight: Pick<StickFight, "phase" | "phaseT" | "tellReady" | "readWindow">): number {
   return (readWindowPercent(fight) / 100) * fight.readWindow;
+}
+
+export function hasSweetTiming(timing: number): boolean {
+  return Math.abs(timing - SWEET_TIMING_CENTER) < SWEET_TIMING_TOLERANCE;
 }
 
 export function webSurgeHint(web: Pick<WebProfile, "style" | "surge">): string {
@@ -246,8 +253,7 @@ export function queuePlayerMove(f: StickFight, move: MoveId): void {
   if (f.player.stam < MOVES[move].stamina * 0.5) return;
   f.player.queued = move;
   f.playerLocked = true;
-  const window = Math.abs(f.timing - 0.62);
-  f.timingHit = window < 0.16;
+  f.timingHit = hasSweetTiming(f.timing);
 }
 
 /** Desktop shortcuts mirror the move grid from left to right. */

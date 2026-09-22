@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FightCanvas } from "./FightCanvas";
-import { applyEnemyTell, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, moveForKey, queuePlayerMove, READ_WINDOW_SECONDS, readWindowPercent, readWindowSeconds, webSurgeHint, type StickFight } from "@/game/combat";
+import { applyEnemyTell, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, moveForKey, queuePlayerMove, READ_WINDOW_SECONDS, readWindowPercent, readWindowSeconds, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint, type StickFight } from "@/game/combat";
 import { MOVES } from "@/game/content";
 import { playHit, playLose, playSilk, playWin } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -457,14 +457,18 @@ export function FightArena() {
             <div className={cn("h-full bg-moss transition-[width,background-color] duration-75", readWindow > 0 && readWindow < 35 && "bg-rust")} style={{ width: `${readWindow}%` }} />
           </div>
         </div>
-        <div className="h-1 overflow-hidden rounded-full bg-line">
-          <div
-            className="h-full bg-paper"
-            style={{ width: `${Math.round(f.player.stam)}%` }}
-          />
+        <div className="mt-2" aria-live="polite">
+          <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-widest text-dust">
+            <span>Sweet timing</span>
+            <span className={f.timingHit ? "text-moss" : "text-dust"}>{f.playerLocked ? (f.timingHit ? "Threaded" : "Early / late") : "Needle to moss"}</span>
+          </div>
+          <div className="relative h-2 overflow-hidden rounded-full bg-line" role="meter" aria-label="Sweet timing needle" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(f.timing * 100)}>
+            <div className="absolute inset-y-0 bg-moss/50" style={{ left: `${(SWEET_TIMING_CENTER - SWEET_TIMING_TOLERANCE) * 100}%`, width: `${SWEET_TIMING_TOLERANCE * 200}%` }} />
+            <div className="absolute -top-1 h-4 w-1 rounded-full bg-paper shadow-[0_0_6px_rgba(255,255,255,0.85)]" style={{ left: `calc(${f.timing * 100}% - 2px)` }} />
+          </div>
         </div>
         <p className="mt-1 text-center text-[11px] text-dust">
-          {f.timingHit ? "Sweet timing" : "Hit the window as you pick"} · desktop keys 1–6
+          {f.timingHit ? "Sweet timing adds 18% damage" : "Pick inside moss for a damage bonus"} · desktop keys 1–6
         </p>
       </div>
       <div className="grid grid-cols-3 gap-1.5 p-3 pb-4">

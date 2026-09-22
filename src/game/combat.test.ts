@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEnemyTell, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight, webSurgeHint } from "./combat";
+import { applyEnemyTell, ASSIST_READ_WINDOW_SECONDS, bestCounterFor, countersFor, createFight, hasSweetTiming, MAX_ROUNDS, moveForKey, queuePlayerMove, readWindowPercent, readWindowSeconds, stepFight, SWEET_TIMING_CENTER, SWEET_TIMING_TOLERANCE, webSurgeHint } from "./combat";
 import { MOVES } from "./content";
 import { mulberry32 } from "./rng";
 import { applyRivalGrit, effective, rollSpider, teamSupport } from "./spiders";
@@ -70,6 +70,13 @@ test("focus timing extends the visible read window without changing the standard
   assisted.phase = "telegraph";
   assisted.tellReady = true;
   assert.equal(readWindowSeconds(assisted), ASSIST_READ_WINDOW_SECONDS);
+});
+
+test("sweet timing is only awarded inside the player-visible moss band", () => {
+  assert.equal(hasSweetTiming(SWEET_TIMING_CENTER), true);
+  assert.equal(hasSweetTiming(SWEET_TIMING_CENTER - SWEET_TIMING_TOLERANCE + 0.001), true);
+  assert.equal(hasSweetTiming(SWEET_TIMING_CENTER + SWEET_TIMING_TOLERANCE), false);
+  assert.equal(hasSweetTiming(0.1), false);
 });
 
 test("the live read guide only recommends moves that win the exchange", () => {
