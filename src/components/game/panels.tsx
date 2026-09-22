@@ -23,6 +23,7 @@ import { heldRivalTrophies, RIVAL_TROPHIES } from "@/game/rewards";
 import { DAILY_STREAK_CAP, dailyStreakBonus } from "@/game/daily-streak";
 import { archiveShareText } from "@/game/share";
 import { shareMatchCard } from "@/game/share-client";
+import { strongestTapePlay, trainingStatForMove } from "@/game/fight-playbook";
 import { SpiderBuildCanvas } from "./SpiderBuildCanvas";
 
 const CompetitionSignIn = lazy(() => import("./CompetitionSignIn").then((module) => ({ default: module.CompetitionSignIn })));
@@ -1188,6 +1189,7 @@ export function CareerView() {
   const earnedBadges = useGame((s) => s.earnedBadges);
   const paper = useGame((s) => s.paper);
   const fightArchive = useGame((s) => s.fightArchive);
+  const train = useGame((s) => s.train);
   const rollYear = useGame((s) => s.rollYear);
   const [msg, setMsg] = useState<string | null>(null);
   const [circuitBoard, setCircuitBoard] = useState<CircuitEntry[]>([]);
@@ -1199,6 +1201,7 @@ export function CareerView() {
   const [dailyBoardError, setDailyBoardError] = useState<string | null>(null);
   const [dailyPlacement, setDailyPlacement] = useState<CircuitPlacement | null>(null);
   const [archiveShared, setArchiveShared] = useState<string | null>(null);
+  const [archiveDrill, setArchiveDrill] = useState<{ key: string; message: string } | null>(null);
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
   const current = SEASONS.find((s) => s.id === careerSeasonId(season)) ?? SEASONS[0]!;
@@ -1445,8 +1448,13 @@ export function CareerView() {
           <p className="text-xs uppercase tracking-widest text-dust">Yard archive</p>
           <p className="mt-1 text-xs text-mute">Your last {fightArchive.length} complete tapes. Read what worked, then share a finished card.</p>
           <ol className="mt-2 space-y-3">
-            {fightArchive.slice(0, 6).map((tape, index) => (
-              <li key={`${tape.date}-${tape.fighter}-${tape.rivalId}-${index}`} className="border-t border-line pt-2 first:border-0 first:pt-0">
+            {fightArchive.slice(0, 6).map((tape, index) => {
+              const archiveKey = `${tape.date}-${tape.fighter}-${tape.rivalId}-${index}`;
+              const tapePlay = strongestTapePlay(tape.rounds);
+              const tapeDrill = tapePlay ? trainingStatForMove(tapePlay.playerMove) : null;
+              const fighter = spiders.find((spider) => spider.name === tape.fighter && !spider.retired);
+              const drillCost = fighter && tapeDrill ? traitTrainCost(fighter.traits, 10 + fighter.trained[tapeDrill] * 6) : null;
+              return <li key={archiveKey} className="border-t border-line pt-2 first:border-0 first:pt-0">
                 <p className={tape.won ? "text-sm text-paper" : "text-sm text-dust"}>
                   {tape.fighter} {tape.won ? "held" : "dropped"} vs {tape.enemyName}
                   {tape.practice ? " · practice" : tape.points === undefined ? "" : ` · ${tape.points > 0 ? "+" : ""}${tape.points} pts`}
@@ -1454,6 +1462,16 @@ export function CareerView() {
                 <p className="mt-1 text-xs text-dust">
                   {tape.rounds.map((round) => `R${round.round} ${MOVES[round.playerMove].name}/${MOVES[round.enemyMove].name} ${round.result}`).join(" · ") || "No exchanges recorded"}
                 </p>
+                {tapePlay ? <p className="mt-2 text-xs text-moss">Best read: when {MOVES[tapePlay.enemyMove].name} showed, {MOVES[tapePlay.playerMove].name} earned {tapePlay.edges} edge{tapePlay.edges === 1 ? "" : "s"}.</p> : null}
+                {fighter && tapeDrill ? (
+                  <Button size="sm" variant="outline" className="mt-2" onClick={() => {
+                    const outcome = train(fighter.id, tapeDrill);
+                    setArchiveDrill({ key: archiveKey, message: outcome ?? `Drilled ${STAT_LABEL[tapeDrill]} for ${fighter.name}.` });
+                  }}>
+                    Drill {STAT_LABEL[tapeDrill]} · ${drillCost} / 16 energy
+                  </Button>
+                ) : null}
+                {archiveDrill?.key === archiveKey ? <p className="mt-2 text-xs text-moss">{archiveDrill.message}</p> : null}
                 <Button
                   size="sm"
                   variant="outline"
@@ -1467,7 +1485,7 @@ export function CareerView() {
                   Share match card
                 </Button>
               </li>
-            ))}
+            })}
           </ol>
           {archiveShared ? <p className="mt-2 text-xs text-dust">{archiveShared}</p> : null}
         </section>
