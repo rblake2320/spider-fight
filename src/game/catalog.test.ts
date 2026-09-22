@@ -119,6 +119,11 @@ test("migrate keeps unknown species from crashing", () => {
   speciesOf("nope");
 });
 
+test("migrate keeps the read guide on unless a yard deliberately turns it off", () => {
+  assert.equal(migrateSave({}, 17).settings.readHints, true);
+  assert.equal(migrateSave({ settings: { readHints: false } }, 17).settings.readHints, false);
+});
+
 test("migrate retains valid completed fight tape and removes invalid move data", () => {
   const next = migrateSave({
     fightArchive: [{

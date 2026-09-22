@@ -272,6 +272,7 @@ export function migrateSave(persisted: unknown, fromVersion: number): SaveState 
       music: asRecord(p.settings).music !== false,
       reduceMotion: asRecord(p.settings).reduceMotion === true,
       timingAssist: asRecord(p.settings).timingAssist === true,
+      readHints: asRecord(p.settings).readHints !== false,
     },
     seen: seen.length ? seen : ["hentz"],
     flags: asRecord(p.flags) as SaveState["flags"],

@@ -283,6 +283,7 @@ export function FightArena() {
   const result = useGame((s) => s.result);
   const reduceMotion = useGame((s) => s.settings.reduceMotion);
   const timingAssist = useGame((s) => s.settings.timingAssist);
+  const readHints = useGame((s) => s.settings.readHints);
   const setScreen = useGame((s) => s.setScreen);
   const player = spiders.find((s) => s.id === fightMeta?.playerId);
   const firstRankedCall = Boolean(player && fightMeta && !fightMeta.practice && player.wins + player.losses === 0);
@@ -426,10 +427,12 @@ export function FightArena() {
         Web charge {"●".repeat(f.player.webCharge)}{"○".repeat(3 - f.player.webCharge)} · two reads prime: {webSurgeHint(f.player.web)}
       </p>
       {f.readWindow > READ_WINDOW_SECONDS ? <p className="px-3 pb-1 text-center text-[10px] text-dust">{firstRankedCall ? "First-call focus" : "Focus timing"} · extended read window</p> : null}
-      {f.enemy.tell && readMoves.length ? (
+      {f.enemy.tell && readMoves.length && readHints ? (
         <p className="mx-3 rounded-md border border-moss/40 bg-moss/10 px-2 py-1 text-center text-[11px] text-paper">
           Read {MOVES[f.enemy.tell].name} · counter with {readMoves.map((move) => MOVES[move].name).join(" or ")}
         </p>
+      ) : f.enemy.tell ? (
+        <p className="px-3 pb-1 text-center text-[11px] text-dust">Read {MOVES[f.enemy.tell].name}. Make the call.</p>
       ) : (
         <p className="px-3 pb-1 text-center text-[11px] text-dust">Watch the tell. A correct counter earns web charge.</p>
       )}
