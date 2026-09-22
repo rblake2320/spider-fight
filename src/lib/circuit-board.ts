@@ -56,6 +56,11 @@ export function nextCircuitChase(entries: CircuitEntry[], score: number, wins: n
     .sort((a, b) => a.pointsNeeded - b.pointsNeeded || a.entry.wins - b.entry.wins || a.entry.stableName.localeCompare(b.entry.stableName))[0] ?? null;
 }
 
+/** Matches the board's score-first ordering for a player's local ladder position. */
+export function circuitPosition(entries: CircuitEntry[], score: number, wins: number): number {
+  return 1 + entries.filter((entry) => entry.score > score || (entry.score === score && entry.wins > wins)).length;
+}
+
 function validSeason(input: CircuitSeason): CircuitSeason {
   if (!Number.isInteger(input.season) || input.season < 1 || input.season > 10000) throw new Error("Invalid circuit year");
   return { season: input.season };

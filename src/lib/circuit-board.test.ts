@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
-import { nextCircuitChase, porchCircuitLadder, type CircuitEntry } from "./circuit-board.ts";
+import { circuitPosition, nextCircuitChase, porchCircuitLadder, type CircuitEntry } from "./circuit-board.ts";
 
 test("the circuit board offers the nearest other yard to chase", () => {
   const board: CircuitEntry[] = [
@@ -20,6 +20,8 @@ test("the circuit board offers the nearest other yard to chase", () => {
     pointsNeeded: 1,
   });
   assert.equal(nextCircuitChase(board, 32, 0, "Porch Crew"), null);
+  assert.equal(circuitPosition(board, 20, 2), 3);
+  assert.equal(circuitPosition(board, 23, 2), 1);
 });
 
 test("the offline Porch Ladder is stable for a circuit day and offers distinct yards", () => {
