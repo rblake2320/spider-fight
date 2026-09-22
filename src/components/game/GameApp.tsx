@@ -23,10 +23,13 @@ export function GameApp() {
   const fight = useGame((s) => s.fight);
   const result = useGame((s) => s.result);
   const reduceMotion = useGame((s) => s.settings.reduceMotion);
+  const hydrated = useGame((s) => s.hydrated);
 
   useEffect(() => {
     void Promise.resolve(useGame.persist.rehydrate()).then(() => hydrate());
   }, [hydrate]);
+
+  if (!hydrated) return <LoadingYard />;
 
   const hideNav = screen === "title" || screen === "onboard" || Boolean(fight) || Boolean(result);
 
@@ -49,6 +52,15 @@ export function GameApp() {
         {screen === "settings" ? <SettingsView /> : null}
       </main>
       {hideNav ? null : <NavBar />}
+    </div>
+  );
+}
+
+function LoadingYard() {
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-ink text-paper">
+      <SpiderMark className="size-12" />
+      <p className="text-xs uppercase tracking-[0.28em] text-dust">Opening the yard</p>
     </div>
   );
 }
