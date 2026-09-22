@@ -94,3 +94,21 @@ test("a ranked web discovery shows the earned field-guide Circuit mark", () => {
     useGame.setState(before, true);
   }
 });
+
+test("the drill that earns a Circuit mark returns its name and reward to the training screen", () => {
+  const before = useGame.getState();
+  try {
+    const spider = rollSpider(mulberry32(51), { speciesId: "hentz", stage: "adult" });
+    spider.trained.power = 4;
+    useGame.setState({
+      spiders: [spider], selectedId: spider.id, cash: 100, rank: 0, rankPoints: 0,
+      career: { ...EMPTY_CAREER }, seen: ["hentz"], earnedBadges: [],
+    });
+    assert.equal(useGame.getState().train(spider.id, "power"), "Drilled Power · Five honest drills +12 circuit pts");
+    const after = useGame.getState();
+    assert.equal(after.rankPoints, 12);
+    assert.ok(after.earnedBadges.includes("drill-five"));
+  } finally {
+    useGame.setState(before, true);
+  }
+});

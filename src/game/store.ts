@@ -26,6 +26,7 @@ import {
   filledHp,
   molt,
   rollSpider,
+  STAT_LABEL,
   starterSpider,
   teamSupport,
 } from "./spiders";
@@ -339,6 +340,7 @@ export const useGame = create<Game>()(
             moltReady: clamp(sp.moltReady + 4, 0, 100),
             xp: sp.xp + 8,
           }));
+        const unlocked = newlyEarnedBadges(g.earnedBadges, { spiders, career: g.career, wins: g.wins, seen: g.seen });
         set({
           cash: g.cash - cost,
           dailyContract: advanceContract(g.dailyContract, "train"),
@@ -346,7 +348,9 @@ export const useGame = create<Game>()(
           spiders,
           ...badgeProgress(g, { spiders, career: g.career, wins: g.wins, seen: g.seen }),
         });
-        return null;
+        return unlocked.length
+          ? `Drilled ${STAT_LABEL[stat]} · ${unlocked.map((badge) => `${badge.name} +${badge.reward} circuit pts`).join(" · ")}`
+          : null;
       },
 
       restSpider: (spiderId) => {
