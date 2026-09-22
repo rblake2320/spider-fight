@@ -611,6 +611,14 @@ export const useGame = create<Game>()(
       applyResult: (out, finalSpider) => {
         const g = get();
         const practice = g.fight?.practice === true;
+        const enemySpeciesId = g.fight?.enemy.speciesId;
+        const seen = enemySpeciesId && SPECIES[enemySpeciesId] && !g.seen.includes(enemySpeciesId)
+          ? [...g.seen, enemySpeciesId]
+          : g.seen;
+        if (seen !== g.seen && enemySpeciesId) {
+          const species = SPECIES[enemySpeciesId]!;
+          out.discovery = { species: species.common, web: species.web.name, ability: species.web.ability };
+        }
         let cash = g.cash;
         let rankPoints = g.rankPoints;
         const rank = g.rank;
@@ -673,7 +681,7 @@ export const useGame = create<Game>()(
         };
         const badges = badgeProgress(
           { ...g, rank, rankPoints },
-          { spiders, career, wins, seen: g.seen },
+          { spiders, career, wins, seen },
         );
         if (!practice) out.points = badges.rankPoints - g.rankPoints;
         const nextSeries = isSeries && out.won && g.yardSeries
@@ -698,6 +706,7 @@ export const useGame = create<Game>()(
           fight: null,
           result: out,
           career,
+          seen,
           dailyContract: !practice && out.won ? advanceContract(g.dailyContract, "win") : g.dailyContract,
           dailyWebChallenge: practice ? g.dailyWebChallenge : advanceWebChallenge(g.dailyWebChallenge ?? makeDailyWebChallenge(g.dayStamp, g.rank), out.rounds),
           rivalRecords: { ...g.rivalRecords, [out.rivalId]: rivalRecord },

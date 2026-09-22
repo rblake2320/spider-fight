@@ -179,6 +179,8 @@ export type FightOutcome = {
   seriesBonus?: number;
   streakBonus?: { cash: number; points: number; label: string };
   sky?: string;
+  /** First opponent species observed at the stick; shown as a field-guide unlock. */
+  discovery?: { species: string; web: string; ability: string };
   rounds: FightRound[];
 };
 

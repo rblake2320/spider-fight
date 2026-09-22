@@ -563,6 +563,13 @@ function ResultCard() {
         {result.loot ? <li className="text-moss">Lifted {ITEMS[result.loot]?.name}</li> : null}
         {result.injury ? <li className="text-rust">{result.injury.label}</li> : null}
       </ul>
+      {result.discovery ? (
+        <section className="rounded-xl border border-moss/50 bg-moss/10 p-3 text-sm text-paper">
+          <p className="text-xs uppercase tracking-widest text-moss">Field guide updated</p>
+          <p className="mt-1 font-medium">{result.discovery.species} · {result.discovery.web}</p>
+          <p className="mt-1 text-xs text-dust">{result.discovery.ability}</p>
+        </section>
+      ) : null}
       {result.rounds.length ? (
         <section className="rounded-xl bg-raised p-3">
           <p className="text-xs uppercase tracking-widest text-dust">Fight tape</p>
