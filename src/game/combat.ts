@@ -61,6 +61,7 @@ export type StickFight = {
   decisionWinner: "player" | "enemy" | null;
   skyId: string | null;
   readWindow: number;
+  readGuideOff: boolean;
 };
 
 const INTRO = 1.15;
@@ -187,6 +188,7 @@ export function createFight(
     decisionWinner: null,
     skyId,
     readWindow,
+    readGuideOff: false,
   };
 }
 
@@ -590,6 +592,7 @@ function buildOutcome(f: StickFight): FightOutcome {
     enemyName: f.rivalName,
     rivalId: f.rivalId,
     jevReads: f.jevReads,
+    readGuideOff: f.readGuideOff || undefined,
     rounds: f.roundLog,
   };
 }

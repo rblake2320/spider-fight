@@ -876,6 +876,10 @@ export const useGame = create<Game>()(
           cash += stakes.purse;
           out.purse = stakes.purse;
           rankPoints += stakes.points;
+          if (out.readGuideOff) {
+            out.readBonus = 3;
+            rankPoints += out.readBonus;
+          }
           winStreak += 1;
           const heater = streakReward(winStreak);
           if (heater) {

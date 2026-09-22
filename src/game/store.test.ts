@@ -73,6 +73,29 @@ test("fighting an unknown species adds its web to the field guide, even in pract
   }
 });
 
+test("a counter-free ranked win earns its visible Circuit read bonus", () => {
+  const before = useGame.getState();
+  try {
+    const player = rollSpider(mulberry32(36), { speciesId: "hentz", stage: "adult" });
+    const enemy = rollSpider(mulberry32(37), { speciesId: "hentz", stage: "adult", asRival: true });
+    const outcome: FightOutcome = {
+      won: true, wager: 10, purse: 0, xp: 0, stripped: [], decay: {}, loot: null,
+      injury: null, koMove: null, playerHp: 10, enemyHp: 0, enemyName: enemy.name, rivalId: "tom", readGuideOff: true, rounds: [],
+    };
+    useGame.setState({
+      spiders: [player], selectedId: player.id, seen: ["hentz"], rank: 0, rankPoints: 0, wins: 0, losses: 0, winStreak: 0,
+      fight: { rivalId: "tom", playerId: player.id, wager: 10, practice: false, enemy, teamBonus: {}, headline: false, seriesStage: null },
+      career: { ...EMPTY_CAREER }, earnedBadges: [],
+    });
+    useGame.getState().applyResult(outcome, player);
+    assert.equal(outcome.readBonus, 3);
+    assert.equal(useGame.getState().rankPoints, outcome.points);
+    assert.ok((outcome.points ?? 0) >= 3);
+  } finally {
+    useGame.setState(before, true);
+  }
+});
+
 test("a ranked web discovery shows the earned field-guide Circuit mark", () => {
   const before = useGame.getState();
   try {

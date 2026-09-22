@@ -212,6 +212,10 @@ export type FightOutcome = {
   enemyName: string;
   rivalId: string;
   jevReads?: number;
+  /** The player completed this ranked call without the live counter guide. */
+  readGuideOff?: boolean;
+  /** Circuit points awarded for a completed counter-free ranked read. */
+  readBonus?: number;
   headlineBonus?: number;
   seriesBonus?: number;
   streakBonus?: { cash: number; points: number; label: string };

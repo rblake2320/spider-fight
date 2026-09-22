@@ -308,6 +308,7 @@ export function FightArena() {
       fightMeta.practice,
       openingReadWindow(player.wins, player.losses, fightMeta.practice, timingAssist),
     );
+    sim.current.readGuideOff = !readHints;
     askedRound.current = 0;
     jevDead.current = false;
   }
@@ -316,7 +317,7 @@ export function FightArena() {
     if (!fightMeta || !player) return;
     if (!sim.current) {
       const sky = tonightSky();
-    sim.current = createFight(
+      sim.current = createFight(
         player,
         fightMeta.enemy,
         fightMeta.wager,
@@ -329,6 +330,7 @@ export function FightArena() {
         fightMeta.practice,
         openingReadWindow(player.wins, player.losses, fightMeta.practice, timingAssist),
       );
+      sim.current.readGuideOff = !readHints;
     }
     const pullJev = (f: StickFight) => {
       if (jevDead.current || f.failedJev) return;
@@ -369,7 +371,7 @@ export function FightArena() {
       }
     }, 80);
     return () => clearInterval(id);
-  }, [applyResult, fightMeta, player, timingAssist]);
+  }, [applyResult, fightMeta, player, timingAssist, readHints]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -616,6 +618,7 @@ function ResultCard() {
         ) : null}
         {result.headlineBonus ? <li className="text-moss">Headliner bonus +${result.headlineBonus} · +{NIGHTLY_BONUS_POINTS} circuit</li> : null}
         {result.seriesBonus ? <li className="text-moss">Yard series bonus +${result.seriesBonus}</li> : null}
+        {result.readBonus ? <li className="text-moss">No-hint read +{result.readBonus} circuit</li> : null}
         {result.streakBonus ? <li className="text-moss">{result.streakBonus.label} +${result.streakBonus.cash} · +{result.streakBonus.points} circuit</li> : null}
         {result.badges?.map((badge) => <li key={badge.name} className="text-moss">{badge.name} mark +{badge.reward} circuit pts</li>)}
         {result.sky ? <li className="text-dust">{tonightSky().name} on the stick</li> : null}
