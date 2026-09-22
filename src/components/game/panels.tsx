@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ITEMS, ITEM_LIST, RANKS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
+import { ITEMS, ITEM_LIST, MOVES, RANKS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
 import { BUILD, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES } from "@/game/badges";
+import { webSurgeHint } from "@/game/combat";
 import { listCircuitBoard, postCircuitScore, type CircuitEntry } from "@/lib/circuit-board";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { canFight, effective, molt, portraitOf, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
@@ -221,6 +222,14 @@ export function SpiderDetail() {
           {spider.origin} · {spider.traits.join(" · ")} · {spider.wins}–{spider.losses}
         </p>
         {spider.injury ? <p className="text-sm text-rust">{spider.injury.label}</p> : null}
+        {spec ? (
+          <section className="rounded-xl border border-moss/40 bg-moss/10 p-3">
+            <p className="text-xs uppercase tracking-widest text-moss">Web kit</p>
+            <p className="mt-1 font-medium">{spec.web.name} · {spec.web.style} web</p>
+            <p className="mt-1 text-xs text-dust">Signature: {MOVES[spec.web.move].name} · {spec.web.ability}</p>
+            <p className="mt-1 text-xs text-paper">At two web charge: {webSurgeHint(spec.web.style)}.</p>
+          </section>
+        ) : null}
         <XpBar level={spider.level} xp={spider.xp} />
         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
           {(Object.keys(STAT_LABEL) as Array<keyof Stats>).map((k) => (
