@@ -33,6 +33,7 @@ import { advanceContract, canClaimContract, makeDailyContract } from "./contract
 import { firstWinTrophy } from "./rewards";
 import { applyBait } from "./bait";
 import { badgeReward, newlyEarnedBadges } from "./badges";
+import { nightlyReward, nightlyRival } from "./night-card";
 
 const emptySave = (): SaveState => ({
   version: SAVE_VERSION,
@@ -73,6 +74,7 @@ type Session = {
     wager: number;
     enemy: Spider;
     teamBonus: Partial<Stats>;
+    headline: boolean;
   } | null;
   result: FightOutcome | null;
 };
@@ -442,7 +444,14 @@ export const useGame = create<Game>()(
           enemy.traits = ["Hourglass", "Venom queen", "Doesn't blink"];
         }
         set({
-          fight: { rivalId, playerId, wager, enemy, teamBonus: teamSupport(player, g.spiders, g.activeTeam) },
+          fight: {
+            rivalId,
+            playerId,
+            wager,
+            enemy,
+            teamBonus: teamSupport(player, g.spiders, g.activeTeam),
+            headline: nightlyRival(g.dayStamp, g.rank).id === rivalId,
+          },
           result: null,
           screen: "fight",
           cash: g.cash - wager,
@@ -459,15 +468,17 @@ export const useGame = create<Game>()(
         let wins = g.wins;
         let losses = g.losses;
         let inventory = { ...g.inventory };
+        const headlineReward = nightlyReward(g.fight?.headline === true);
         const priorRival = g.rivalRecords[out.rivalId] ?? { wins: 0, losses: 0, streak: 0 };
         const rivalRecord = out.won
           ? { ...priorRival, wins: priorRival.wins + 1, streak: priorRival.streak + 1 }
           : { ...priorRival, losses: priorRival.losses + 1, streak: 0 };
         if (out.won) {
-          const prize = (RANKS[g.rank]?.purse ?? 18) + out.wager;
+          const prize = (RANKS[g.rank]?.purse ?? 18) + out.wager + headlineReward.cash;
           cash += prize;
           out.purse = prize;
-          rankPoints += 12 + Math.round(out.wager / 8);
+          rankPoints += 12 + Math.round(out.wager / 8) + headlineReward.points;
+          if (headlineReward.cash) out.headlineBonus = headlineReward.cash;
           wins += 1;
           if (out.loot) inventory = addInv(inventory, out.loot);
           const trophy = firstWinTrophy(out.rivalId, inventory, g.spiders);

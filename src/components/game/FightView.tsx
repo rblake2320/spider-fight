@@ -13,6 +13,8 @@ import { askRivalMove, judgeBout, jevStatus } from "@/lib/jev";
 import type { StickSnapshot } from "@/lib/jev-types";
 import { cn } from "@/lib/utils";
 import { fightShareText } from "@/game/share";
+import { NIGHTLY_BONUS_CASH, NIGHTLY_BONUS_POINTS, nightlyRival } from "@/game/night-card";
+import { todayStamp } from "@/game/rng";
 
 const MOVE_ORDER: MoveId[] = ["lunge", "grapple", "feint", "brace", "yank", "drop"];
 
@@ -53,6 +55,7 @@ export function FightSelect() {
   );
   const rivals = [...RIVALS.filter((r) => r.always && isShipped(r)), ...windowed];
   const purse = RANKS[rank]?.purse ?? 18;
+  const headline = nightlyRival(todayStamp(), rank);
 
   useEffect(() => {
     void jevStatus()
@@ -67,6 +70,11 @@ export function FightSelect() {
         <h2 className="font-display text-3xl font-semibold">Call a fight</h2>
         <p className="mt-1 text-sm text-dust">Lose the wager. Lose the wraps. Train them back.</p>
       </header>
+      <section className="rounded-xl border border-moss/50 bg-raised p-3">
+        <p className="text-xs uppercase tracking-widest text-moss">Tonight's headliner</p>
+        <p className="mt-1 font-medium">{headline.name}</p>
+        <p className="mt-1 text-xs text-dust">Win this call for +${NIGHTLY_BONUS_CASH} and +{NIGHTLY_BONUS_POINTS} circuit points.</p>
+      </section>
       {player ? (
         <button
           type="button"
@@ -110,6 +118,7 @@ export function FightSelect() {
             className={cn(
               "rounded-xl border bg-panel p-3 text-left",
               r.mind ? "border-rust/70" : "border-line",
+              r.id === headline.id && "border-moss/70",
             )}
             onClick={() => {
               if (!player) return;
@@ -376,6 +385,7 @@ function ResultCard() {
       <ul className="space-y-1 text-sm">
         <li>Wager {result.won ? "returned in purse" : "gone"} · ${result.wager}</li>
         {result.won ? <li className="text-moss">Purse ${result.purse}</li> : null}
+        {result.headlineBonus ? <li className="text-moss">Headliner bonus +${result.headlineBonus} · +{NIGHTLY_BONUS_POINTS} circuit</li> : null}
         <li>+{result.xp} xp</li>
         {result.stripped.map((id) => (
           <li key={id} className="text-rust">

@@ -165,6 +165,7 @@ export type FightOutcome = {
   enemyName: string;
   rivalId: string;
   jevReads?: number;
+  headlineBonus?: number;
   rounds: FightRound[];
 };
 
