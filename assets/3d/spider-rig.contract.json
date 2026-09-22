@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "status": "contract-only",
+  "asset": {
+    "id": "eratigena-atrica",
+    "displayName": "Eratigena atrica spider",
+    "sourceUrl": "https://sketchfab.com/3d-models/spider-eratigena-atrica-464d4c6773684786ac488a65d7020ff1",
+    "license": "UNVERIFIED",
+    "sourceFile": null,
+    "exports": {
+      "web": null,
+      "unreal": null,
+      "vrchat": null
+    }
+  },
+  "limits": {
+    "webTriangles": 30000,
+    "webFileMb": 15,
+    "maxInfluencesPerVertex": 4,
+    "textureMaxPx": 1024
+  },
+  "skeleton": {
+    "root": "root",
+    "pelvis": "abdomen",
+    "requiredBones": [
+      "root",
+      "abdomen",
+      "cephalothorax",
+      "leg_l_1_coxa", "leg_l_1_femur", "leg_l_1_tibia", "leg_l_1_tarsus",
+      "leg_l_2_coxa", "leg_l_2_femur", "leg_l_2_tibia", "leg_l_2_tarsus",
+      "leg_l_3_coxa", "leg_l_3_femur", "leg_l_3_tibia", "leg_l_3_tarsus",
+      "leg_l_4_coxa", "leg_l_4_femur", "leg_l_4_tibia", "leg_l_4_tarsus",
+      "leg_r_1_coxa", "leg_r_1_femur", "leg_r_1_tibia", "leg_r_1_tarsus",
+      "leg_r_2_coxa", "leg_r_2_femur", "leg_r_2_tibia", "leg_r_2_tarsus",
+      "leg_r_3_coxa", "leg_r_3_femur", "leg_r_3_tibia", "leg_r_3_tarsus",
+      "leg_r_4_coxa", "leg_r_4_femur", "leg_r_4_tibia", "leg_r_4_tarsus"
+    ],
+    "retargetChains": [
+      "body",
+      "leg_l_1", "leg_l_2", "leg_l_3", "leg_l_4",
+      "leg_r_1", "leg_r_2", "leg_r_3", "leg_r_4"
+    ]
+  },
+  "actions": ["idle", "intro", "lunge", "grapple", "feint", "brace", "yank", "drop", "hurt", "ko"],
+  "verification": {
+    "blender": ["applied-transforms", "outward-normals", "four-or-fewer-weights", "named-actions"],
+    "unreal": ["set-pelvis", "map-identical-retarget-chains", "preview-every-action", "check-retarget-output-log"],
+    "vrchat": ["generic-fbx-rig", "root-animator-avatar-reference", "base-action-fx-playable-layers", "local-build-and-test"]
+  }
+}
