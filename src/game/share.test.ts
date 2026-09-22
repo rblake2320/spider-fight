@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { shareMatchCard } from "./share-client.ts";
+import { matchCardUrl, shareMatchCard } from "./share-client.ts";
 import { archiveShareText, fightShareText } from "./share.ts";
 
 test("fight share text includes result, reward, and the recent tape", () => {
@@ -62,13 +62,16 @@ test("an archived tape can be shared without inventing current rewards", () => {
 });
 
 test("match cards use the native share sheet and fall back to copying", async () => {
-  let shared = "";
-  const native = { share: async ({ text }: ShareData) => { shared = text ?? ""; }, clipboard: { writeText: async () => assert.fail("clipboard should not run") } } as unknown as Navigator;
-  assert.equal(await shareMatchCard("held the stick", native), "shared");
-  assert.equal(shared, "held the stick");
+  let shared: ShareData | undefined;
+  const native = { share: async (data: ShareData) => { shared = data; }, clipboard: { writeText: async () => assert.fail("clipboard should not run") } } as unknown as Navigator;
+  assert.equal(await shareMatchCard("held the stick", native, "https://spider.fight"), "shared");
+  assert.equal(shared?.text, "held the stick");
+  assert.equal(shared?.url, "https://spider.fight");
+
+  assert.equal(matchCardUrl({ origin: "https://spider.fight" }), "https://spider.fight");
 
   let copied = "";
   const fallback = { clipboard: { writeText: async (text: string) => { copied = text; } } } as unknown as Navigator;
-  assert.equal(await shareMatchCard("tape", fallback), "copied");
-  assert.equal(copied, "tape");
+  assert.equal(await shareMatchCard("tape", fallback, "https://spider.fight"), "copied");
+  assert.equal(copied, "tape\nhttps://spider.fight");
 });
