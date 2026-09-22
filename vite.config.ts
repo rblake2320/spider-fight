@@ -150,6 +150,10 @@ export default defineConfig(({ command, isPreview }) => ({
     host: "0.0.0.0",
     port: 8080,
     strictPort: true,
+    // The production bundle gains PGlite's runtime data after each build.
+    // Ignore it in dev so copying those binary files cannot crash a running
+    // Vite watcher on Windows with EBUSY.
+    watch: { ignored: ["**/.vercel/**"] },
   },
   preview: {
     host: "127.0.0.1",

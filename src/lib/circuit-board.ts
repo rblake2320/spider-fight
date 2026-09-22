@@ -14,6 +14,12 @@ export type CircuitPlacement = {
   total: number;
 };
 
+export type CircuitChase = {
+  entry: CircuitEntry;
+  /** The smallest score gain that beats this yard under the board's score-first order. */
+  pointsNeeded: number;
+};
+
 type CircuitSeason = { season: number };
 type CircuitSubmission = Pick<CircuitEntry, "stableName" | "score" | "wins" | "rank"> & CircuitSeason;
 type DailyCircuit = CircuitSeason & { day: string };
@@ -22,6 +28,17 @@ type DailyCircuitSubmission = CircuitSubmission & DailyCircuit;
 /** Shared daily cards reset at midnight UTC, so every yard sees the same race. */
 export function circuitDay(now = new Date()): string {
   return now.toISOString().slice(0, 10);
+}
+
+/** Gives a player one reachable yard to pass instead of an inert list of scores. */
+export function nextCircuitChase(entries: CircuitEntry[], score: number, wins: number, stableName: string): CircuitChase | null {
+  const ahead = entries.filter((entry) =>
+    entry.stableName !== stableName && (entry.score > score || (entry.score === score && entry.wins > wins)),
+  );
+  if (!ahead.length) return null;
+  return ahead
+    .map((entry) => ({ entry, pointsNeeded: Math.max(1, entry.score - score + 1) }))
+    .sort((a, b) => a.pointsNeeded - b.pointsNeeded || a.entry.wins - b.entry.wins || a.entry.stableName.localeCompare(b.entry.stableName))[0] ?? null;
 }
 
 function validSeason(input: CircuitSeason): CircuitSeason {

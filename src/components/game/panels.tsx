@@ -4,7 +4,8 @@ import { ITEMS, ITEM_LIST, MOVES, RANKS, RIVALS, SLOT_LABEL, SPECIES, SPECIES_LI
 import { BUILD, careerSeasonId, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES, FIELD_GUIDE_MILESTONES } from "@/game/badges";
 import { webSurgeHint } from "@/game/combat";
-import { circuitDay, listCircuitBoard, listDailyCircuitBoard, postCircuitScore, postDailyCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
+import { circuitDay, listCircuitBoard, listDailyCircuitBoard, nextCircuitChase, postCircuitScore, postDailyCircuitScore, type CircuitEntry, type CircuitPlacement } from "@/lib/circuit-board";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { tonightSky } from "@/game/sky";
 import { canClutch, clutchCost } from "@/game/clutch";
@@ -856,6 +857,7 @@ export function TeamView() {
 }
 
 export function CareerView() {
+  const { user, isPending: isSessionPending } = useCurrentUserState();
   const rank = useGame((s) => s.rank);
   const points = useGame((s) => s.rankPoints);
   const stableName = useGame((s) => s.stableName);
@@ -890,6 +892,8 @@ export function CareerView() {
   const nextFieldGuideMark = FIELD_GUIDE_MILESTONES.find((milestone) => !earnedBadges.includes(milestone.id));
   const trophies = heldRivalTrophies(inventory, spiders);
   const trophyRows = Object.entries(RIVAL_TROPHIES).map(([rivalId, itemId]) => ({ rival: RIVALS.find((rival) => rival.id === rivalId), item: ITEMS[itemId], held: trophies.includes(itemId) }));
+  const seasonChase = nextCircuitChase(circuitBoard, points, wins, stableName);
+  const dailyChase = nextCircuitChase(dailyCircuitBoard, points, wins, stableName);
 
   useEffect(() => {
     let alive = true;
@@ -999,7 +1003,7 @@ export function CareerView() {
       <section className="rounded-xl border border-moss/50 bg-raised p-3">
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-xs uppercase tracking-widest text-moss">Year {season} circuit board</p>
-          <Button size="sm" variant="outline" disabled={boardState === "loading"} onClick={postScore}>
+          <Button size="sm" variant="outline" disabled={boardState === "loading" || isSessionPending || !user} onClick={postScore}>
             Post score
           </Button>
         </div>
@@ -1008,6 +1012,11 @@ export function CareerView() {
         {boardState === "error" ? <p className="mt-2 text-xs text-rust">{boardError}</p> : null}
         {boardState === "loading" ? <p className="mt-2 text-xs text-dust">Reading the board…</p> : null}
         {boardState === "ready" && circuitBoard.length === 0 ? <p className="mt-2 text-xs text-dust">Be the first yard on the line.</p> : null}
+        {boardState === "ready" && circuitBoard.length ? (
+          <p className="mt-2 text-xs text-moss">
+            {seasonChase ? `Chase ${seasonChase.entry.stableName}: +${seasonChase.pointsNeeded} Circuit point${seasonChase.pointsNeeded === 1 ? "" : "s"} passes their ${seasonChase.entry.score}.` : "Your current score owns the top posted mark."}
+          </p>
+        ) : null}
         {circuitBoard.length ? (
           <ol className="mt-2 space-y-2">
             {circuitBoard.map((entry, index) => (
@@ -1050,7 +1059,7 @@ export function CareerView() {
       <section className="rounded-xl border border-rust/50 bg-raised p-3">
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-xs uppercase tracking-widest text-rust">Daily circuit · {day}</p>
-          <Button size="sm" variant="outline" disabled={dailyBoardState === "loading"} onClick={postDailyScore}>
+          <Button size="sm" variant="outline" disabled={dailyBoardState === "loading" || isSessionPending || !user} onClick={postDailyScore}>
             Enter today
           </Button>
         </div>
@@ -1059,6 +1068,11 @@ export function CareerView() {
         {dailyBoardState === "error" ? <p className="mt-2 text-xs text-rust">{dailyBoardError}</p> : null}
         {dailyBoardState === "loading" ? <p className="mt-2 text-xs text-dust">Reading today’s board…</p> : null}
         {dailyBoardState === "ready" && dailyCircuitBoard.length === 0 ? <p className="mt-2 text-xs text-dust">Set the first mark today.</p> : null}
+        {dailyBoardState === "ready" && dailyCircuitBoard.length ? (
+          <p className="mt-2 text-xs text-moss">
+            {dailyChase ? `Today’s chase: ${dailyChase.entry.stableName} is +${dailyChase.pointsNeeded} Circuit point${dailyChase.pointsNeeded === 1 ? "" : "s"} away.` : "You hold today’s top posted mark."}
+          </p>
+        ) : null}
         {dailyCircuitBoard.length ? (
           <ol className="mt-2 space-y-2">
             {dailyCircuitBoard.map((entry, index) => (
