@@ -399,7 +399,7 @@ export function FightArena() {
   // A choice before the read is just a blind guess. Open the buttons when the
   // actual tell is visible, then keep the round genuinely timed from there.
   const locked = f.phase !== "telegraph" || !f.tellReady || f.playerLocked;
-  const readMoves = f.phase === "telegraph" && f.tellReady && f.enemy.tell ? countersFor(f.enemy.tell) : [];
+  const readMoves = f.phase === "telegraph" && f.tellReady && f.enemy.tell ? countersFor(f.enemy.tell) : [];`n  const bestRead = f.enemy.tell ? bestCounterFor(f.enemy.tell) : null;
   const readWindow = readWindowPercent(f);
   const readSeconds = Math.ceil(readWindowSeconds(f) * 10) / 10;
   const stickEffects = skyFightEffects(tonightSky());
@@ -431,7 +431,7 @@ export function FightArena() {
       {f.readWindow > READ_WINDOW_SECONDS ? <p className="px-3 pb-1 text-center text-[10px] text-dust">{firstRankedCall ? "First-call focus" : "Focus timing"} · extended read window</p> : null}
       {f.enemy.tell && readMoves.length && readHints ? (
         <p className="mx-3 rounded-md border border-moss/40 bg-moss/10 px-2 py-1 text-center text-[11px] text-paper">
-          Read {MOVES[f.enemy.tell].name} · counter with {readMoves.map((move) => MOVES[move].name).join(" or ")}
+          Read {MOVES[f.enemy.tell].name} · lead {bestRead ? MOVES[bestRead].name : MOVES[readMoves[0]!].name}
         </p>
       ) : f.enemy.tell ? (
         <p className="px-3 pb-1 text-center text-[11px] text-dust">Read {MOVES[f.enemy.tell].name}. Make the call.</p>
