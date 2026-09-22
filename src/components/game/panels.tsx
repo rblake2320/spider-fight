@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ITEMS, ITEM_LIST, RANKS, SLOT_LABEL, SPECIES, SPECIES_LIST, xpToNext } from "@/game/content";
 import { BUILD, SEASONS, SHIPPED_SEASON, isShipped, seasonName } from "@/game/catalog";
 import { BADGES } from "@/game/badges";
+import { listCircuitBoard, postCircuitScore, type CircuitEntry } from "@/lib/circuit-board";
 import { useGame, formatCash, rankName } from "@/game/store";
 import { canFight, effective, molt, portraitOf, spiderScore, STAGE_LABEL, STAT_LABEL, trainingTotal } from "@/game/spiders";
 import type { GearSlot, ItemKind, Stats } from "@/game/types";
@@ -482,6 +483,7 @@ export function TeamView() {
 export function CareerView() {
   const rank = useGame((s) => s.rank);
   const points = useGame((s) => s.rankPoints);
+  const stableName = useGame((s) => s.stableName);
   const wins = useGame((s) => s.wins);
   const losses = useGame((s) => s.losses);
   const seen = useGame((s) => s.seen);
@@ -491,9 +493,48 @@ export function CareerView() {
   const earnedBadges = useGame((s) => s.earnedBadges);
   const rollYear = useGame((s) => s.rollYear);
   const [msg, setMsg] = useState<string | null>(null);
+  const [circuitBoard, setCircuitBoard] = useState<CircuitEntry[]>([]);
+  const [boardState, setBoardState] = useState<"loading" | "ready" | "error">("loading");
+  const [boardError, setBoardError] = useState<string | null>(null);
   const next = RANKS[rank + 1];
   const board = [...spiders].sort((a, b) => spiderScore(b) - spiderScore(a));
   const current = SEASONS.find((s) => s.id === SHIPPED_SEASON) ?? SEASONS[0]!;
+
+  useEffect(() => {
+    let alive = true;
+    void listCircuitBoard()
+      .then((entries) => {
+        if (!alive) return;
+        setCircuitBoard(entries);
+        setBoardState("ready");
+        setBoardError(null);
+      })
+      .catch(() => {
+        if (alive) {
+          setBoardState("error");
+          setBoardError("Board unavailable. Your yard still saves locally.");
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const postScore = () => {
+    setBoardState("loading");
+    setBoardError(null);
+    void postCircuitScore({ data: { stableName, score: points, wins, rank } })
+      .then(() => listCircuitBoard())
+      .then((entries) => {
+        setCircuitBoard(entries);
+        setBoardState("ready");
+        setBoardError(null);
+      })
+      .catch((error: unknown) => {
+        setBoardState("error");
+        setBoardError(error instanceof Error && error.message === "Unauthorized" ? "Sign in to post a score." : "Could not post this score. Try again.");
+      });
+  };
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-4 pb-24">
@@ -522,6 +563,31 @@ export function CareerView() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="rounded-xl border border-moss/50 bg-raised p-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-xs uppercase tracking-widest text-moss">Circuit board</p>
+          <Button size="sm" variant="outline" disabled={boardState === "loading"} onClick={postScore}>
+            Post score
+          </Button>
+        </div>
+        <p className="mt-1 text-xs text-mute">Post this stable's circuit score for other yards to chase.</p>
+        {boardState === "error" ? <p className="mt-2 text-xs text-rust">{boardError}</p> : null}
+        {boardState === "loading" ? <p className="mt-2 text-xs text-dust">Reading the board…</p> : null}
+        {boardState === "ready" && circuitBoard.length === 0 ? <p className="mt-2 text-xs text-dust">Be the first yard on the line.</p> : null}
+        {circuitBoard.length ? (
+          <ol className="mt-2 space-y-2">
+            {circuitBoard.map((entry, index) => (
+              <li key={`${entry.stableName}-${entry.updatedAt}`} className="flex items-center gap-2 text-sm">
+                <span className="w-5 text-dust">{index + 1}</span>
+                <span className="min-w-0 flex-1 truncate">{entry.stableName}</span>
+                <span className="text-xs text-dust">{rankName(entry.rank)} · {entry.wins}W</span>
+                <span className="tabular text-moss">{entry.score} pts</span>
+              </li>
+            ))}
+          </ol>
+        ) : null}
       </section>
 
       <div className="rounded-xl bg-raised p-3">
